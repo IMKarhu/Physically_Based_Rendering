@@ -101,3 +101,8 @@ void Instance::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoE
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
 }
+
+VkInstance Instance::getInstance() const
+{
+    return m_Instance;
+}

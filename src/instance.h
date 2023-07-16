@@ -25,6 +25,7 @@ public:
 	bool checkValidationLayers();
 	std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+	VkInstance getInstance() const;
 private:
 	VkInstance m_Instance{ VK_NULL_HANDLE };
 

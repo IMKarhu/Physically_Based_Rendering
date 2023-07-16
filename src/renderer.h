@@ -2,6 +2,7 @@
 
 #include "window.h"
 #include "instance.h"
+#include "device.h"
 
 #include <memory>
 
@@ -20,4 +21,5 @@ public:
 private:
 	std::unique_ptr<Window> m_Window = std::make_unique<Window>();
 	std::unique_ptr<Instance> m_Instance = std::make_unique<Instance>();
+	std::unique_ptr<Device> m_Device = std::make_unique<Device>();
 };
