@@ -56,6 +56,10 @@ Device::Device(Device&&other) noexcept
     m_PhysicalDevice = std::exchange(other.m_PhysicalDevice, nullptr);
 }
 
+Device::~Device()
+{
+}
+
 void Device::pickPhysicalDevice(const VkSurfaceKHR& surface, const VkInstance& instance)
 {
     uint32_t deviceCount = 0;

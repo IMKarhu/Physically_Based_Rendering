@@ -1,9 +1,18 @@
 #include "window.h"
 #include <stdexcept>
 
-Window::Window()
+Window::Window(const char* title, std::uint32_t width, std::uint32_t height)
+	:m_Title(title),
+	m_Width(width),
+	m_Height(height)
 {
-	
+	glfwInit();
+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); /* Tell glfw to not create opengl context. */
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); /* Window is not resizable. */
+
+	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
+	printf("hello");
 }
 
 Window::~Window()
@@ -12,40 +21,17 @@ Window::~Window()
 	glfwTerminate();
 }
 
-void Window::createWindow()
-{
-	if (!glfwInit())
-	{
-		throw std::runtime_error("Failed to initialize glfw!");
-	}
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
-}
-
 void Window::pollEvents()
 {
 	glfwPollEvents();
 }
 
-bool Window::windowShouldCose()
+bool Window::windowShouldClose()
 {
 	return glfwWindowShouldClose(m_Window);
 }
 
-void Window::setWidth(const uint32_t& width)
+GLFWwindow* Window::getWindow() const
 {
-	m_Width = width;
-}
-
-void Window::setHeight(const uint32_t& height)
-{
-	m_Height = height;
-}
-
-void Window::setTitle(const char* title)
-{
-	m_Title = title;
+	return m_Window;
 }

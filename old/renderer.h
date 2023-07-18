@@ -17,9 +17,12 @@ public:
 	Renderer& operator=(const Renderer&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
+	void createSurface();
+
 	void Run();
 private:
+	VkSurfaceKHR m_Surface;
 	std::unique_ptr<Window> m_Window = std::make_unique<Window>();
 	std::unique_ptr<Instance> m_Instance = std::make_unique<Instance>();
-	std::unique_ptr<Device> m_Device = std::make_unique<Device>();
+	std::unique_ptr<Device> m_Device;
 };
