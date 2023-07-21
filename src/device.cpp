@@ -1,4 +1,5 @@
 #include "device.h"
+#include "vkUtils/vkUtils.h"
 #include <set>
 
 Device::Device(VkInstance instance, GLFWwindow* window, bool validationlayers, const std::vector<const char*> validationLayersvector)
@@ -108,7 +109,8 @@ void Device::createLogicalDevice()
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
     if (m_Enablevalidationlayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(m_ValidationLayers.size());
@@ -126,13 +128,13 @@ void Device::createLogicalDevice()
     vkGetDeviceQueue(m_Device, indices.presentFamily.value(), 0, &m_PresentQueue);
 }
 
-bool Device::checkDeviceExtensionSupport()
+bool Device::checkDeviceExtensionSupport(VkPhysicalDevice pdevice)
 {
     uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &extensionCount, nullptr);
+    vkEnumerateDeviceExtensionProperties(pdevice, nullptr, &extensionCount, nullptr);
 
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &extensionCount, availableExtensions.data());
+    vkEnumerateDeviceExtensionProperties(pdevice, nullptr, &extensionCount, availableExtensions.data());
 
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -147,16 +149,15 @@ bool Device::checkDeviceExtensionSupport()
 bool Device::isDeviceSuitable(VkPhysicalDevice pdevice)
 {
     QueueFamilyIndices indices = findQueueFamilies(pdevice);
-
-   /* bool extensionsSupported = checkDeviceExtensionSupport();
+    bool extensionsSupported = checkDeviceExtensionSupport(pdevice);
 
     bool swapChainAdequate = false;
     if (extensionsSupported)
     {
-        vkUtils::SwapChainSupportDetails swapChainSupport = vkUtils::getQuerySwapChainSupportDetails(m_PhysicalDevice, m_Surface);
+        vkUtils::SwapChainSupportDetails swapChainSupport = vkUtils::querySwapChainSupport(pdevice, m_Surface);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-    }*/
-    return indices.isComplete() /*&& extensionsSupported && swapChainAdequate*/;
+    }
+    return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 

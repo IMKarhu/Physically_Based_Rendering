@@ -9,6 +9,7 @@ VulkanRenderer::VulkanRenderer()
 
 VulkanRenderer::~VulkanRenderer()
 {
+    delete m_SwapChain;
     delete m_Device;
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
@@ -26,6 +27,9 @@ void VulkanRenderer::Run()
     m_Device->createSurface();
     m_Device->pickPhysicalDevice();
     m_Device->createLogicalDevice();
+    m_SwapChain = new SwapChain(m_Device);
+    m_SwapChain->createSwapChain(m_Window->getWindow());
+    m_SwapChain->createImageViews();
 	while (!m_Window->windowShouldClose())
 	{
 		m_Window->pollEvents();
@@ -128,6 +132,27 @@ std::vector<const char*> VulkanRenderer::getRequiredExtensions() const
 
     return extensions;
 }
+
+//VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+//{
+//    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+//        return capabilities.currentExtent;
+//    }
+//    else {
+//        int width, height;
+//        glfwGetFramebufferSize(m_Window->getWindow(), &width, &height);
+//
+//        VkExtent2D actualExtent = {
+//            static_cast<uint32_t>(width),
+//            static_cast<uint32_t>(height)
+//        };
+//
+//        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+//        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+//
+//        return actualExtent;
+//    }
+//}
 
 void VulkanRenderer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {

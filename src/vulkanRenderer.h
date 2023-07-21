@@ -2,12 +2,16 @@
 
 #include "window.h"
 #include "device.h"
+#include "swapChain.h"
 
 #include <vector>
 
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
+//const std::vector<const char*> deviceExtensions = {
+//	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+//};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -27,6 +31,7 @@ public:
 private:
 	std::unique_ptr<Window> m_Window = std::make_unique<Window>("Vulkan renderer", 800, 600);
 	Device* m_Device;
+	SwapChain* m_SwapChain;
 	VkInstance m_Instance;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
 
@@ -36,6 +41,7 @@ private:
 
 	bool checkValidationSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;
+	//VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);

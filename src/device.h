@@ -30,11 +30,13 @@ public:
 	void createSurface();
 	void pickPhysicalDevice();
 	void createLogicalDevice();
-	bool checkDeviceExtensionSupport();
+	bool checkDeviceExtensionSupport(VkPhysicalDevice pdevice);
 
 	bool isDeviceSuitable(VkPhysicalDevice pdevice);
 
-	VkDevice getDevice() const { return m_Device; }
+	[[nodiscard]] VkDevice getDevice() const { return m_Device; }
+	[[nodiscard]] VkPhysicalDevice getPhysicalDevice() const { return m_PhysicalDevice; }
+	[[nodiscard]] VkSurfaceKHR getSurafce() const { return m_Surface; }
 private:
 	std::vector<const char*> m_ValidationLayers;
 	bool m_Enablevalidationlayers = false;
