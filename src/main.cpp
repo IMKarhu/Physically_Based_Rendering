@@ -3,7 +3,6 @@
 int main()
 {
 	VulkanRenderer vRen;
-	printf("hello");
 	try
 	{
 		vRen.Run();

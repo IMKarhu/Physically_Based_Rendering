@@ -12,7 +12,6 @@ Window::Window(const char* title, std::uint32_t width, std::uint32_t height)
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); /* Window is not resizable. */
 
 	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
-	printf("hello");
 }
 
 Window::~Window()
