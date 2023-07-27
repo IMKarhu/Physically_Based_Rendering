@@ -3,15 +3,14 @@
 #include "window.h"
 #include "device.h"
 #include "swapChain.h"
+#include "graphicsPipeLine.h"
 
 #include <vector>
 
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
-//const std::vector<const char*> deviceExtensions = {
-//	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-//};
+
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -32,12 +31,24 @@ private:
 	std::unique_ptr<Window> m_Window = std::make_unique<Window>("Vulkan renderer", 800, 600);
 	Device* m_Device;
 	SwapChain* m_SwapChain;
+	GraphicsPipeLine* m_PipeLine;
 	VkInstance m_Instance;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
+	VkCommandPool m_CommandPool;
+	VkCommandBuffer m_CommandBuffer;
+	VkSemaphore m_ImageAvailableSemaphore;
+	VkSemaphore m_RenderFinishedSemaphore;
+	VkFence m_InFlightFence;
+
 
 	/* Private member Functions. */
 	void createInstance();
 	void setupDebugMessenger();
+	void createCommandPool();
+	void createCommandBuffer();
+	void recordCommandBuffer(VkCommandBuffer commandbuffer, uint32_t imageIndex);
+	void createSyncObjects();
+	void drawFrame();
 
 	bool checkValidationSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;

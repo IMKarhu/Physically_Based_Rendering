@@ -37,6 +37,8 @@ public:
 	[[nodiscard]] VkDevice getDevice() const { return m_Device; }
 	[[nodiscard]] VkPhysicalDevice getPhysicalDevice() const { return m_PhysicalDevice; }
 	[[nodiscard]] VkSurfaceKHR getSurafce() const { return m_Surface; }
+	[[nodiscard]] VkQueue getGraphicsQueue() { return m_GraphicsQueue; }
+	[[nodiscard]] VkQueue getPresentQueue() { return m_PresentQueue; }
 private:
 	std::vector<const char*> m_ValidationLayers;
 	bool m_Enablevalidationlayers = false;
