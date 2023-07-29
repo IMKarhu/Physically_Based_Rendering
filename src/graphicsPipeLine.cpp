@@ -8,9 +8,7 @@ GraphicsPipeLine::GraphicsPipeLine(Device* device, SwapChain* swapchain)
 
 GraphicsPipeLine::~GraphicsPipeLine()
 {
-    for (auto framebuffer : m_SwapChainFramebuffers) {
-        vkDestroyFramebuffer(m_Device->getDevice(), framebuffer, nullptr);
-    }
+    
     vkDestroyPipeline(m_Device->getDevice(), m_GraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_Device->getDevice(), m_PipelineLayout, nullptr);
     vkDestroyRenderPass(m_Device->getDevice(), m_RenderPass, nullptr);
@@ -111,7 +109,8 @@ void GraphicsPipeLine::createPipeLine()
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-    if (vkCreatePipelineLayout(m_Device->getDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_Device->getDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -133,7 +132,8 @@ void GraphicsPipeLine::createPipeLine()
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(m_Device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(m_Device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
@@ -180,7 +180,8 @@ void GraphicsPipeLine::createRenderPass()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(m_Device->getDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_Device->getDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create render pass!");
     }
 }
@@ -189,7 +190,8 @@ void GraphicsPipeLine::createFrameBuffers()
 {
     m_SwapChainFramebuffers.resize(m_SwapChain->getSwapChainImageViews().size());
 
-    for (size_t i = 0; i < m_SwapChain->getSwapChainImageViews().size(); i++) {
+    for (size_t i = 0; i < m_SwapChain->getSwapChainImageViews().size(); i++)
+    {
         VkImageView attachments[] = {
             m_SwapChain->getSwapChainImageViews()[i]
         };
@@ -203,7 +205,8 @@ void GraphicsPipeLine::createFrameBuffers()
         framebufferInfo.height = m_SwapChain->getSwapChainExtent().height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(m_Device->getDevice(), &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(m_Device->getDevice(), &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create framebuffer!");
         }
     }
@@ -217,7 +220,8 @@ VkShaderModule GraphicsPipeLine::createShaderModule(const std::vector<char>& cod
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(m_Device->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(m_Device->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create shader module!");
     }
 

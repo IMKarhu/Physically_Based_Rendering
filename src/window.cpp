@@ -9,9 +9,10 @@ Window::Window(const char* title, std::uint32_t width, std::uint32_t height)
 	glfwInit();
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); /* Tell glfw to not create opengl context. */
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); /* Window is not resizable. */
 
 	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
+	glfwSetWindowUserPointer(m_Window, this);
+	glfwSetFramebufferSizeCallback(m_Window, framebufferResizeCallback);
 }
 
 Window::~Window()
@@ -33,4 +34,20 @@ bool Window::windowShouldClose()
 GLFWwindow* Window::getWindow() const
 {
 	return m_Window;
+}
+
+const bool Window::getFrameBufferResize()
+{
+	return m_FrameBufferResized;
+}
+
+void Window::setFrameBufferResize(bool size)
+{
+	m_FrameBufferResized = size;
+}
+
+void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	app->m_FrameBufferResized = true;
 }

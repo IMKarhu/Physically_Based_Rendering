@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+class VulkanRenderer;
+
 class Window
 {
 public:
@@ -19,12 +21,16 @@ public:
 	void pollEvents();
 	bool windowShouldClose();
 
-	GLFWwindow* getWindow() const;
+	[[nodiscard]] GLFWwindow* getWindow() const;
+	[[nodiscard]] const bool getFrameBufferResize();
+	void setFrameBufferResize(bool size);
 	
-
 private:
 	GLFWwindow* m_Window;
 	const char* m_Title;
 	std::uint32_t m_Width;
 	std::uint32_t m_Height;
+	bool m_FrameBufferResized = false; /* Handle to flag window resize. */
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 };

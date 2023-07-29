@@ -22,10 +22,8 @@ class VulkanRenderer
 {
 public:
 	VulkanRenderer();
-
 	~VulkanRenderer();
 
-	
 	void Run();
 private:
 	std::unique_ptr<Window> m_Window = std::make_unique<Window>("Vulkan renderer", 800, 600);
@@ -35,24 +33,28 @@ private:
 	VkInstance m_Instance;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
 	VkCommandPool m_CommandPool;
-	VkCommandBuffer m_CommandBuffer;
-	VkSemaphore m_ImageAvailableSemaphore;
-	VkSemaphore m_RenderFinishedSemaphore;
-	VkFence m_InFlightFence;
+	std::vector<VkCommandBuffer> m_CommandBuffers;
+	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+	std::vector<VkFence> m_InFlightFences;
+
+	const int m_MaxFramesInFlight = 2;
+	uint32_t m_CurrentFrame = 0;
 
 
 	/* Private member Functions. */
 	void createInstance();
 	void setupDebugMessenger();
 	void createCommandPool();
-	void createCommandBuffer();
+	void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandbuffer, uint32_t imageIndex);
 	void createSyncObjects();
 	void drawFrame();
+	void recreateSwapChain();
+	void cleanUpSwapChain();
 
 	bool checkValidationSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;
-	//VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);

@@ -8,10 +8,7 @@ SwapChain::SwapChain(Device* device)
 
 SwapChain::~SwapChain()
 {
-    vkDestroySwapchainKHR(m_Device->getDevice(), m_SwapChain, nullptr);
-    for (auto imageView : m_SwapChainImageViews) {
-        vkDestroyImageView(m_Device->getDevice(), imageView, nullptr);
-    }
+
 }
 
 //void SwapChain::createSwapChain(VkPhysicalDevice pdevice, VkDevice device, VkSurfaceKHR surface, GLFWwindow* window)
@@ -24,7 +21,8 @@ void SwapChain::createSwapChain(GLFWwindow* window)
     VkExtent2D extent = vkUtils::chooseSwapExtent(swapChainSupport.capabilities, window);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+    {
         imageCount = swapChainSupport.capabilities.maxImageCount;
     }
 
@@ -41,12 +39,14 @@ void SwapChain::createSwapChain(GLFWwindow* window)
     QueueFamilyIndices indices = m_Device->findQueueFamilies(m_Device->getPhysicalDevice());
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
-    if (indices.graphicsFamily != indices.presentFamily) {
+    if (indices.graphicsFamily != indices.presentFamily)
+    {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
         createInfo.pQueueFamilyIndices = queueFamilyIndices;
     }
-    else {
+    else
+    {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = 0; // Optional
         createInfo.pQueueFamilyIndices = nullptr; // Optional
@@ -74,7 +74,8 @@ void SwapChain::createImageViews()
 {
     m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
-    for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
+    for (size_t i = 0; i < m_SwapChainImages.size(); i++)
+    {
         VkImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         createInfo.image = m_SwapChainImages[i];
@@ -90,7 +91,8 @@ void SwapChain::createImageViews()
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(m_Device->getDevice(), &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS) {
+        if (vkCreateImageView(m_Device->getDevice(), &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create image views!");
         }
     }

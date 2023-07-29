@@ -53,7 +53,8 @@ QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice pdevice)
 
 void Device::createSurface()
 {
-    if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create window surface!");
     }
 }
@@ -63,21 +64,25 @@ void Device::pickPhysicalDevice()
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
 
-    if (deviceCount == 0) {
+    if (deviceCount == 0)
+    {
         throw std::runtime_error("failed to find GPUs with Vulkan support!");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
-    for (const auto& device : devices) {
-        if (isDeviceSuitable(device)) {
+    for (const auto& device : devices)
+    {
+        if (isDeviceSuitable(device))
+        {
             m_PhysicalDevice = device;
             break;
         }
     }
 
-    if (m_PhysicalDevice == VK_NULL_HANDLE) {
+    if (m_PhysicalDevice == VK_NULL_HANDLE)
+    {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
@@ -89,7 +94,8 @@ void Device::createLogicalDevice()
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
     float queuePriority = 1.0f;
-    for (uint32_t queueFamily : uniqueQueueFamilies) {
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+    {
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -112,15 +118,18 @@ void Device::createLogicalDevice()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (m_Enablevalidationlayers) {
+    if (m_Enablevalidationlayers)
+    {
         createInfo.enabledLayerCount = static_cast<uint32_t>(m_ValidationLayers.size());
         createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
     }
-    else {
+    else
+    {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS) {
+    if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create logical device!");
     }
 

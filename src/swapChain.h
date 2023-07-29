@@ -21,8 +21,8 @@ public:
 private:
 	VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 	std::vector<VkImage> m_SwapChainImages;
-	VkFormat m_SwapChainImageFormat;
-	VkExtent2D m_SwapChainExtent;
+	VkFormat m_SwapChainImageFormat{};
+	VkExtent2D m_SwapChainExtent{};
 	std::vector<VkImageView> m_SwapChainImageViews;
 	Device* m_Device;
 };
