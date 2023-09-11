@@ -3,12 +3,14 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <string>
+#include <iostream>
+
+class VulkanRenderer;
 
 class Window
 {
 public:
-	Window();
+	Window(const char* title, std::uint32_t width, std::uint32_t height);
 	Window(const Window&) = delete; /* Disallows copying. */
 	Window(Window&&) = delete; /* Disallows move operation. */
 	~Window();
@@ -16,18 +18,19 @@ public:
 	Window& operator=(const Window&) = delete;
 	Window& operator=(Window&&) = delete;
 
-	void createWindow();
 	void pollEvents();
-	bool windowShouldCose();
+	bool windowShouldClose();
 
-	GLFWwindow* getWindow();
-
-	void setWidth(const uint32_t &width);
-	void setHeight(const uint32_t &height);
-	void setTitle(const char* title);
+	[[nodiscard]] GLFWwindow* getWindow() const;
+	[[nodiscard]] const bool getFrameBufferResize();
+	void setFrameBufferResize(bool size);
+	
 private:
-	GLFWwindow* m_Window = nullptr;
+	GLFWwindow* m_Window;
 	const char* m_Title;
 	std::uint32_t m_Width;
 	std::uint32_t m_Height;
+	bool m_FrameBufferResized = false; /* Handle to flag window resize. */
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 };

@@ -1,28 +1,11 @@
-#include "renderer.h"
-
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-
-class Application
-{
-public:
-	void run()
-	{
-		printf("hello");
-		ren.Run();
-	}
-private:
-	Renderer ren;
-};
+#include "vulkanRenderer.h"
 
 int main()
 {
-	Application app;
-
+	VulkanRenderer vRen;
 	try
 	{
-		app.run();
+		vRen.Run();
 	}
 	catch (const std::exception& e)
 	{

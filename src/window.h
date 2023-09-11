@@ -1,36 +1,39 @@
 #pragma once
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include <iostream>
-
-class VulkanRenderer;
+#include "vulkan/vulkan.h"
+#include "GLFW/glfw3.h"
+#include <string>
 
 class Window
 {
 public:
-	Window(const char* title, std::uint32_t width, std::uint32_t height);
+	Window(const char* title, uint32_t width, uint32_t height);
 	Window(const Window&) = delete; /* Disallows copying. */
 	Window(Window&&) = delete; /* Disallows move operation. */
-	~Window();
+
+	virtual ~Window();
 
 	Window& operator=(const Window&) = delete;
 	Window& operator=(Window&&) = delete;
 
+	void initWindow();
 	void pollEvents();
-	bool windowShouldClose();
+	bool shouldClose();
+	static void frameBufferResizeCallBack(GLFWwindow* window, int width, int height);
+	void createWindowSurface(VkSurfaceKHR surface, const VkInstance& instance);
 
-	[[nodiscard]] GLFWwindow* getWindow() const;
-	[[nodiscard]] const bool getFrameBufferResize();
 	void setFrameBufferResize(bool size);
-	
-private:
-	GLFWwindow* m_Window;
-	const char* m_Title;
-	std::uint32_t m_Width;
-	std::uint32_t m_Height;
-	bool m_FrameBufferResized = false; /* Handle to flag window resize. */
 
-	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+	[[nodiscard]] GLFWwindow* getWindow() const { return m_Window; }
+	[[nodiscard]] const bool getFrameBufferResize() const { return m_FrameBufferResized; }
+	[[nodiscard]] const uint32_t getWidth() const { return m_Width; }
+	[[nodiscard]] const uint32_t getHeight() const { return m_Height; }
+
+private:
+	/* Class members. */
+	GLFWwindow* m_Window = nullptr;
+	const char* m_Title;
+	uint32_t m_Width;
+	uint32_t m_Height;
+	bool m_FrameBufferResized = false;
 };

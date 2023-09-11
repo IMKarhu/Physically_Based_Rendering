@@ -1,10 +1,21 @@
 #include "window.h"
-#include <stdexcept>
 
-Window::Window(const char* title, std::uint32_t width, std::uint32_t height)
-	:m_Title(title),
-	m_Width(width),
-	m_Height(height)
+
+
+Window::Window(const char* title, uint32_t width, uint32_t height)
+	:m_Title(title), m_Width(width), m_Height(height)
+{
+	initWindow();
+}
+
+Window::~Window()
+{
+	printf("Window destructor");
+	glfwDestroyWindow(m_Window);
+	glfwTerminate();
+}
+
+void Window::initWindow()
 {
 	glfwInit();
 
@@ -12,13 +23,7 @@ Window::Window(const char* title, std::uint32_t width, std::uint32_t height)
 
 	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
 	glfwSetWindowUserPointer(m_Window, this);
-	glfwSetFramebufferSizeCallback(m_Window, framebufferResizeCallback);
-}
-
-Window::~Window()
-{
-	glfwDestroyWindow(m_Window);
-	glfwTerminate();
+	glfwSetFramebufferSizeCallback(m_Window, frameBufferResizeCallBack);
 }
 
 void Window::pollEvents()
@@ -26,28 +31,23 @@ void Window::pollEvents()
 	glfwPollEvents();
 }
 
-bool Window::windowShouldClose()
+bool Window::shouldClose()
 {
 	return glfwWindowShouldClose(m_Window);
 }
 
-GLFWwindow* Window::getWindow() const
+void Window::frameBufferResizeCallBack(GLFWwindow* window, int width, int height)
 {
-	return m_Window;
+	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	app->m_FrameBufferResized = true;
 }
 
-const bool Window::getFrameBufferResize()
+void Window::createWindowSurface(VkSurfaceKHR surface, const VkInstance& instance)
 {
-	return m_FrameBufferResized;
+	
 }
 
 void Window::setFrameBufferResize(bool size)
 {
 	m_FrameBufferResized = size;
-}
-
-void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
-{
-	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-	app->m_FrameBufferResized = true;
 }

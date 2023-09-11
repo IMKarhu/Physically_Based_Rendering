@@ -1,9 +1,18 @@
 #include "window.h"
 #include <stdexcept>
 
-Window::Window()
+Window::Window(const char* title, std::uint32_t width, std::uint32_t height)
+	:m_Title(title),
+	m_Width(width),
+	m_Height(height)
 {
-	
+	glfwInit();
+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); /* Tell glfw to not create opengl context. */
+
+	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
+	glfwSetWindowUserPointer(m_Window, this);
+	glfwSetFramebufferSizeCallback(m_Window, framebufferResizeCallback);
 }
 
 Window::~Window()
@@ -12,45 +21,33 @@ Window::~Window()
 	glfwTerminate();
 }
 
-void Window::createWindow()
-{
-	if (!glfwInit())
-	{
-		throw std::runtime_error("Failed to initialize glfw!");
-	}
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-	m_Window = glfwCreateWindow(static_cast<int>(m_Width), static_cast<int>(m_Height), m_Title, nullptr, nullptr);
-}
-
 void Window::pollEvents()
 {
 	glfwPollEvents();
 }
 
-bool Window::windowShouldCose()
+bool Window::windowShouldClose()
 {
 	return glfwWindowShouldClose(m_Window);
 }
 
-GLFWwindow* Window::getWindow()
+GLFWwindow* Window::getWindow() const
 {
 	return m_Window;
 }
 
-void Window::setWidth(const uint32_t& width)
+const bool Window::getFrameBufferResize()
 {
-	m_Width = width;
+	return m_FrameBufferResized;
 }
 
-void Window::setHeight(const uint32_t& height)
+void Window::setFrameBufferResize(bool size)
 {
-	m_Height = height;
+	m_FrameBufferResized = size;
 }
 
-void Window::setTitle(const char* title)
+void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
-	m_Title = title;
+	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	app->m_FrameBufferResized = true;
 }

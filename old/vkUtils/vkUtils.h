@@ -1,27 +1,22 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
-#include <optional>
+#include <GLFW/glfw3.h>
+#include <vector>
 
 namespace vkUtils
 {
-	struct QueueFamilyIndices
-	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
+    struct SwapChainSupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 
-		bool isComplete()
-		{
-			return graphicsFamily.has_value() && presentFamily.has_value();
-		}
-	};
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice pdevice, VkSurfaceKHR surface);
 
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
-	QueueFamilyIndices getQueueFamilies(const VkPhysicalDevice pdevice, VkSurfaceKHR surface);
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-	SwapChainSupportDetails getQuerySwapChainSupportDetails(const VkPhysicalDevice device, const VkSurfaceKHR surface);
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
+
 }
