@@ -8,6 +8,7 @@
 
 namespace kge
 {
+
 	vkApplication::vkApplication()
 	{
 		std::cout << "Default Constructor called!\n" << std::endl;
@@ -17,6 +18,7 @@ namespace kge
 	{
 		std::cout << "Destructor called!\n" << std::endl;
 		vkDestroyPipelineLayout(m_Device->getDevice(), m_PipelineLayout, nullptr);
+		delete m_DescriptorLayout;
 		delete m_Model;
 		delete m_PipeLine;
 		delete m_SwapChain;
@@ -117,11 +119,16 @@ namespace kge
 		};
 
 		m_Model = new kgeModel(m_Device, vertices, indices, m_MaxFramesInFlight);
+		m_DescriptorLayout = new vkDescriptorSetLayout(m_Device, m_Model);
+		ubobinding = m_DescriptorLayout->createBinding(ubobinding, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+		m_DescriptorSetLayout = m_DescriptorLayout->createDescriptorSetLayout(m_DescriptorSetLayout, ubobinding, 1);
+		m_DescriptorLayout->createDescriptorPool(m_MaxFramesInFlight);
+		m_DescriptorLayout->createDescriptorSets(m_MaxFramesInFlight);
 	}
    
 	void vkApplication::createPipeLineLayout()
 	{
-		m_DescriptorSetLayout = m_DescriptorLayout->createDescriptorSetLayout(m_DescriptorSetLayout, ubobinding, 1);
+		//m_DescriptorSetLayout = m_DescriptorLayout->createDescriptorSetLayout(m_DescriptorSetLayout, ubobinding, 1);
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
@@ -166,6 +173,7 @@ namespace kge
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			beginInfo.flags = 0; // Optional
 			beginInfo.pInheritanceInfo = nullptr; // Optional
+			
 
 			if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
 			{
@@ -203,7 +211,7 @@ namespace kge
 			scissor.extent = m_SwapChain->getSwapchainExtent();
 
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-			m_Model->bind(commandBuffer);
+			m_Model->bind(commandBuffer, m_PipelineLayout, m_DescriptorLayout->getDescriptorSets(), m_CurrentFrame);
 
 			m_Model->draw(commandBuffer);
 
@@ -238,8 +246,7 @@ namespace kge
 		m_SwapChain->createImageViews();
 		m_SwapChain->createDepthResources();
 		m_SwapChain->createRenderPass();
-		m_DescriptorLayout = new vkDescriptorSetLayout(m_Device);
-		ubobinding = m_DescriptorLayout->createBinding(ubobinding, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+		//ubobinding = m_DescriptorLayout->createBinding(ubobinding, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
 		createPipeLineLayout();
 		createPipeLine();
 		m_SwapChain->createFrameBuffers();

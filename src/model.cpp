@@ -24,12 +24,14 @@ namespace kge
 		}
 	}
 
-	void kgeModel::bind(VkCommandBuffer commandBuffer)
+	void kgeModel::bind(VkCommandBuffer commandBuffer, VkPipelineLayout layout, std::vector<VkDescriptorSet> descriptorsets, int currentframe)
 	{
 		VkBuffer vertexBuffers[] = { m_VertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, m_IndeBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1,
+			&descriptorsets[currentframe], 0, nullptr);
 	}
 
 	void kgeModel::draw(VkCommandBuffer commandBuffer)

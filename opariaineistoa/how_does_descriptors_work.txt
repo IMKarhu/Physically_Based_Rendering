@@ -1,0 +1,48 @@
+Uniform buffereita ei pysty suoraan kiinnittämään render pipelineen.
+
+Tätä varten vulkan on luonut abstractin asian jonka nimi on descriptor sets.
+
+Descriptorin voi kuvailla simppelisti että se on pointteri resurssiin.
+
+esimerkiksi buffer descriptor osoittaa uniform bufferiin
+tai
+image descriptor osoittaa image resurssiin tai sampleriin.
+
+descriptorit varastoi ylimääräistä dataa kuten:
+
+Size,
+offset,
+image layout
+
+descriptoreita ei pysty kiinnittämään pipelineen yksittäin. vaan ne pitää kiinnittää settinä/sarjana
+
+
+
+Descriptor layout object
+
+Tyhmän miehen sanoin: descriptor set layout antaa pipelinelle tiedon kuinka monta descriptor settiä on olemassa sekä minkä tyyppisiä
+ descriptoreja on jokaisessa setissä.
+ 
+ descriptor pools
+ 
+ Descriptor poolit ovat sen takia olemassa koska descriptor settejä ei voi luoda suoraan, vaan descriptor set täytyy luoda
+ descriptor pool objectista.
+ 
+ syyt tähän on suorituskyvyn takia. muistin varaaminen on kallista, joten descriptor pool sallii
+ meidän varata ison määrän muistia kerralla joka voi sisältää monta eri descriptor settiä.
+ Tämän jälkeen voimme jakaa muistia descriptor poolista kun descriptor settejä tarvitaan.
+ 
+ 
+ 
+ yhteensumma.
+ 
+ Descriptorit osoittaa resurssiin.
+ 
+ Descriptoreista täytyy luoda ryhmiä(set).
+ 
+ descriptor set layout täytyy antaa pipelinen luonnin aikana. layout sisältää tiedon,
+ kuinka monta sekä minkä tyyppisiä settejä on olemassa.
+ 
+ ennen kuvan piirtämistä täytyy bindata setit pipelineen
+ 
+ descriptor setit voidaan ainoastaan luoda jakamalla muistia descriptor poolista.

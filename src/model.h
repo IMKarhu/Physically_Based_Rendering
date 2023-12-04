@@ -37,9 +37,11 @@ namespace kge
 		~kgeModel();
 		kgeModel& operator=(const kgeModel&) = delete;
 
-		void bind(VkCommandBuffer commandBuffer);
+		void bind(VkCommandBuffer commandBuffer, VkPipelineLayout layout, std::vector<VkDescriptorSet> descriptorsets, int currentframe);
 		void draw(VkCommandBuffer commandBuffer);
 		void updateUniformBuffer(uint32_t currentImage, uint32_t width, uint32_t height);
+
+		[[nodiscard]] const std::vector<VkBuffer> getUniformBuffers() const { return m_UniformBuffers; }
 
 	private:
 		vkDevice* m_Device;
