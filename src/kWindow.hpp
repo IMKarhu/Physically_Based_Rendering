@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <string>
+
 namespace karhu
 {
 	class kWindow
@@ -18,12 +19,17 @@ namespace karhu
 
 		bool shouldClose();
 		void pollEvents();
+
 	private:
 		void initWindow();
+		void createInstance();
+
 	private:
 		GLFWwindow* m_Window = nullptr;
 		const int m_Width = 0;
 		const int m_Height = 0;
 		const std::string m_Title = "";
+
+		VkInstance m_Instance;
 	};
-} // karhu namespace
+} // namespace karhu
