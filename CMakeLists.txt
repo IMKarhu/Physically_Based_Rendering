@@ -11,7 +11,7 @@ add_subdirectory(ext/glfw-3.3.8)
 add_subdirectory(ext/VulkanMemoryAllocator)
 
 
-file(GLOB_RECURSE CPP_SOURCE_FILES "src/*.h" "src/*.cpp")
+file(GLOB_RECURSE CPP_SOURCE_FILES "src/*.h" "src/*.hpp" "src/*.cpp")
 add_executable(PBR ${CPP_SOURCE_FILES})
 
 target_link_libraries(PBR PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator Vulkan::Vulkan)
