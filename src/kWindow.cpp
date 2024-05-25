@@ -1,5 +1,6 @@
 #include "kWindow.hpp"
 #include "utils/macros.hpp"
+#include "utils/vkUtils.hpp"
 
 namespace karhu
 {
@@ -25,7 +26,7 @@ namespace karhu
 	{
 		if (!glfwInit())
 		{
-			std::runtime_error("Failed to initialize GLFW!");
+			throw std::runtime_error("Failed to initialize GLFW!");
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -35,6 +36,10 @@ namespace karhu
 
 	void kWindow::createInstance()
 	{
+		if (enableValidationLayers && !vkUtils::checkValidationSupport())
+		{
+			throw std::runtime_error("No available validation layers!");
+		}
 		VkApplicationInfo appinfo{};
 		appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appinfo.pApplicationName = "Small vulkan renderer";
