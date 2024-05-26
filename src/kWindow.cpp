@@ -1,6 +1,4 @@
 #include "kWindow.hpp"
-#include "utils/macros.hpp"
-#include "utils/vkUtils.hpp"
 
 namespace karhu
 {
@@ -40,6 +38,7 @@ namespace karhu
 		{
 			throw std::runtime_error("No available validation layers!");
 		}
+
 		VkApplicationInfo appinfo{};
 		appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appinfo.pApplicationName = "Small vulkan renderer";
@@ -52,13 +51,23 @@ namespace karhu
 		createinfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		createinfo.pApplicationInfo = &appinfo;
 
-		uint32_t glfwExtensioncount = 0;
-		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensioncount);
+		auto extensions = vkUtils::getRequiredExtensions();
+		createinfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+		createinfo.ppEnabledExtensionNames = extensions.data();
 
-		createinfo.enabledExtensionCount = glfwExtensioncount;
-		createinfo.ppEnabledExtensionNames = glfwExtensions;
-		createinfo.enabledLayerCount = 0;
+		VkDebugUtilsMessengerCreateInfoEXT debuginfo{};
+		if (enableValidationLayers)
+		{
+			createinfo.enabledLayerCount = static_cast<uint32_t>(vkUtils::valiadationLayers.size());
+			createinfo.ppEnabledLayerNames = vkUtils::valiadationLayers.data();
+			vkUtils::populateDebugMessengerCreateInfo(debuginfo);
+			createinfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debuginfo;
+		}
+		else
+		{
+			createinfo.enabledLayerCount = 0;
+			createinfo.pNext = nullptr;
+		}
 
 		/*if (vkCreateInstance(&createinfo, nullptr, &m_Instance) != VK_SUCCESS)
 		{

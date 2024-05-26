@@ -2,6 +2,8 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include "utils/vkUtils.hpp"
+
 
 #include <stdexcept>
 #include <string>
@@ -20,6 +22,7 @@ namespace karhu
 		bool shouldClose();
 		void pollEvents();
 
+		const VkInstance& getInstance() { return m_Instance; }
 	private:
 		void initWindow();
 		void createInstance();
