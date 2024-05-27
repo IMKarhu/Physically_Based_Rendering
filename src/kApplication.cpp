@@ -11,6 +11,7 @@ namespace karhu
 
     Application::~Application()
     {
+        vkDestroySurfaceKHR(m_Window->getInstance(), m_Surface, nullptr);
         if (enableValidationLayers)
         {
             destroyDebugUtilsMessengerEXT(m_Window->getInstance(), m_DebugMessenger, nullptr);
@@ -20,6 +21,7 @@ namespace karhu
     void Application::run()
     {
         setupDebugMessenger();
+        createSurface();
         m_VkDevice.pickPhysicalDevice();
         m_VkDevice.createLogicalDevice();
 
@@ -65,6 +67,11 @@ namespace karhu
         {
             func(instance, debugMessenger, pAllocator);
         }
+    }
+
+    void Application::createSurface()
+    {
+        VK_CHECK(glfwCreateWindowSurface(m_Window->getInstance(), m_Window->getWindow(), nullptr, &m_Surface));
     }
 
     

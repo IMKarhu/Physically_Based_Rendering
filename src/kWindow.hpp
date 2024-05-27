@@ -23,6 +23,7 @@ namespace karhu
 		void pollEvents();
 
 		const VkInstance& getInstance() { return m_Instance; }
+		GLFWwindow* getWindow() { return m_Window; }
 	private:
 		void initWindow();
 		void createInstance();

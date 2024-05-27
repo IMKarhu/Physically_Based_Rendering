@@ -17,10 +17,13 @@ namespace karhu
         VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
         void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+
+        void createSurface();
     private:
         std::unique_ptr<kWindow> m_Window;
         Vulkan_Device m_VkDevice;
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
+        VkSurfaceKHR m_Surface;
     };
 } // namespace karhu
