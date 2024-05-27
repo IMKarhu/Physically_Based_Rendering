@@ -1,5 +1,6 @@
 #pragma once
 #include "kWindow.hpp"
+#include "kDevice.hpp"
 
 #include <memory>
 
@@ -18,6 +19,7 @@ namespace karhu
         void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
     private:
         std::unique_ptr<kWindow> m_Window;
+        Vulkan_Device m_VkDevice;
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
     };

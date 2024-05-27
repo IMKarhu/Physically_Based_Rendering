@@ -6,6 +6,7 @@ namespace karhu
     Application::Application()
     {
         m_Window = std::make_unique<kWindow>("Vulkan", 1080, 720);
+        m_VkDevice = Vulkan_Device(m_Window->getInstance());
     }
 
     Application::~Application()
@@ -19,6 +20,9 @@ namespace karhu
     void Application::run()
     {
         setupDebugMessenger();
+        m_VkDevice.pickPhysicalDevice();
+        m_VkDevice.createLogicalDevice();
+
         while (!m_Window->shouldClose())
         {
             m_Window->pollEvents();

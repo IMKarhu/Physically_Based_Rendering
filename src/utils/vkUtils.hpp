@@ -1,5 +1,6 @@
 #pragma once
 #include "macros.hpp"
+#include "GLFW/glfw3.h"
 #include <vector>
 #include <cstdint>
 #include <cstring>
