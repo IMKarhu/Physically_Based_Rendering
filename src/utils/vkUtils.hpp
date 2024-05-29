@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstring>
+#include <set>
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -17,6 +18,9 @@ namespace karhu
     {
         const std::vector<const char*> valiadationLayers = {
             "VK_LAYER_KHRONOS_validation"
+        };
+        const std::vector<const char*> deviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
         inline bool checkValidationSupport()
@@ -86,5 +90,28 @@ namespace karhu
             createinfo.pUserData = nullptr;
         }
 
+        inline bool checkDeviceExtensionSupport(VkPhysicalDevice device)
+        {
+            uint32_t deviceExtensionCount;
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, nullptr);
+
+            std::vector<VkExtensionProperties> availableExtensions(deviceExtensionCount);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, availableExtensions.data());
+
+            std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+            for (const auto& extension : availableExtensions)
+            {
+                requiredExtensions.erase(extension.extensionName);
+            }
+            return requiredExtensions.empty();
+        }
+
     } // namespace vkUtils
+
+    struct SwapChainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 } // namespace karhu

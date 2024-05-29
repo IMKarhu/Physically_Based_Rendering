@@ -1,6 +1,7 @@
 #pragma once
 #include "kWindow.hpp"
 #include "kDevice.hpp"
+#include "kSwapChain.hpp"
 
 #include <memory>
 
@@ -19,9 +20,11 @@ namespace karhu
         void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
         void createSurface();
+        VkSwapchainCreateInfoKHR fillSwapchainCI();
     private:
         std::unique_ptr<kWindow> m_Window;
-        Vulkan_Device m_VkDevice;
+        std::shared_ptr<Vulkan_Device> m_VkDevice;
+        std::shared_ptr<Vulkan_SwapChain> m_VkSwapChain;
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
         VkSurfaceKHR m_Surface;

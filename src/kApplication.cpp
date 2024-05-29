@@ -6,11 +6,14 @@ namespace karhu
     Application::Application()
     {
         m_Window = std::make_unique<kWindow>("Vulkan", 1080, 720);
-        m_VkDevice = Vulkan_Device(m_Window->getInstance());
+        
     }
 
     Application::~Application()
     {
+        
+        printf("app destroyed\n");
+        vkDestroySwapchainKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, nullptr);
         vkDestroySurfaceKHR(m_Window->getInstance(), m_Surface, nullptr);
         if (enableValidationLayers)
         {
@@ -22,8 +25,15 @@ namespace karhu
     {
         setupDebugMessenger();
         createSurface();
-        m_VkDevice.pickPhysicalDevice();
-        m_VkDevice.createLogicalDevice();
+        m_VkDevice = std::make_shared<Vulkan_Device>(m_Window->getInstance(), m_Surface);
+        m_VkDevice->pickPhysicalDevice();
+        m_VkDevice->createLogicalDevice();
+        VkSwapchainCreateInfoKHR createinfo = fillSwapchainCI();
+        //SwapChainSupportDetails details = m_VkDevice.querySwapChainSupport(m_VkDevice.m_PhysicalDevice);
+        printf("before swapchain creation.");
+        m_VkSwapChain = std::make_shared<Vulkan_SwapChain>(m_VkDevice->m_Device, m_Window->getWindow());
+        m_VkSwapChain->createSwapChain(m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice), m_Surface, createinfo);
+        m_VkSwapChain->createImageViews();
 
         while (!m_Window->shouldClose())
         {
@@ -72,6 +82,27 @@ namespace karhu
     void Application::createSurface()
     {
         VK_CHECK(glfwCreateWindowSurface(m_Window->getInstance(), m_Window->getWindow(), nullptr, &m_Surface));
+    }
+
+    VkSwapchainCreateInfoKHR Application::fillSwapchainCI()
+    {
+        VkSwapchainCreateInfoKHR createinfo{};
+        QueueFamilyIndices indices = m_VkDevice->findQueueFamilies(m_VkDevice->m_PhysicalDevice);
+
+        uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+        if (indices.graphicsFamily != indices.presentFamily)
+        {
+            createinfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            createinfo.queueFamilyIndexCount = 2;
+            createinfo.pQueueFamilyIndices = queueFamilyIndices;
+        }
+        else
+        {
+            createinfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            createinfo.queueFamilyIndexCount = 0;
+            createinfo.pQueueFamilyIndices = nullptr;
+        }
+        return createinfo;
     }
 
     

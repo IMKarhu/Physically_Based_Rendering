@@ -1,34 +1,40 @@
 #pragma once
-#include <vulkan/vulkan.h>
+#include "utils/vkUtils.hpp"
 #include <optional>
+#include <set>
 
 namespace karhu
 {
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		bool isComplete()
 		{
-			return graphicsFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
+
 
 	struct Vulkan_Device
 	{
 		Vulkan_Device() = default;
-		Vulkan_Device(const VkInstance& instance);
+		Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface);
 		~Vulkan_Device();
 
 		void pickPhysicalDevice();
 		void createLogicalDevice();
 		bool isDeviceSuitable(VkPhysicalDevice device);
 		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 		VkDevice m_Device = VK_NULL_HANDLE;
 		VkQueue m_GraphicsQueue;
+		VkQueue m_PresentQueue;
 
 		VkInstance m_Instance = VK_NULL_HANDLE;
+		VkSurfaceKHR m_Surface;
 	};
 }

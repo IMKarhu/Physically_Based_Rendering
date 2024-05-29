@@ -1,18 +1,19 @@
 #include "kDevice.hpp"
-#include "utils/vkUtils.hpp"
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
 
 namespace karhu
 {
-	Vulkan_Device::Vulkan_Device(const VkInstance& instance)
+	Vulkan_Device::Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface)
 	{
 		m_Instance = instance;
+		m_Surface = surface;
 	}
 
 	Vulkan_Device::~Vulkan_Device()
 	{
+		printf("device destroyed\n");
 		vkDestroyDevice(m_Device, nullptr);
 	}
 
@@ -48,22 +49,29 @@ namespace karhu
 	{
 		QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
 
-		VkDeviceQueueCreateInfo createinfo{};
-		createinfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		createinfo.queueFamilyIndex = indices.graphicsFamily.value();
-		createinfo.queueCount = 1;
+		std::vector<VkDeviceQueueCreateInfo> quecreateinfos;
+		std::set<uint32_t> uniqueQueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
-		float queuePriority = 1.0f; /* This needs to be between 0.0 - 1.0. */
-		createinfo.pQueuePriorities = &queuePriority;
+		for (uint32_t queFamily : uniqueQueFamilies)
+		{
+			VkDeviceQueueCreateInfo createinfo{};
+			createinfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			createinfo.queueFamilyIndex = queFamily;
+			createinfo.queueCount = 1;
+			float queuePriority = 1.0f; /* This needs to be between 0.0 - 1.0. */
+			createinfo.pQueuePriorities = &queuePriority;
+			quecreateinfos.push_back(createinfo);
+		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{}; /* Leave this as vk_false for now, still need it for device creation. */
 
 		VkDeviceCreateInfo deviceinfo{};
 		deviceinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		deviceinfo.pQueueCreateInfos = &createinfo;
-		deviceinfo.queueCreateInfoCount = 1;
+		deviceinfo.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueFamilies.size());
+		deviceinfo.pQueueCreateInfos = quecreateinfos.data();
 		deviceinfo.pEnabledFeatures = &deviceFeatures;
-		deviceinfo.enabledExtensionCount = 0;
+		deviceinfo.enabledExtensionCount = static_cast<uint32_t>(vkUtils::deviceExtensions.size());
+		deviceinfo.ppEnabledExtensionNames = vkUtils::deviceExtensions.data();
 
 		if (enableValidationLayers)
 		{
@@ -78,6 +86,7 @@ namespace karhu
 		VK_CHECK(vkCreateDevice(m_PhysicalDevice, &deviceinfo, nullptr, &m_Device));
 
 		vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
+		vkGetDeviceQueue(m_Device, indices.presentFamily.value(), 0, &m_PresentQueue);
 	}
 
 	bool Vulkan_Device::isDeviceSuitable(VkPhysicalDevice device)
@@ -87,7 +96,16 @@ namespace karhu
 
 		QueueFamilyIndices indices = findQueueFamilies(device);
 
-		return indices.isComplete();
+		bool extensionsSupported = vkUtils::checkDeviceExtensionSupport(device);
+
+		bool swapChainAdequate = false;
+		if (extensionsSupported)
+		{
+			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+		}
+
+		return indices.isComplete() && extensionsSupported && swapChainAdequate;
 	}
 
 	QueueFamilyIndices Vulkan_Device::findQueueFamilies(VkPhysicalDevice device)
@@ -108,6 +126,14 @@ namespace karhu
 				indices.graphicsFamily = i;
 			}
 
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_Surface, &presentSupport);
+
+			if (presentSupport)
+			{
+				indices.presentFamily = i;
+			}
+
 			if (indices.isComplete())
 			{
 				break;
@@ -116,5 +142,32 @@ namespace karhu
 		}
 
 		return indices;
+	}
+
+	SwapChainSupportDetails Vulkan_Device::querySwapChainSupport(VkPhysicalDevice device)
+	{
+		SwapChainSupportDetails details;
+
+		VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.capabilities));
+
+		uint32_t formaCount;
+		VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formaCount, nullptr));
+
+		if (formaCount != 0)
+		{
+			details.formats.resize(formaCount);
+			VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formaCount, details.formats.data()));
+		}
+
+		uint32_t presentModeCount;
+		VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, nullptr));
+
+		if (presentModeCount != 0)
+		{
+			details.presentModes.resize(presentModeCount);
+			VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, details.presentModes.data()));
+		}
+
+		return details;
 	}
 }
