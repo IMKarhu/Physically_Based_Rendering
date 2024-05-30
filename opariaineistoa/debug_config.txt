@@ -1,0 +1,2 @@
+Look docs for more settings for the validation layer behaviours.
+Browse vulkandSDK folder for vk_layer_settings.txt file which will explain how to config validation layers.

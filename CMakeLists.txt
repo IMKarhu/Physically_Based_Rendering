@@ -16,3 +16,7 @@ file(GLOB_RECURSE CPP_SOURCE_FILES "src/*.h" "src/*.hpp" "src/*.cpp")
 add_executable(PBR ${CPP_SOURCE_FILES})
 
 target_link_libraries(PBR PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator Vulkan::Vulkan)
+
+file(GLOB_RECURSE TRIANGLE_FILES "src/triangle/*.hpp" "src/triangle/*.cpp")
+add_executable(Triangle ${TRIANGLE_FILES})
+target_link_libraries(Triangle PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator Vulkan::Vulkan)

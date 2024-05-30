@@ -4,6 +4,7 @@
 #include "kSwapChain.hpp"
 
 #include <memory>
+#include <fstream>
 
 namespace karhu
 {
@@ -13,6 +14,8 @@ namespace karhu
         Application();
         ~Application();
         void run();
+        void createGraphicsPipeline();
+        void createRenderPass();
     private:
         void setupDebugMessenger();
         VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -21,6 +24,8 @@ namespace karhu
 
         void createSurface();
         VkSwapchainCreateInfoKHR fillSwapchainCI();
+        static std::vector<char> readFile(const std::string& fileName);
+        VkShaderModule createShaderModule(const std::vector<char>& code);
     private:
         std::unique_ptr<kWindow> m_Window;
         std::shared_ptr<Vulkan_Device> m_VkDevice;
@@ -28,5 +33,12 @@ namespace karhu
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
         VkSurfaceKHR m_Surface;
+        VkRenderPass m_RenderPass;
+        VkPipelineLayout m_PipelineLayout;
+        VkPipeline m_GraphicsPipeline;
+        std::vector<VkDynamicState> m_DynamicStates = {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
+        };
     };
 } // namespace karhu
