@@ -16,10 +16,11 @@ namespace karhu
         void run();
         void createGraphicsPipeline();
         void createRenderPass();
+        void createFrameBuffers();
     private:
         void setupDebugMessenger();
         VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+            const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
         void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
         void createSurface();
@@ -40,5 +41,6 @@ namespace karhu
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
         };
+        std::vector<VkFramebuffer> m_FrameBuffers;
     };
 } // namespace karhu

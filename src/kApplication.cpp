@@ -6,13 +6,17 @@ namespace karhu
     Application::Application()
     {
         m_Window = std::make_unique<kWindow>("Vulkan", 1080, 720);
-        
+
     }
 
     Application::~Application()
     {
-        
+
         printf("app destroyed\n");
+        for (auto framebuffer : m_FrameBuffers)
+        {
+            vkDestroyFramebuffer(m_VkDevice->m_Device, framebuffer, nullptr);
+        }
         vkDestroyPipeline(m_VkDevice->m_Device, m_GraphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_VkDevice->m_Device, m_PipelineLayout, nullptr);
         vkDestroyRenderPass(m_VkDevice->m_Device, m_RenderPass, nullptr);
@@ -212,6 +216,30 @@ namespace karhu
 
     }
 
+    void Application::createFrameBuffers()
+    {
+        m_FrameBuffers.resize(m_VkSwapChain->m_SwapChainImageViews.size());
+
+        for (size_t i = 0; i < m_VkSwapChain->m_SwapChainImageViews.size(); i++)
+        {
+            VkImageView attachments[]{
+                m_VkSwapChain->m_SwapChainImageViews[i]
+            };
+
+
+            VkFramebufferCreateInfo createinfo{};
+            createinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            createinfo.renderPass = m_RenderPass;
+            createinfo.attachmentCount = 1;
+            createinfo.pAttachments = attachments;
+            createinfo.width = m_VkSwapChain->m_SwapChainExtent.width;
+            createinfo.height = m_VkSwapChain->m_SwapChainExtent.height;
+            createinfo.layers = 1;
+
+            VK_CHECK(vkCreateFramebuffer(m_VkDevice->m_Device, &createinfo, nullptr, &m_FrameBuffers[i]));
+        }
+    }
+
     void Application::setupDebugMessenger()
     {
         if (!enableValidationLayers)
@@ -221,7 +249,7 @@ namespace karhu
 
         VkDebugUtilsMessengerCreateInfoEXT createinfo{};
         vkUtils::populateDebugMessengerCreateInfo(createinfo);
-        
+
         if (createDebugUtilsMessengerEXT(m_Window->getInstance(), &createinfo, nullptr, &m_DebugMessenger) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create debug messenger!\n");
@@ -307,6 +335,6 @@ namespace karhu
         return shaderModule;
     }
 
-    
+
 
 } // namespace karhu
