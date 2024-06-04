@@ -13,6 +13,7 @@ namespace karhu
     {
 
         printf("app destroyed\n");
+        vkDestroyCommandPool(m_VkDevice->m_Device, m_CommandPool, nullptr);
         for (auto framebuffer : m_FrameBuffers)
         {
             vkDestroyFramebuffer(m_VkDevice->m_Device, framebuffer, nullptr);
@@ -43,11 +44,11 @@ namespace karhu
         m_VkSwapChain->createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createCommandPool();
+        createCommandBuffer();
 
-        while (!m_Window->shouldClose())
-        {
-            m_Window->pollEvents();
-        }
+
+        update(m_DeltaTime);
     }
 
     void Application::createGraphicsPipeline()
@@ -238,6 +239,90 @@ namespace karhu
 
             VK_CHECK(vkCreateFramebuffer(m_VkDevice->m_Device, &createinfo, nullptr, &m_FrameBuffers[i]));
         }
+    }
+
+    void Application::createCommandPool()
+    {
+        QueueFamilyIndices indices = m_VkDevice->findQueueFamilies(m_VkDevice->m_PhysicalDevice);
+
+        VkCommandPoolCreateInfo createinfo{};
+        createinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        createinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        createinfo.queueFamilyIndex = indices.graphicsFamily.value();
+
+        VK_CHECK(vkCreateCommandPool(m_VkDevice->m_Device, &createinfo, nullptr, &m_CommandPool));
+    }
+
+    void Application::createCommandBuffer()
+    {
+        VkCommandBufferAllocateInfo allocinfo{};
+        allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocinfo.commandPool = m_CommandPool;
+        allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocinfo.commandBufferCount = 1;
+
+        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice->m_Device, &allocinfo, &m_CommandBuffer));
+    }
+
+    void Application::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index)
+    {
+        VkCommandBufferBeginInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        info.flags = 0;
+        info.pInheritanceInfo = nullptr;
+
+        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &info));
+
+        VkRenderPassBeginInfo renderpassInfo{};
+        renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderpassInfo.renderPass = m_RenderPass;
+        renderpassInfo.framebuffer = m_FrameBuffers[index];
+        renderpassInfo.renderArea.offset = { 0,0 };
+        renderpassInfo.renderArea.extent = m_VkSwapChain->m_SwapChainExtent;
+
+        VkClearValue clearColor{ {{0.0f ,0.0f ,0.0f ,1.0f}} };
+        renderpassInfo.clearValueCount = 1;
+        renderpassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+
+        VkViewport viewPort{};
+        viewPort.x = 0.0f;
+        viewPort.y = 0.0f;
+        viewPort.width = static_cast<float>(m_VkSwapChain->m_SwapChainExtent.width);
+        viewPort.height = static_cast<float>(m_VkSwapChain->m_SwapChainExtent.height);
+        viewPort.minDepth = 0.0f;
+        viewPort.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewPort);
+
+        VkRect2D scissor{};
+        scissor.offset = { 0, 0 };
+        scissor.extent = m_VkSwapChain->m_SwapChainExtent;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
+        //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
+        //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffer);
+
+        VK_CHECK(vkEndCommandBuffer(commandBuffer));
+    }
+
+    void Application::update(float deltaTime)
+    {
+        while (!m_Window->shouldClose())
+        {
+            m_Window->pollEvents();
+            drawFrame();
+        }
+    }
+
+    void Application::drawFrame()
+    {
     }
 
     void Application::setupDebugMessenger()

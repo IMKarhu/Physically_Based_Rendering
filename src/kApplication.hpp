@@ -17,6 +17,11 @@ namespace karhu
         void createGraphicsPipeline();
         void createRenderPass();
         void createFrameBuffers();
+        void createCommandPool();
+        void createCommandBuffer();
+        void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
+        void update(float deltaTime);
+        void drawFrame();
     private:
         void setupDebugMessenger();
         VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -42,5 +47,9 @@ namespace karhu
             VK_DYNAMIC_STATE_SCISSOR
         };
         std::vector<VkFramebuffer> m_FrameBuffers;
+        VkCommandPool m_CommandPool;
+        VkCommandBuffer m_CommandBuffer;
+
+        float m_DeltaTime = 0.0f;
     };
 } // namespace karhu

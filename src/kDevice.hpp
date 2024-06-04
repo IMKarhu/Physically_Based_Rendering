@@ -1,12 +1,14 @@
 #pragma once
 #include "utils/vkUtils.hpp"
 #include <optional>
+#include <experimental/optional>
 #include <set>
 
 namespace karhu
 {
 	struct QueueFamilyIndices
 	{
+
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
 
