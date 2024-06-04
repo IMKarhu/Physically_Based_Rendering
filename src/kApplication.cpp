@@ -13,6 +13,9 @@ namespace karhu
     {
 
         printf("app destroyed\n");
+        vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.availableSemaphore, nullptr);
+        vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.finishedSemaphore, nullptr);
+        vkDestroyFence(m_VkDevice->m_Device, m_InFlightFence, nullptr);
         vkDestroyCommandPool(m_VkDevice->m_Device, m_CommandPool, nullptr);
         for (auto framebuffer : m_FrameBuffers)
         {
@@ -46,6 +49,7 @@ namespace karhu
         createGraphicsPipeline();
         createCommandPool();
         createCommandBuffer();
+        createSyncObjects();
 
 
         update(m_DeltaTime);
@@ -206,12 +210,23 @@ namespace karhu
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
 
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = 1;
         renderPassInfo.pAttachments = &colorAttachment;
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies = &dependency;
+
 
         VK_CHECK(vkCreateRenderPass(m_VkDevice->m_Device, &renderPassInfo, nullptr, &m_RenderPass));
 
@@ -280,6 +295,7 @@ namespace karhu
         renderpassInfo.renderArea.offset = { 0,0 };
         renderpassInfo.renderArea.extent = m_VkSwapChain->m_SwapChainExtent;
 
+
         VkClearValue clearColor{ {{0.0f ,0.0f ,0.0f ,1.0f}} };
         renderpassInfo.clearValueCount = 1;
         renderpassInfo.pClearValues = &clearColor;
@@ -312,6 +328,23 @@ namespace karhu
         VK_CHECK(vkEndCommandBuffer(commandBuffer));
     }
 
+    void Application::createSyncObjects()
+    {
+        VkSemaphoreCreateInfo createinfo{};
+        createinfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fenceinfo{};
+        fenceinfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceinfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        if (vkCreateSemaphore(m_VkDevice->m_Device, &createinfo, nullptr, &m_Semaphores.availableSemaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(m_VkDevice->m_Device, &createinfo, nullptr, &m_Semaphores.finishedSemaphore) != VK_SUCCESS ||
+            vkCreateFence(m_VkDevice->m_Device, &fenceinfo, nullptr, &m_InFlightFence) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create Semaphores!");
+        }
+    }
+
     void Application::update(float deltaTime)
     {
         while (!m_Window->shouldClose())
@@ -319,10 +352,48 @@ namespace karhu
             m_Window->pollEvents();
             drawFrame();
         }
+        vkDeviceWaitIdle(m_VkDevice->m_Device);
     }
 
     void Application::drawFrame()
     {
+        uint32_t imageIndex;
+        vkWaitForFences(m_VkDevice->m_Device, 1, &m_InFlightFence, VK_TRUE, UINT64_MAX);
+
+        vkResetFences(m_VkDevice->m_Device, 1, &m_InFlightFence);
+
+        vkAcquireNextImageKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, UINT64_MAX, m_Semaphores.availableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+        vkResetCommandBuffer(m_CommandBuffer, 0);
+        recordCommandBuffer(m_CommandBuffer, imageIndex);
+
+        VkSubmitInfo submitinfo{};
+        submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = { m_Semaphores.availableSemaphore };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitinfo.waitSemaphoreCount = 1;
+        submitinfo.pWaitSemaphores = waitSemaphores;
+        submitinfo.pWaitDstStageMask = waitStages;
+        submitinfo.commandBufferCount = 1;
+        submitinfo.pCommandBuffers = &m_CommandBuffer;
+        VkSemaphore signalSemaphores[] = { m_Semaphores.finishedSemaphore };
+        submitinfo.signalSemaphoreCount = 1;
+        submitinfo.pSignalSemaphores = signalSemaphores;
+
+        VK_CHECK(vkQueueSubmit(m_VkDevice->m_GraphicsQueue, 1, &submitinfo, m_InFlightFence));
+
+        VkPresentInfoKHR presentinfo{};
+        presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentinfo.waitSemaphoreCount = 1;
+        presentinfo.pWaitSemaphores = signalSemaphores;
+        VkSwapchainKHR swapChains[] = { m_VkSwapChain->m_SwapChain };
+        presentinfo.swapchainCount = 1;
+        presentinfo.pSwapchains = swapChains;
+        presentinfo.pImageIndices = &imageIndex;
+        presentinfo.pResults = nullptr;
+
+        VK_CHECK(vkQueuePresentKHR(m_VkDevice->m_PresentQueue, &presentinfo));
     }
 
     void Application::setupDebugMessenger()

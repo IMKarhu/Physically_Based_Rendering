@@ -20,6 +20,7 @@ namespace karhu
         void createCommandPool();
         void createCommandBuffer();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
+        void createSyncObjects();
         void update(float deltaTime);
         void drawFrame();
     private:
@@ -49,7 +50,13 @@ namespace karhu
         std::vector<VkFramebuffer> m_FrameBuffers;
         VkCommandPool m_CommandPool;
         VkCommandBuffer m_CommandBuffer;
+        struct
+        {
+            VkSemaphore availableSemaphore;
+            VkSemaphore finishedSemaphore;
+        }m_Semaphores;
 
+        VkFence m_InFlightFence;
         float m_DeltaTime = 0.0f;
     };
 } // namespace karhu
