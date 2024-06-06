@@ -11,20 +11,20 @@ namespace karhu
 
     Application::~Application()
     {
-
         printf("app destroyed\n");
-        vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.availableSemaphore, nullptr);
-        vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.finishedSemaphore, nullptr);
-        vkDestroyFence(m_VkDevice->m_Device, m_InFlightFence, nullptr);
-        vkDestroyCommandPool(m_VkDevice->m_Device, m_CommandPool, nullptr);
-        for (auto framebuffer : m_FrameBuffers)
+        cleanUpSwapChain();
+        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
-            vkDestroyFramebuffer(m_VkDevice->m_Device, framebuffer, nullptr);
+            vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.availableSemaphores[i], nullptr);
+            vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.finishedSemaphores[i], nullptr);
+            vkDestroyFence(m_VkDevice->m_Device, m_InFlightFences[i], nullptr);
         }
+
+        vkDestroyCommandPool(m_VkDevice->m_Device, m_CommandPool, nullptr);
+
         vkDestroyPipeline(m_VkDevice->m_Device, m_GraphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_VkDevice->m_Device, m_PipelineLayout, nullptr);
         vkDestroyRenderPass(m_VkDevice->m_Device, m_RenderPass, nullptr);
-        vkDestroySwapchainKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, nullptr);
         vkDestroySurfaceKHR(m_Window->getInstance(), m_Surface, nullptr);
         if (enableValidationLayers)
         {
@@ -49,7 +49,7 @@ namespace karhu
         createGraphicsPipeline();
         createFrameBuffers();
         createCommandPool();
-        createCommandBuffer();
+        createCommandBuffers();
         createSyncObjects();
 
 
@@ -269,15 +269,17 @@ namespace karhu
         VK_CHECK(vkCreateCommandPool(m_VkDevice->m_Device, &createinfo, nullptr, &m_CommandPool));
     }
 
-    void Application::createCommandBuffer()
+    void Application::createCommandBuffers()
     {
+        m_CommandBuffers.resize(m_MaxFramesInFlight);
+
         VkCommandBufferAllocateInfo allocinfo{};
         allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocinfo.commandPool = m_CommandPool;
         allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocinfo.commandBufferCount = 1;
+        allocinfo.commandBufferCount = (uint32_t)m_CommandBuffers.size();
 
-        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice->m_Device, &allocinfo, &m_CommandBuffer));
+        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice->m_Device, &allocinfo, m_CommandBuffers.data()));
     }
 
     void Application::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index)
@@ -332,6 +334,10 @@ namespace karhu
 
     void Application::createSyncObjects()
     {
+        m_Semaphores.availableSemaphores.resize(m_MaxFramesInFlight);
+        m_Semaphores.finishedSemaphores.resize(m_MaxFramesInFlight);
+        m_InFlightFences.resize(m_MaxFramesInFlight);
+
         VkSemaphoreCreateInfo createinfo{};
         createinfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -339,12 +345,16 @@ namespace karhu
         fenceinfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceinfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        if (vkCreateSemaphore(m_VkDevice->m_Device, &createinfo, nullptr, &m_Semaphores.availableSemaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(m_VkDevice->m_Device, &createinfo, nullptr, &m_Semaphores.finishedSemaphore) != VK_SUCCESS ||
-            vkCreateFence(m_VkDevice->m_Device, &fenceinfo, nullptr, &m_InFlightFence) != VK_SUCCESS)
+        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
-            throw std::runtime_error("Failed to create Semaphores!");
+            if (vkCreateSemaphore(m_VkDevice->m_Device, &createinfo, nullptr, &m_Semaphores.availableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(m_VkDevice->m_Device, &createinfo, nullptr, &m_Semaphores.finishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(m_VkDevice->m_Device, &fenceinfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS)
+            {
+                throw std::runtime_error("Failed to create Semaphores!");
+            }
         }
+
     }
 
     void Application::update(float deltaTime)
@@ -359,30 +369,40 @@ namespace karhu
 
     void Application::drawFrame()
     {
-        vkWaitForFences(m_VkDevice->m_Device, 1, &m_InFlightFence, VK_TRUE, UINT64_MAX);
-        vkResetFences(m_VkDevice->m_Device, 1, &m_InFlightFence);
+        vkWaitForFences(m_VkDevice->m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, UINT64_MAX, m_Semaphores.availableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        VkResult res = vkAcquireNextImageKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, UINT64_MAX, m_Semaphores.availableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (res == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            reCreateSwapChain();
+            return;
+        }
+        else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("Failed to get swapchain image!\n");
+        }
 
-        vkResetCommandBuffer(m_CommandBuffer, 0);
-        recordCommandBuffer(m_CommandBuffer, imageIndex);
+        vkResetFences(m_VkDevice->m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
+
+        vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
+        recordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
 
         VkSubmitInfo submitinfo{};
         submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = { m_Semaphores.availableSemaphore };
+        VkSemaphore waitSemaphores[] = { m_Semaphores.availableSemaphores[m_CurrentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitinfo.waitSemaphoreCount = 1;
         submitinfo.pWaitSemaphores = waitSemaphores;
         submitinfo.pWaitDstStageMask = waitStages;
         submitinfo.commandBufferCount = 1;
-        submitinfo.pCommandBuffers = &m_CommandBuffer;
-        VkSemaphore signalSemaphores[] = { m_Semaphores.finishedSemaphore };
+        submitinfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
+        VkSemaphore signalSemaphores[] = { m_Semaphores.finishedSemaphores[m_CurrentFrame] };
         submitinfo.signalSemaphoreCount = 1;
         submitinfo.pSignalSemaphores = signalSemaphores;
 
-        VK_CHECK(vkQueueSubmit(m_VkDevice->m_GraphicsQueue, 1, &submitinfo, m_InFlightFence));
+        VK_CHECK(vkQueueSubmit(m_VkDevice->m_GraphicsQueue, 1, &submitinfo, m_InFlightFences[m_CurrentFrame]));
 
         VkPresentInfoKHR presentinfo{};
         presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -394,7 +414,18 @@ namespace karhu
         presentinfo.pImageIndices = &imageIndex;
         presentinfo.pResults = nullptr;
 
-        VK_CHECK(vkQueuePresentKHR(m_VkDevice->m_PresentQueue, &presentinfo));
+        res = vkQueuePresentKHR(m_VkDevice->m_PresentQueue, &presentinfo);
+
+        if (res == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR || m_Window->getResize())
+        {
+            m_Window->setResize(false);
+            reCreateSwapChain();
+        }
+        else if (res != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to present swapchain image1\n");
+        }
+        m_CurrentFrame = (m_CurrentFrame + 1) % m_MaxFramesInFlight;
     }
 
     void Application::setupDebugMessenger()
@@ -490,6 +521,45 @@ namespace karhu
         VK_CHECK(vkCreateShaderModule(m_VkDevice->m_Device, &createinfo, nullptr, &shaderModule));
 
         return shaderModule;
+    }
+
+    void Application::cleanUpSwapChain()
+    {
+        for (auto framebuffer : m_FrameBuffers)
+        {
+            vkDestroyFramebuffer(m_VkDevice->m_Device, framebuffer, nullptr);
+        }
+        for (auto imageView : m_VkSwapChain->m_SwapChainImageViews)
+        {
+            vkDestroyImageView(m_VkDevice->m_Device, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, nullptr);
+    }
+
+    void Application::reCreateSwapChain()
+    {
+        /*int width = 0;
+        int height = 0;
+        m_Window->getFrameBufferSize(m_Window->getWindow(), width, height);
+        while (width == 0 || height == 0)
+        {
+            printf("hello2\n");
+            if (m_Window->shouldClose())
+            {
+                return;
+            }
+            m_Window->getFrameBufferSize(m_Window->getWindow(), width, height);
+            m_Window->waitEvents();
+        }*/
+
+        VK_CHECK(vkDeviceWaitIdle(m_VkDevice->m_Device));
+
+        cleanUpSwapChain();
+
+        VkSwapchainCreateInfoKHR createinfo = fillSwapchainCI();
+        m_VkSwapChain->createSwapChain(m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice), m_Surface, createinfo);
+        m_VkSwapChain->createImageViews();
+        createFrameBuffers();
     }
 
 

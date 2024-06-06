@@ -18,7 +18,7 @@ namespace karhu
         void createRenderPass();
         void createFrameBuffers();
         void createCommandPool();
-        void createCommandBuffer();
+        void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
         void createSyncObjects();
         void update(float deltaTime);
@@ -33,6 +33,8 @@ namespace karhu
         VkSwapchainCreateInfoKHR fillSwapchainCI();
         static std::vector<char> readFile(const std::string& fileName);
         VkShaderModule createShaderModule(const std::vector<char>& code);
+        void cleanUpSwapChain();
+        void reCreateSwapChain();
     private:
         std::unique_ptr<kWindow> m_Window;
         std::shared_ptr<Vulkan_Device> m_VkDevice;
@@ -49,14 +51,15 @@ namespace karhu
         };
         std::vector<VkFramebuffer> m_FrameBuffers;
         VkCommandPool m_CommandPool;
-        VkCommandBuffer m_CommandBuffer;
+        std::vector<VkCommandBuffer> m_CommandBuffers;
         struct m_Semaphores
         {
-            VkSemaphore availableSemaphore;
-            VkSemaphore finishedSemaphore;
+            std::vector<VkSemaphore> availableSemaphores;
+            std::vector<VkSemaphore> finishedSemaphores;
         }m_Semaphores;
-
-        VkFence m_InFlightFence;
+        std::vector<VkFence> m_InFlightFences;
         float m_DeltaTime = 0.0f;
+        uint32_t m_CurrentFrame = 0;
+        const int m_MaxFramesInFlight = 2;
     };
 } // namespace karhu

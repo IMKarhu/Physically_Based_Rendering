@@ -20,6 +20,21 @@ namespace karhu
 
 	void kWindow::pollEvents() { glfwPollEvents(); }
 
+	void kWindow::getFrameBufferSize(GLFWwindow* window, int width, int height)
+	{
+		glfwGetFramebufferSize(window, &width, &height);
+	}
+
+	void kWindow::waitEvents()
+	{
+		glfwWaitEvents();
+	}
+
+	void kWindow::setResize(const bool& resized)
+	{
+		m_Resized = resized;
+	}
+
 	void kWindow::initWindow()
 	{
 		if (!glfwInit())
@@ -30,6 +45,8 @@ namespace karhu
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 		m_Window = glfwCreateWindow(m_Width, m_Height, m_Title.c_str(), nullptr, nullptr);
+		glfwSetWindowUserPointer(m_Window, this);
+		glfwSetFramebufferSizeCallback(m_Window, frameBufferResizeCallback);
 	}
 
 	void kWindow::createInstance()
@@ -74,5 +91,10 @@ namespace karhu
 			std::runtime_error("Failed to create Instance!");
 		}*/
 		VK_CHECK(vkCreateInstance(&createinfo, nullptr, &m_Instance));
+	}
+	void kWindow::frameBufferResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		auto app = reinterpret_cast<kWindow*>(glfwGetWindowUserPointer(window));
+		app->m_Resized = true;
 	}
 } // namespace karhu

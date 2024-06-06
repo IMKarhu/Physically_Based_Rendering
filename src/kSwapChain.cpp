@@ -16,10 +16,10 @@ namespace karhu
 	Vulkan_SwapChain::~Vulkan_SwapChain()
 	{
 		printf("swapchain dsetroyed\n");
-		for (auto imageView : m_SwapChainImageViews)
+		/*for (auto imageView : m_SwapChainImageViews)
 		{
 			vkDestroyImageView(m_Device, imageView, nullptr);
-		}
+		}*/
 	}
 
 	VkSurfaceFormatKHR Vulkan_SwapChain::chooseSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats)
