@@ -47,6 +47,7 @@ namespace karhu
         m_VkSwapChain->createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createFrameBuffers();
         createCommandPool();
         createCommandBuffer();
         createSyncObjects();
@@ -295,7 +296,6 @@ namespace karhu
         renderpassInfo.renderArea.offset = { 0,0 };
         renderpassInfo.renderArea.extent = m_VkSwapChain->m_SwapChainExtent;
 
-
         VkClearValue clearColor{ {{0.0f ,0.0f ,0.0f ,1.0f}} };
         renderpassInfo.clearValueCount = 1;
         renderpassInfo.pClearValues = &clearColor;
@@ -311,11 +311,13 @@ namespace karhu
         viewPort.height = static_cast<float>(m_VkSwapChain->m_SwapChainExtent.height);
         viewPort.minDepth = 0.0f;
         viewPort.maxDepth = 1.0f;
+
         vkCmdSetViewport(commandBuffer, 0, 1, &viewPort);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
         scissor.extent = m_VkSwapChain->m_SwapChainExtent;
+
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
@@ -357,11 +359,10 @@ namespace karhu
 
     void Application::drawFrame()
     {
-        uint32_t imageIndex;
         vkWaitForFences(m_VkDevice->m_Device, 1, &m_InFlightFence, VK_TRUE, UINT64_MAX);
-
         vkResetFences(m_VkDevice->m_Device, 1, &m_InFlightFence);
 
+        uint32_t imageIndex;
         vkAcquireNextImageKHR(m_VkDevice->m_Device, m_VkSwapChain->m_SwapChain, UINT64_MAX, m_Semaphores.availableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         vkResetCommandBuffer(m_CommandBuffer, 0);

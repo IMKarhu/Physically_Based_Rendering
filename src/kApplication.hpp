@@ -50,7 +50,7 @@ namespace karhu
         std::vector<VkFramebuffer> m_FrameBuffers;
         VkCommandPool m_CommandPool;
         VkCommandBuffer m_CommandBuffer;
-        struct
+        struct m_Semaphores
         {
             VkSemaphore availableSemaphore;
             VkSemaphore finishedSemaphore;
