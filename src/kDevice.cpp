@@ -42,7 +42,7 @@ namespace karhu
 		{
 			throw std::runtime_error("Failed to find suitable GPU!\n");
 		}
-		
+
 	}
 
 	void Vulkan_Device::createLogicalDevice()
@@ -169,5 +169,17 @@ namespace karhu
 		}
 
 		return details;
+	}
+	uint32_t Vulkan_Device::findMemoryType(uint32_t filter, VkMemoryPropertyFlags properties)
+	{
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+		vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memoryProperties);
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+		{
+			if ((filter & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			{
+				return i;
+			}
+		}
 	}
 }

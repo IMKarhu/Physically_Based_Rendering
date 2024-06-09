@@ -13,6 +13,8 @@ namespace karhu
     {
         printf("app destroyed\n");
         cleanUpSwapChain();
+        vkDestroyBuffer(m_VkDevice->m_Device, m_VertexBuffer, nullptr);
+        vkFreeMemory(m_VkDevice->m_Device, m_VertexBufferMemory, nullptr);
         for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
             vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.availableSemaphores[i], nullptr);
@@ -49,6 +51,7 @@ namespace karhu
         createGraphicsPipeline();
         createFrameBuffers();
         createCommandPool();
+        createVertexBuffer();
         createCommandBuffers();
         createSyncObjects();
 
@@ -78,12 +81,15 @@ namespace karhu
 
         VkPipelineShaderStageCreateInfo stages[] = { vertexShaderStageCI, fragmentShaderStageCI };
 
+        auto bindingDescription = Vertex::getBindingDescription();
+        auto attributeDescription = Vertex::getAttributeDescription();
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -306,6 +312,10 @@ namespace karhu
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
+        VkBuffer vBuffers[] = { m_VertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
+
         VkViewport viewPort{};
         viewPort.x = 0.0f;
         viewPort.y = 0.0f;
@@ -325,7 +335,7 @@ namespace karhu
         //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
         //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
         //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -355,6 +365,34 @@ namespace karhu
             }
         }
 
+    }
+
+    void Application::createVertexBuffer()
+    {
+        VkBufferCreateInfo createinfo{};
+        createinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        createinfo.size = sizeof(m_Vertices[0]) * m_Vertices.size(); //byte size of one vertices multiplied by size of vector
+        createinfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VK_CHECK(vkCreateBuffer(m_VkDevice->m_Device, &createinfo, nullptr, &m_VertexBuffer));
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(m_VkDevice->m_Device, m_VertexBuffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocinfo{};
+        allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocinfo.allocationSize = memRequirements.size;
+        allocinfo.memoryTypeIndex = m_VkDevice->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        VK_CHECK(vkAllocateMemory(m_VkDevice->m_Device, &allocinfo, nullptr, &m_VertexBufferMemory));
+
+        VK_CHECK(vkBindBufferMemory(m_VkDevice->m_Device, m_VertexBuffer, m_VertexBufferMemory, 0));
+
+        void* data;
+        VK_CHECK(vkMapMemory(m_VkDevice->m_Device, m_VertexBufferMemory, 0, createinfo.size, 0, &data));
+        memcpy(data, m_Vertices.data(), (size_t)createinfo.usage);
+        vkUnmapMemory(m_VkDevice->m_Device, m_VertexBufferMemory);
     }
 
     void Application::update(float deltaTime)

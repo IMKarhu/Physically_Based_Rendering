@@ -5,9 +5,40 @@
 
 #include <memory>
 #include <fstream>
+#include <glm/glm.hpp>
 
 namespace karhu
 {
+    struct Vertex
+    {
+        glm::vec2 pos;
+        glm::vec3 color;
+
+        static VkVertexInputBindingDescription getBindingDescription()
+        {
+            VkVertexInputBindingDescription description{};
+            description.binding = 0;
+            description.stride = sizeof(Vertex);
+            description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            return description;
+        }
+        static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
+        {
+            std::array<VkVertexInputAttributeDescription, 2> attributeDescription{};
+            attributeDescription[0].binding = 0;
+            attributeDescription[0].location = 0;
+            attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescription[0].offset = offsetof(Vertex, pos);
+
+            attributeDescription[1].binding = 0;
+            attributeDescription[1].location = 1;
+            attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescription[1].offset = offsetof(Vertex, color);
+
+            return attributeDescription;
+        }
+    };
+
     class Application
     {
     public:
@@ -21,6 +52,7 @@ namespace karhu
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
         void createSyncObjects();
+        void createVertexBuffer();
         void update(float deltaTime);
         void drawFrame();
     private:
@@ -61,5 +93,13 @@ namespace karhu
         float m_DeltaTime = 0.0f;
         uint32_t m_CurrentFrame = 0;
         const int m_MaxFramesInFlight = 2;
+
+        const std::vector<Vertex> m_Vertices = {
+            {{0.0f, 0.5f},{1.0f, 0.0f, 0.0f}},
+            {{0.5f, 0.5f},{0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.0f},{0.0f, 0.0f, 1.0f}}
+        };
+        VkBuffer m_VertexBuffer;
+        VkDeviceMemory m_VertexBufferMemory;
     };
 } // namespace karhu
