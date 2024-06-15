@@ -90,7 +90,10 @@ namespace karhu
 		{
 			std::runtime_error("Failed to create Instance!");
 		}*/
-		VK_CHECK(vkCreateInstance(&createinfo, nullptr, &m_Instance));
+		if (vkCreateInstance(&createinfo, nullptr, &m_Instance) == VK_SUCCESS)
+		{
+			std::cout << "Instance succesfully created!\n" << std::endl;
+		}
 	}
 	void kWindow::frameBufferResizeCallback(GLFWwindow* window, int width, int height)
 	{
