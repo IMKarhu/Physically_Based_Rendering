@@ -1,5 +1,10 @@
 #include "kApplication.hpp"
 
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "tiny_gltf.h"
+
 
 namespace karhu
 {
@@ -94,13 +99,12 @@ namespace karhu
         allocInfo.descriptorPool = m_DescriptorPool;
         allocInfo.descriptorSetCount = static_cast<uint32_t>(m_MaxFramesInFlight);
         allocInfo.pSetLayouts = layouts.data();
-        printf("hello3\n");
+
         m_DescriptorSets.resize(m_MaxFramesInFlight);
         VK_CHECK(vkAllocateDescriptorSets(m_VkDevice->m_Device, &allocInfo, m_DescriptorSets.data()));
 
         for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
-            printf("hello: %d\n", i);
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = m_UniformBuffers[i];
             bufferInfo.offset = 0;
@@ -781,6 +785,17 @@ namespace karhu
         m_VkSwapChain->createSwapChain(m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice), m_Surface, createinfo);
         m_VkSwapChain->createImageViews();
         createFrameBuffers();
+    }
+
+    void Application::loadGltfFile(std::string fileName)
+    {
+        tinygltf::Model input;
+        tinygltf::TinyGLTF gltfContext;
+        std::string error, warning;
+
+        bool fileLoad = gltfContext.LoadASCIIFromFile(&input, &error, &warning, fileName);
+
+
     }
 
 

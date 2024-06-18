@@ -45,6 +45,7 @@ namespace karhu
         VkShaderModule createShaderModule(const std::vector<char>& code);
         void cleanUpSwapChain();
         void reCreateSwapChain();
+        void loadGltfFile(std::string fileName);
     private:
         std::unique_ptr<kWindow> m_Window;
         std::shared_ptr<Vulkan_Device> m_VkDevice;
@@ -86,6 +87,7 @@ namespace karhu
         };
         VkBuffer m_VertexBuffer;
         VkDeviceMemory m_VertexBufferMemory;
+
         VkBuffer m_IndexBuffer;
         VkDeviceMemory m_IndexBufferMemory;
 
