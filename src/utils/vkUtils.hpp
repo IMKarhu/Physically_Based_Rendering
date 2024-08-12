@@ -17,7 +17,8 @@ namespace karhu
     namespace vkUtils
     {
         const std::vector<const char*> valiadationLayers = {
-            "VK_LAYER_KHRONOS_validation"
+            "VK_LAYER_KHRONOS_validation",
+            "VK_LAYER_LUNARG_monitor"
         };
         const std::vector<const char*> deviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -134,5 +135,16 @@ namespace karhu
             createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
             return createInfo;
         }
+
+        /*template<typename T>
+        inline void createVkBuffer(const std::vector<T>& buffer)
+        {
+            VkDeviceSize bufferSize = sizeof(T[0]) * T.size();
+
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                stagingBuffer, stagingBufferMemory);
+        }*/
     }
 } // namespace karhu

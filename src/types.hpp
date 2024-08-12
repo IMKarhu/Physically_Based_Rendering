@@ -20,6 +20,18 @@ namespace karhu
         alignas(16)glm::mat4 proj;
     };
 
+    class Texture
+    {
+    public:
+    private:
+        VkImage m_TextureImage;
+        VkDeviceMemory m_TextureMemory;
+        VkImageView m_ImageView;
+        VkDescriptorSet m_DescriptorSet;
+        uint32_t m_Width;
+        uint32_t m_Height;
+    };
+
     class vkglTFModel
     {
     public:

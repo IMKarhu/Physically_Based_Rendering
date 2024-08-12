@@ -1,7 +1,11 @@
 #pragma once
 #include "utils/vkUtils.hpp"
 #include <optional>
+#ifdef __linux__
 #include <experimental/optional>
+#endif // DEBUG
+
+
 #include <set>
 
 namespace karhu
