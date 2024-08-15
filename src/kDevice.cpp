@@ -64,6 +64,7 @@ namespace karhu
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{}; /* Leave this as vk_false for now, still need it for device creation. */
+		deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo deviceinfo{};
 		deviceinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -94,6 +95,9 @@ namespace karhu
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
+		VkPhysicalDeviceFeatures supportedFeatures;
+		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
 		QueueFamilyIndices indices = findQueueFamilies(device);
 
 		bool extensionsSupported = vkUtils::checkDeviceExtensionSupport(device);
@@ -105,7 +109,7 @@ namespace karhu
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 
-		return indices.isComplete() && extensionsSupported && swapChainAdequate;
+		return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
 	QueueFamilyIndices Vulkan_Device::findQueueFamilies(VkPhysicalDevice device)

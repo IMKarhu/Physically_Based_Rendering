@@ -69,6 +69,8 @@ namespace karhu
 		}
 	}
 
+	
+
 	void Vulkan_SwapChain::createSwapChain(SwapChainSupportDetails swapChainSupport, VkSurfaceKHR surface, VkSwapchainCreateInfoKHR createInfo)
 	{
 		SwapChainSupportDetails swapchainSupport = swapChainSupport;

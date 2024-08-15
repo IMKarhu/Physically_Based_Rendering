@@ -62,29 +62,43 @@ namespace karhu
 
         VkDescriptorSetLayoutBinding binding{};
         binding = Helpers::fillLayoutBindingStruct(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+
+        VkDescriptorSetLayoutBinding samplerBinding{};
+        samplerBinding = Helpers::fillLayoutBindingStruct(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        std::array<VkDescriptorSetLayoutBinding, 2> bindings = { binding, samplerBinding };
+
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo = Helpers::fillDescriptorSetLayoutCreateInfo();
-        createInfo.bindingCount = 1;
-        createInfo.pBindings = &binding;
+        createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        createInfo.pBindings = bindings.data();
 
         VK_CHECK(vkCreateDescriptorSetLayout(m_VkDevice->m_Device, &createInfo, nullptr, &m_DescriptorLayout));
 
+        m_Texture = std::make_shared<Texture>(m_VkDevice);
+
         createGraphicsPipeline();
-        createFrameBuffers();
         createCommandPool();
+        createDepthResources();
+        createFrameBuffers();
+        
+        m_Texture->createTexture(m_CommandPool);
+        m_Texture->createTextureImageView();
+        m_Texture->createSampler();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
 
         /*Descriptor pool creation.*/
-        VkDescriptorPoolSize poolSize{};
-        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(m_MaxFramesInFlight);
+        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = static_cast<uint32_t>(m_MaxFramesInFlight);
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(m_MaxFramesInFlight);
 
         VkDescriptorPoolCreateInfo poolcreateInfo{};
         poolcreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolcreateInfo.poolSizeCount = 1;
-        poolcreateInfo.pPoolSizes = &poolSize;
+        poolcreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolcreateInfo.pPoolSizes = poolSizes.data();
         poolcreateInfo.maxSets = static_cast<uint32_t>(m_MaxFramesInFlight);
 
         VK_CHECK(vkCreateDescriptorPool(m_VkDevice->m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
@@ -108,16 +122,29 @@ namespace karhu
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_DescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = m_Texture->imageView();
+            imageInfo.sampler = m_Texture->textureSampler();
 
-            vkUpdateDescriptorSets(m_VkDevice->m_Device, 1, &descriptorWrite, 0, nullptr);
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet = m_DescriptorSets[i];
+            descriptorWrites[0].dstBinding = 0;
+            descriptorWrites[0].dstArrayElement = 0;
+            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[0].descriptorCount = 1;
+            descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet = m_DescriptorSets[i];
+            descriptorWrites[1].dstBinding = 1;
+            descriptorWrites[1].dstArrayElement = 0;
+            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[1].descriptorCount = 1;
+            descriptorWrites[1].pImageInfo = &imageInfo;
+
+            vkUpdateDescriptorSets(m_VkDevice->m_Device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 
         createCommandBuffers();
@@ -231,6 +258,18 @@ namespace karhu
         colorBlending.blendConstants[2] = 0.0f; // Optional
         colorBlending.blendConstants[3] = 0.0f; // Optional
 
+        VkPipelineDepthStencilStateCreateInfo depthStencil{};
+        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencil.depthTestEnable = VK_TRUE;
+        depthStencil.depthWriteEnable = VK_TRUE;
+        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+        depthStencil.depthBoundsTestEnable = VK_FALSE;
+        depthStencil.minDepthBounds = 0.0f; // Optional
+        depthStencil.maxDepthBounds = 1.0f; // Optional
+        depthStencil.stencilTestEnable = VK_FALSE;
+        depthStencil.front = {}; // Optional
+        depthStencil.back = {}; // Optional
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1; // nullptr if no descriptors used
@@ -249,7 +288,7 @@ namespace karhu
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = nullptr; // Optional
+        pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamiccreateinfo;
         pipelineInfo.layout = m_PipelineLayout;
@@ -276,6 +315,20 @@ namespace karhu
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+        VkAttachmentDescription depthAttachment{};
+        depthAttachment.format = findDepthFormat();
+        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference depthAttachmentRef{};
+        depthAttachmentRef.attachment = 1;
+        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
         VkAttachmentReference colorAttachmentRef{};
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -284,19 +337,21 @@ namespace karhu
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
+        subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
+        std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
+        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        renderPassInfo.pAttachments = attachments.data();
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
@@ -313,16 +368,17 @@ namespace karhu
 
         for (size_t i = 0; i < m_VkSwapChain->m_SwapChainImageViews.size(); i++)
         {
-            VkImageView attachments[]{
-                m_VkSwapChain->m_SwapChainImageViews[i]
+            std::array<VkImageView, 2> attachments = {
+                m_VkSwapChain->m_SwapChainImageViews[i],
+                m_DepthImageView
             };
 
 
             VkFramebufferCreateInfo createinfo{};
             createinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             createinfo.renderPass = m_RenderPass;
-            createinfo.attachmentCount = 1;
-            createinfo.pAttachments = attachments;
+            createinfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+            createinfo.pAttachments = attachments.data();
             createinfo.width = m_VkSwapChain->m_SwapChainExtent.width;
             createinfo.height = m_VkSwapChain->m_SwapChainExtent.height;
             createinfo.layers = 1;
@@ -372,9 +428,11 @@ namespace karhu
         renderpassInfo.renderArea.offset = { 0,0 };
         renderpassInfo.renderArea.extent = m_VkSwapChain->m_SwapChainExtent;
 
-        VkClearValue clearColor{ {{0.0f ,0.0f ,0.0f ,1.0f}} };
-        renderpassInfo.clearValueCount = 1;
-        renderpassInfo.pClearValues = &clearColor;
+        std::array<VkClearValue, 2> clearColors{};
+        clearColors[0].color = { {0.0f ,0.0f ,0.0f ,1.0f} };
+        clearColors[1].depthStencil = { 1.0f, 0 };
+        renderpassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+        renderpassInfo.pClearValues = clearColors.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -469,6 +527,16 @@ namespace karhu
                 m_UniformBuffers[i], m_UniformBuffersMemory[i]);
             vkMapMemory(m_VkDevice->m_Device, m_UniformBuffersMemory[i], 0, bufferSize, 0, &m_UniformBuffersMapped[i]);
         }
+    }
+
+    void Application::createDepthResources()
+    {
+        VkFormat format = findDepthFormat();
+
+        m_Texture->createImage(m_VkSwapChain->m_SwapChainExtent.width, m_VkSwapChain->m_SwapChainExtent.height, format, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
+        m_DepthImageView = m_Texture->createImageview(m_DepthImage, format, VK_IMAGE_ASPECT_DEPTH_BIT);
+        
     }
 
     void Application::updateUBOs(uint32_t currentImage)
@@ -657,6 +725,9 @@ namespace karhu
 
     void Application::cleanUpSwapChain()
     {
+        vkDestroyImageView(m_VkDevice->m_Device, m_DepthImageView, nullptr);
+        vkDestroyImage(m_VkDevice->m_Device, m_DepthImage, nullptr);
+        vkFreeMemory(m_VkDevice->m_Device, m_DepthImageMemory, nullptr);
         for (auto framebuffer : m_FrameBuffers)
         {
             vkDestroyFramebuffer(m_VkDevice->m_Device, framebuffer, nullptr);
@@ -691,7 +762,41 @@ namespace karhu
         VkSwapchainCreateInfoKHR createinfo = fillSwapchainCI();
         m_VkSwapChain->createSwapChain(m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice), m_Surface, createinfo);
         m_VkSwapChain->createImageViews();
+        createDepthResources();
         createFrameBuffers();
+    }
+
+    VkFormat Application::findSupportedFormat(const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags features)
+    {
+        for (VkFormat format : formats)
+        {
+            VkFormatProperties props;
+            vkGetPhysicalDeviceFormatProperties(m_VkDevice->m_PhysicalDevice, format, &props);
+
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+            {
+                return format;
+            }
+            else if(tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+            {
+                return format;
+            }
+        }
+        throw std::runtime_error("failed to find supported format!");
+    }
+
+    VkFormat Application::findDepthFormat()
+    {
+        return findSupportedFormat(
+            { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+        );
+    }
+
+    bool Application::hasStencilComponent(VkFormat format)
+    {
+        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
     }
 
     /*void Application::loadGltfFile(std::string fileName)
