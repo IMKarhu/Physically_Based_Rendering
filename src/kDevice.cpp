@@ -9,6 +9,8 @@ namespace karhu
 	{
 		m_Instance = instance;
 		m_Surface = surface;
+		pickPhysicalDevice();
+		createLogicalDevice();
 	}
 
 	Vulkan_Device::~Vulkan_Device()

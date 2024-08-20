@@ -52,6 +52,7 @@ namespace karhu
         Application();
         ~Application();
         void run();
+        void buildVulkan();
         void createGraphicsPipeline();
         void createRenderPass();
         void createFrameBuffers();
@@ -59,8 +60,6 @@ namespace karhu
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
         void createSyncObjects();
-        void createVertexBuffer();
-        void createIndexBuffer();
         void createUniformBuffers();
         void createDepthResources();
         void updateUBOs(uint32_t currentImage);
@@ -86,10 +85,8 @@ namespace karhu
         std::unique_ptr<kWindow> m_Window;
         std::shared_ptr<Vulkan_Device> m_VkDevice;
         std::shared_ptr<Vulkan_SwapChain> m_VkSwapChain;
-        std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
+        std::shared_ptr<kDescriptors> m_Descriptor;
         std::shared_ptr<vkglTFModel> m_Model;
-        //vkglTFModel m_Model;
-
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
         VkSurfaceKHR m_Surface;
@@ -113,29 +110,6 @@ namespace karhu
         float m_DeltaTime = 0.0f;
         uint32_t m_CurrentFrame = 0;
         const int m_MaxFramesInFlight = 2;
-
-        //std::vector<Vertex> m_Vertices;
-        /*const std::vector<Vertex> m_Vertices = {
-            {{-0.5f,-0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-        };*/
-        //std::vector<uint32_t> m_Indices;
-        /*const std::vector<uint16_t> m_Indices = {
-            0,1,2,2,3,0,
-            4,5,6,6,7,4
-        };*/
-        VkBuffer m_VertexBuffer;
-        VkDeviceMemory m_VertexBufferMemory;
-
-        VkBuffer m_IndexBuffer;
-        VkDeviceMemory m_IndexBufferMemory;
 
         std::vector<VkBuffer> m_UniformBuffers;
         std::vector<VkDeviceMemory> m_UniformBuffersMemory;

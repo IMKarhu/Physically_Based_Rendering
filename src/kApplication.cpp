@@ -24,10 +24,10 @@ namespace karhu
         }
         vkDestroyDescriptorPool(m_VkDevice->m_Device, m_DescriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(m_VkDevice->m_Device, m_DescriptorLayout, nullptr);
-        vkDestroyBuffer(m_VkDevice->m_Device, m_IndexBuffer, nullptr);
+        /*vkDestroyBuffer(m_VkDevice->m_Device, m_IndexBuffer, nullptr);
         vkFreeMemory(m_VkDevice->m_Device, m_IndexBufferMemory, nullptr);
         vkDestroyBuffer(m_VkDevice->m_Device, m_VertexBuffer, nullptr);
-        vkFreeMemory(m_VkDevice->m_Device, m_VertexBufferMemory, nullptr);
+        vkFreeMemory(m_VkDevice->m_Device, m_VertexBufferMemory, nullptr);*/
         for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
             vkDestroySemaphore(m_VkDevice->m_Device, m_Semaphores.availableSemaphores[i], nullptr);
@@ -49,15 +49,18 @@ namespace karhu
 
     void Application::run()
     {
+        buildVulkan();
+        update(m_DeltaTime);
+    }
+
+    void Application::buildVulkan()
+    {
         setupDebugMessenger();
         createSurface();
         m_VkDevice = std::make_shared<Vulkan_Device>(m_Window->getInstance(), m_Surface);
-        m_VkDevice->pickPhysicalDevice();
-        m_VkDevice->createLogicalDevice();
-        VkSwapchainCreateInfoKHR createinfo = fillSwapchainCI();
         printf("before swapchain creation.");
-        m_VkSwapChain = std::make_shared<Vulkan_SwapChain>(m_VkDevice->m_Device, m_Window->getWindow());
-        m_VkSwapChain->createSwapChain(m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice), m_Surface, createinfo);
+        m_VkSwapChain = std::make_shared<Vulkan_SwapChain>(m_VkDevice, m_Window->getWindow());
+        m_VkSwapChain->createSwapChain(m_Surface);
         m_VkSwapChain->createImageViews();
         createRenderPass();
 
@@ -82,7 +85,7 @@ namespace karhu
         createCommandPool();
         createDepthResources();
         createFrameBuffers();
-        
+
         m_Model->m_Texture.createTexture(m_CommandPool);
         m_Model->m_Texture.createTextureImageView();
         m_Model->m_Texture.createSampler();
@@ -152,9 +155,6 @@ namespace karhu
 
         createCommandBuffers();
         createSyncObjects();
-
-
-        update(m_DeltaTime);
     }
 
     void Application::createGraphicsPipeline()
@@ -502,20 +502,6 @@ namespace karhu
 
     }
 
-    void Application::createVertexBuffer()
-    {
-        /*Buffer buffer = { m_VkDevice };
-        buffer.createVkBuffer<Vertex>(m_Vertices, m_VertexBuffer, m_VertexBufferMemory,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, m_CommandPool);*/
-    }
-
-    void Application::createIndexBuffer()
-    {
-        /*Buffer buffer = { m_VkDevice };
-        buffer.createVkBuffer<uint32_t>(m_Indices, m_IndexBuffer, m_IndexBufferMemory,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, m_CommandPool);*/
-    }
-
     void Application::createUniformBuffers()
     {
         Buffer buffer = { m_VkDevice };
@@ -764,7 +750,7 @@ namespace karhu
         cleanUpSwapChain();
 
         VkSwapchainCreateInfoKHR createinfo = fillSwapchainCI();
-        m_VkSwapChain->createSwapChain(m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice), m_Surface, createinfo);
+        m_VkSwapChain->createSwapChain(m_Surface);
         m_VkSwapChain->createImageViews();
         createDepthResources();
         createFrameBuffers();

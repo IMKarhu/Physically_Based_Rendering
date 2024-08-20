@@ -1,4 +1,5 @@
 #include "kSwapChain.hpp"
+#include "kDevice.hpp"
 #include "utils/macros.hpp"
 
 #include <limits>
@@ -6,9 +7,9 @@
 
 namespace karhu
 {
-	Vulkan_SwapChain::Vulkan_SwapChain(VkDevice device, GLFWwindow* window)
+	Vulkan_SwapChain::Vulkan_SwapChain(std::shared_ptr<Vulkan_Device>& device, GLFWwindow* window)
 	{
-		m_Device = device;
+		m_VkDevice = device;
 		m_Window = window;
 		printf("constructor called!\n");
 	}
@@ -71,9 +72,9 @@ namespace karhu
 
 	
 
-	void Vulkan_SwapChain::createSwapChain(SwapChainSupportDetails swapChainSupport, VkSurfaceKHR surface, VkSwapchainCreateInfoKHR createInfo)
+	void Vulkan_SwapChain::createSwapChain(VkSurfaceKHR surface)
 	{
-		SwapChainSupportDetails swapchainSupport = swapChainSupport;
+		SwapChainSupportDetails swapchainSupport = m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice);;
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapchainSurfaceFormat(swapchainSupport.formats);
 		VkPresentModeKHR presentMode = chooseSwapchainPresentMode(swapchainSupport.presentModes);
@@ -86,29 +87,43 @@ namespace karhu
 			imageCount = swapchainSupport.capabilities.maxImageCount;
 		}
 
-		VkSwapchainCreateInfoKHR createinfo{};
-		createinfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createinfo.surface = surface;
-		createinfo.minImageCount = imageCount;
-		createinfo.imageFormat = surfaceFormat.format;
-		createinfo.imageColorSpace = surfaceFormat.colorSpace;
-		createinfo.imageExtent = extent;
-		createinfo.imageArrayLayers = 1;
-		createinfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-		createinfo.imageSharingMode = createInfo.imageSharingMode;
-		createinfo.queueFamilyIndexCount = createInfo.queueFamilyIndexCount;
-		createinfo.pQueueFamilyIndices = createInfo.pQueueFamilyIndices;
-		createinfo.preTransform = swapchainSupport.capabilities.currentTransform;
-		createinfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		createinfo.presentMode = presentMode;
-		createinfo.clipped = VK_TRUE;
-		createinfo.oldSwapchain = VK_NULL_HANDLE;
+		QueueFamilyIndices indices = m_VkDevice->findQueueFamilies(m_VkDevice->m_PhysicalDevice);
+		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
-		VK_CHECK(vkCreateSwapchainKHR(m_Device, &createinfo, nullptr, &m_SwapChain));
+		VkSwapchainCreateInfoKHR swapChainCI{};
+		swapChainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		swapChainCI.surface = surface;
+		swapChainCI.minImageCount = imageCount;
+		swapChainCI.imageFormat = surfaceFormat.format;
+		swapChainCI.imageColorSpace = surfaceFormat.colorSpace;
+		swapChainCI.imageExtent = extent;
+		swapChainCI.imageArrayLayers = 1;
+		swapChainCI.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		VK_CHECK(vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, nullptr));
+		if (indices.graphicsFamily != indices.presentFamily)
+		{
+			swapChainCI.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+			swapChainCI.queueFamilyIndexCount = 2;
+			swapChainCI.pQueueFamilyIndices = queueFamilyIndices;
+		}
+		else
+		{
+			swapChainCI.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			swapChainCI.queueFamilyIndexCount = 0;
+			swapChainCI.pQueueFamilyIndices = nullptr;
+		}
+
+		swapChainCI.preTransform = swapchainSupport.capabilities.currentTransform;
+		swapChainCI.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		swapChainCI.presentMode = presentMode;
+		swapChainCI.clipped = VK_TRUE;
+		swapChainCI.oldSwapchain = VK_NULL_HANDLE;
+
+		VK_CHECK(vkCreateSwapchainKHR(m_VkDevice->m_Device, &swapChainCI, nullptr, &m_SwapChain));
+
+		VK_CHECK(vkGetSwapchainImagesKHR(m_VkDevice->m_Device, m_SwapChain, &imageCount, nullptr));
 		m_SwapChainImages.resize(imageCount);
-		VK_CHECK(vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data()));
+		VK_CHECK(vkGetSwapchainImagesKHR(m_VkDevice->m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data()));
 
 		m_SwapChainImageFormat = surfaceFormat.format;
 		m_SwapChainExtent = extent;
@@ -136,7 +151,7 @@ namespace karhu
 			createinfo.subresourceRange.baseArrayLayer = 0;
 			createinfo.subresourceRange.layerCount = 1;
 
-			VK_CHECK(vkCreateImageView(m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
+			VK_CHECK(vkCreateImageView(m_VkDevice->m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
 		}
 	}
 
