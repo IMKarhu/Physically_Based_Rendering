@@ -6,11 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <array>
 
-//#define TINYGLTF_IMPLEMENTATION
-//#define STB_IMAGE_IMPLEMENTATION
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
-//#include "tiny_gltf.h"
 
 
 
@@ -22,7 +19,7 @@ namespace karhu
 	class Texture
 	{
 	public:
-		Texture(std::shared_ptr<struct Vulkan_Device> device);
+		explicit Texture(std::shared_ptr<struct Vulkan_Device> device);
 		~Texture();
 		//void loadFile(std::string fileName, VkFormat format);
 		void createTexture(VkCommandPool& commandPool);
@@ -48,88 +45,110 @@ namespace karhu
 		uint32_t m_Height;
 	};
 
-	//struct Vertex
-	//{
-	//	glm::vec3 pos;
-	//	glm::vec3 color;
-	//	glm::vec3 normal;
-	//	glm::vec2 uv;
+	struct Vertex
+	{
+		glm::vec3 pos;
+		glm::vec3 color;
+		glm::vec2 texCoords;
+		glm::vec3 normal;
+		glm::vec2 uv;
+		
 
-	//	static VkVertexInputBindingDescription getBindingDescription()
-	//	{
-	//		VkVertexInputBindingDescription description{};
-	//		description.binding = 0;
-	//		description.stride = sizeof(Vertex);
-	//		description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	//		return description;
-	//	}
-	//	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription()
-	//	{
-	//		std::array<VkVertexInputAttributeDescription, 3> attributeDescription{};
-	//		attributeDescription[0].binding = 0;
-	//		attributeDescription[0].location = 0;
-	//		attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	//		attributeDescription[0].offset = offsetof(Vertex, pos);
+		static VkVertexInputBindingDescription getBindingDescription()
+		{
+			VkVertexInputBindingDescription description{};
+			description.binding = 0;
+			description.stride = sizeof(Vertex);
+			description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+			return description;
+		}
+		static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescription()
+		{
+			std::array<VkVertexInputAttributeDescription, 5> attributeDescription{};
+			attributeDescription[0].binding = 0;
+			attributeDescription[0].location = 0;
+			attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescription[0].offset = offsetof(Vertex, pos);
 
-	//		attributeDescription[1].binding = 0;
-	//		attributeDescription[1].location = 1;
-	//		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	//		attributeDescription[1].offset = offsetof(Vertex, color);
+			attributeDescription[1].binding = 0;
+			attributeDescription[1].location = 1;
+			attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescription[1].offset = offsetof(Vertex, color);
 
-	//		return attributeDescription;
-	//	}
-	//};
+			attributeDescription[2].binding = 0;
+			attributeDescription[2].location = 2;
+			attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescription[2].offset = offsetof(Vertex, texCoords);
 
-	//class vkglTFModel
-	//{
-	//public:
+			attributeDescription[3].binding = 0;
+			attributeDescription[3].location = 3;
+			attributeDescription[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescription[3].offset = offsetof(Vertex, normal);
 
-	//	
+			attributeDescription[4].binding = 0;
+			attributeDescription[4].location = 4;
+			attributeDescription[4].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescription[4].offset = offsetof(Vertex, uv);
 
-	//	struct
-	//	{
-	//		VkBuffer m_Buffer;
-	//		VkDeviceMemory m_BufferMemory;
-	//	}m_VertexBuffer;
+			return attributeDescription;
+		}
+	};
 
-	//	struct
-	//	{
-	//		VkBuffer m_Buffer;
-	//		VkDeviceMemory m_BufferMemory;
-	//	}m_IndexBuffer;
+	class vkglTFModel
+	{
+	public:
+		explicit vkglTFModel(std::shared_ptr<struct Vulkan_Device> device);
+		
 
-	//	struct Primitive
-	//	{
-	//		uint32_t m_FirstIndex;
-	//		uint32_t m_IndexCount;
-	//		int32_t  m_Materialindex;
-	//	};
+		struct
+		{
+			VkBuffer m_Buffer;
+			VkDeviceMemory m_BufferMemory;
+		}m_VertexBuffer;
 
-	//	struct Mesh
-	//	{
-	//		std::vector<Primitive> m_Primitives;
-	//	};
+		struct
+		{
+			VkBuffer m_Buffer;
+			VkDeviceMemory m_BufferMemory;
+		}m_IndexBuffer;
 
-	//	struct Node {
-	//		Node* m_Parent;
-	//		std::vector<Node*> m_Children;
-	//		Mesh m_Mesh;
-	//		glm::mat4 m_Matrix;
-	//		~Node() {
-	//			for (auto& child : m_Children) {
-	//				delete child;
-	//			}
-	//		}
-	//	};
+		struct Primitive
+		{
+			uint32_t m_FirstIndex;
+			uint32_t m_IndexCount;
+			int32_t  m_Materialindex;
+		};
 
-	//	//std::vector<Vertex> m_Vertices;
-	//	std::vector<Node*> m_Nodes;
+		struct Mesh
+		{
+			std::vector<Primitive> m_Primitives;
+		};
 
-	//	void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& input, vkglTFModel::Node* parent, std::vector<uint32_t>& indexBuffer,
-	//		std::vector<Vertex>& vertexBuffer);
+		struct Node {
+			Node* m_Parent;
+			std::vector<Node*> m_Children;
+			Mesh m_Mesh;
+			glm::mat4 m_Matrix;
+			~Node() {
+				for (auto& child : m_Children) {
+					delete child;
+				}
+			}
+		};
 
-	//	void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout,std::vector<VkDescriptorSet> sets, uint32_t index);
+		//std::vector<Vertex> m_Vertices;
+		std::vector<Node*> m_Nodes;
+		Texture m_Texture;
 
-	//private:
-	//};
+		void loadNode(const auto& inputNode, const auto& input, vkglTFModel::Node* parent, std::vector<uint32_t>& indexBuffer,
+			std::vector<Vertex>& vertexBuffer);
+
+		void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout,std::vector<VkDescriptorSet> sets, uint32_t index);
+
+		void loadgltfFile(std::string fileName, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer);
+		
+	private:
+		std::shared_ptr<struct Vulkan_Device> m_VkDevice;
+		
+	};
 } // namespace karhu

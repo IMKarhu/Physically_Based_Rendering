@@ -1,5 +1,6 @@
 #include "kApplication.hpp"
 #include "kBuffer.hpp"
+#include "kModel.hpp"
 
 
 
@@ -74,18 +75,20 @@ namespace karhu
 
         VK_CHECK(vkCreateDescriptorSetLayout(m_VkDevice->m_Device, &createInfo, nullptr, &m_DescriptorLayout));
 
-        m_Texture = std::make_shared<Texture>(m_VkDevice);
+        //m_Texture = std::make_shared<Texture>(m_VkDevice);
+        m_Model = std::make_shared<vkglTFModel>(m_VkDevice);
 
         createGraphicsPipeline();
         createCommandPool();
         createDepthResources();
         createFrameBuffers();
         
-        m_Texture->createTexture(m_CommandPool);
-        m_Texture->createTextureImageView();
-        m_Texture->createSampler();
-        createVertexBuffer();
-        createIndexBuffer();
+        m_Model->m_Texture.createTexture(m_CommandPool);
+        m_Model->m_Texture.createTextureImageView();
+        m_Model->m_Texture.createSampler();
+        /*createVertexBuffer();
+        createIndexBuffer();*/
+        loadGltfFile("../models/Cube.gltf");
         createUniformBuffers();
 
         /*Descriptor pool creation.*/
@@ -124,8 +127,8 @@ namespace karhu
 
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_Texture->imageView();
-            imageInfo.sampler = m_Texture->textureSampler();
+            imageInfo.imageView = m_Model->m_Texture.imageView();
+            imageInfo.sampler = m_Model->m_Texture.textureSampler();
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -454,11 +457,11 @@ namespace karhu
 
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vBuffers[] = { m_VertexBuffer };
+        VkBuffer vBuffers[] = { m_Model->m_VertexBuffer.m_Buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffer, m_Model->m_IndexBuffer.m_Buffer, 0, VK_INDEX_TYPE_UINT32);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[index], 0, nullptr);
 
@@ -466,7 +469,8 @@ namespace karhu
         //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
         //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+        m_Model->draw(commandBuffer, m_PipelineLayout, m_DescriptorSets, index);
+        //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -500,16 +504,16 @@ namespace karhu
 
     void Application::createVertexBuffer()
     {
-        Buffer buffer = { m_VkDevice };
+        /*Buffer buffer = { m_VkDevice };
         buffer.createVkBuffer<Vertex>(m_Vertices, m_VertexBuffer, m_VertexBufferMemory,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, m_CommandPool);
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, m_CommandPool);*/
     }
 
     void Application::createIndexBuffer()
     {
-        Buffer buffer = { m_VkDevice };
-        buffer.createVkBuffer<uint16_t>(m_Indices, m_IndexBuffer, m_IndexBufferMemory,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, m_CommandPool);
+        /*Buffer buffer = { m_VkDevice };
+        buffer.createVkBuffer<uint32_t>(m_Indices, m_IndexBuffer, m_IndexBufferMemory,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, m_CommandPool);*/
     }
 
     void Application::createUniformBuffers()
@@ -533,9 +537,9 @@ namespace karhu
     {
         VkFormat format = findDepthFormat();
 
-        m_Texture->createImage(m_VkSwapChain->m_SwapChainExtent.width, m_VkSwapChain->m_SwapChainExtent.height, format, VK_IMAGE_TILING_OPTIMAL,
+        m_Model->m_Texture.createImage(m_VkSwapChain->m_SwapChainExtent.width, m_VkSwapChain->m_SwapChainExtent.height, format, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
-        m_DepthImageView = m_Texture->createImageview(m_DepthImage, format, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_DepthImageView = m_Model->m_Texture.createImageview(m_DepthImage, format, VK_IMAGE_ASPECT_DEPTH_BIT);
         
     }
 
@@ -799,16 +803,23 @@ namespace karhu
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
     }
 
-    /*void Application::loadGltfFile(std::string fileName)
+    void Application::loadGltfFile(std::string fileName)
     {
-        tinygltf::Model input;
-        tinygltf::TinyGLTF gltfContext;
-        std::string error, warning;
+        std::vector<Vertex> m_Vertices;
+        std::vector<uint32_t> m_Indices;
+        m_Model->loadgltfFile(fileName, m_Indices, m_Vertices);
 
-        bool fileLoad = gltfContext.LoadASCIIFromFile(&input, &error, &warning, fileName);
+        
+
+        Buffer buffer = { m_VkDevice };
+        buffer.createVkBuffer<Vertex>(m_Vertices, m_Model->m_VertexBuffer.m_Buffer, m_Model->m_VertexBuffer.m_BufferMemory,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, m_CommandPool);
+
+        buffer.createVkBuffer<uint32_t>(m_Indices, m_Model->m_IndexBuffer.m_Buffer, m_Model->m_IndexBuffer.m_BufferMemory,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, m_CommandPool);
 
 
-    }*/
+    }
 
 
 

@@ -3,7 +3,6 @@
 #include "kDevice.hpp"
 #include "kSwapChain.hpp"
 #include "kDescriptors.hpp"
-#include "kModel.hpp"
 
 #include <memory>
 #include <fstream>
@@ -11,7 +10,7 @@
 
 namespace karhu
 {
-    struct Vertex
+    /*struct Vertex
     {
         glm::vec3 pos;
         glm::vec3 color;
@@ -45,8 +44,8 @@ namespace karhu
 
             return attributeDescription;
         }
-    };
-
+    };*/
+    class vkglTFModel;
     class Application
     {
     public:
@@ -88,7 +87,8 @@ namespace karhu
         std::shared_ptr<Vulkan_Device> m_VkDevice;
         std::shared_ptr<Vulkan_SwapChain> m_VkSwapChain;
         std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
-        std::shared_ptr<Texture> m_Texture;
+        std::shared_ptr<vkglTFModel> m_Model;
+        //vkglTFModel m_Model;
 
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
@@ -114,7 +114,8 @@ namespace karhu
         uint32_t m_CurrentFrame = 0;
         const int m_MaxFramesInFlight = 2;
 
-        const std::vector<Vertex> m_Vertices = {
+        //std::vector<Vertex> m_Vertices;
+        /*const std::vector<Vertex> m_Vertices = {
             {{-0.5f,-0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
             {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
             {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
@@ -124,11 +125,12 @@ namespace karhu
             {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
             {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
             {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-        };
-        const std::vector<uint16_t> m_Indices = {
+        };*/
+        //std::vector<uint32_t> m_Indices;
+        /*const std::vector<uint16_t> m_Indices = {
             0,1,2,2,3,0,
             4,5,6,6,7,4
-        };
+        };*/
         VkBuffer m_VertexBuffer;
         VkDeviceMemory m_VertexBufferMemory;
 

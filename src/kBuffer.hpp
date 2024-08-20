@@ -1,8 +1,6 @@
 #pragma once
 #include "kDevice.hpp"
 
-
-
 #include <vector>
 #include <memory>
 
@@ -28,7 +26,7 @@ namespace karhu
     template<typename T>
     void Buffer::createVkBuffer(const std::vector<T>& data, VkBuffer& buffer, VkDeviceMemory& memory, VkBufferUsageFlags usageflags, VkCommandPool& commandPool)
     {
-        VkDeviceSize bufferSize = sizeof(data[0]) * data.size();
+        VkDeviceSize bufferSize = sizeof(T) * data.size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
