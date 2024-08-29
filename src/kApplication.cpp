@@ -63,21 +63,12 @@ namespace karhu
         m_VkSwapChain->createSwapChain(m_Surface);
         m_VkSwapChain->createImageViews();
         createRenderPass();
+        m_Descriptor = std::make_shared<kDescriptors>(m_VkDevice);
 
-        VkDescriptorSetLayoutBinding binding{};
-        binding = Helpers::fillLayoutBindingStruct(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-
-        VkDescriptorSetLayoutBinding samplerBinding{};
-        samplerBinding = Helpers::fillLayoutBindingStruct(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
-        std::array<VkDescriptorSetLayoutBinding, 2> bindings = { binding, samplerBinding };
-
-        VkDescriptorSetLayoutCreateInfo createInfo{};
-        createInfo = Helpers::fillDescriptorSetLayoutCreateInfo();
-        createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        createInfo.pBindings = bindings.data();
-
-        VK_CHECK(vkCreateDescriptorSetLayout(m_VkDevice->m_Device, &createInfo, nullptr, &m_DescriptorLayout));
-
+        m_Descriptor->addBind(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_Descriptor->addBind(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        
+        m_DescriptorLayout = m_Descriptor->createDescriptorSetLayout(m_DescriptorLayout);
         //m_Texture = std::make_shared<Texture>(m_VkDevice);
         m_Model = std::make_shared<vkglTFModel>(m_VkDevice);
 
@@ -94,8 +85,9 @@ namespace karhu
         loadGltfFile("../models/Cube.gltf");
         createUniformBuffers();
 
+        m_DescriptorSets = m_Descriptor->createDescriptorSets(m_MaxFramesInFlight, m_DescriptorLayout, m_UniformBuffers, m_Model->m_Texture);
         /*Descriptor pool creation.*/
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+       /* std::array<VkDescriptorPoolSize, 2> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(m_MaxFramesInFlight);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -109,7 +101,7 @@ namespace karhu
 
         VK_CHECK(vkCreateDescriptorPool(m_VkDevice->m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
 
-        /*Descriptor set creation.*/
+        /*Descriptor set creation.
         std::vector<VkDescriptorSetLayout> layouts(m_MaxFramesInFlight, m_DescriptorLayout);
 
         VkDescriptorSetAllocateInfo allocInfo{};
@@ -151,7 +143,7 @@ namespace karhu
             descriptorWrites[1].pImageInfo = &imageInfo;
 
             vkUpdateDescriptorSets(m_VkDevice->m_Device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-        }
+        }*/
 
         createCommandBuffers();
         createSyncObjects();
@@ -806,7 +798,4 @@ namespace karhu
 
 
     }
-
-
-
 } // namespace karhu

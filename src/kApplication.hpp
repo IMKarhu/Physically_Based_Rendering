@@ -117,6 +117,7 @@ namespace karhu
 
         VkDescriptorPool m_DescriptorPool;
         std::vector<VkDescriptorSet> m_DescriptorSets;
+        
 
         VkImage m_DepthImage;
         VkDeviceMemory m_DepthImageMemory;

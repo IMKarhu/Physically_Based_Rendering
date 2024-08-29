@@ -10,7 +10,7 @@
 namespace karhu
 {
 	Texture::Texture(std::shared_ptr<struct Vulkan_Device> device)
-		: m_VkDevice(std::move(device))
+		: m_VkDevice(device)
 	{
 	}
 	Texture::~Texture()

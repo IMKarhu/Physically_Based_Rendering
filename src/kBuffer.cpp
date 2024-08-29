@@ -3,7 +3,7 @@
 namespace karhu
 {
     Buffer::Buffer(std::shared_ptr<struct Vulkan_Device> device)
-        : m_VkDevice(std::move(device))
+        : m_VkDevice(device)
     {
     }
 
