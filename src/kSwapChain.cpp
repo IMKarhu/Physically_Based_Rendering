@@ -1,5 +1,5 @@
 #include "kSwapChain.hpp"
-#include "kDevice.hpp"
+
 #include "utils/macros.hpp"
 
 #include <limits>
@@ -7,10 +7,9 @@
 
 namespace karhu
 {
-	Vulkan_SwapChain::Vulkan_SwapChain(std::shared_ptr<Vulkan_Device>& device, GLFWwindow* window)
+	Vulkan_SwapChain::Vulkan_SwapChain(Vulkan_Device& device)
+		:m_VkDevice(device)
 	{
-		m_VkDevice = device;
-		m_Window = window;
 		printf("constructor called!\n");
 	}
 
@@ -47,7 +46,7 @@ namespace karhu
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D Vulkan_SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+	VkExtent2D Vulkan_SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window)
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
@@ -56,7 +55,7 @@ namespace karhu
 		else
 		{
 			int width, height;
-			glfwGetFramebufferSize(m_Window, &width, &height);
+			glfwGetFramebufferSize(window, &width, &height);
 
 			VkExtent2D actualExtent = {
 				static_cast<uint32_t>(width),
@@ -72,13 +71,13 @@ namespace karhu
 
 	
 
-	void Vulkan_SwapChain::createSwapChain(VkSurfaceKHR surface)
+	void Vulkan_SwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window)
 	{
-		SwapChainSupportDetails swapchainSupport = m_VkDevice->querySwapChainSupport(m_VkDevice->m_PhysicalDevice);;
+		SwapChainSupportDetails swapchainSupport = m_VkDevice.querySwapChainSupport(m_VkDevice.m_PhysicalDevice);
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapchainSurfaceFormat(swapchainSupport.formats);
 		VkPresentModeKHR presentMode = chooseSwapchainPresentMode(swapchainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapchainSupport.capabilities);
+		VkExtent2D extent = chooseSwapExtent(swapchainSupport.capabilities, window);
 
 		uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
 
@@ -87,7 +86,7 @@ namespace karhu
 			imageCount = swapchainSupport.capabilities.maxImageCount;
 		}
 
-		QueueFamilyIndices indices = m_VkDevice->findQueueFamilies(m_VkDevice->m_PhysicalDevice);
+		QueueFamilyIndices indices = m_VkDevice.findQueueFamilies(m_VkDevice.m_PhysicalDevice);
 		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 		VkSwapchainCreateInfoKHR swapChainCI{};
@@ -119,11 +118,11 @@ namespace karhu
 		swapChainCI.clipped = VK_TRUE;
 		swapChainCI.oldSwapchain = VK_NULL_HANDLE;
 
-		VK_CHECK(vkCreateSwapchainKHR(m_VkDevice->m_Device, &swapChainCI, nullptr, &m_SwapChain));
+		VK_CHECK(vkCreateSwapchainKHR(m_VkDevice.m_Device, &swapChainCI, nullptr, &m_SwapChain));
 
-		VK_CHECK(vkGetSwapchainImagesKHR(m_VkDevice->m_Device, m_SwapChain, &imageCount, nullptr));
+		VK_CHECK(vkGetSwapchainImagesKHR(m_VkDevice.m_Device, m_SwapChain, &imageCount, nullptr));
 		m_SwapChainImages.resize(imageCount);
-		VK_CHECK(vkGetSwapchainImagesKHR(m_VkDevice->m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data()));
+		VK_CHECK(vkGetSwapchainImagesKHR(m_VkDevice.m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data()));
 
 		m_SwapChainImageFormat = surfaceFormat.format;
 		m_SwapChainExtent = extent;
@@ -151,7 +150,7 @@ namespace karhu
 			createinfo.subresourceRange.baseArrayLayer = 0;
 			createinfo.subresourceRange.layerCount = 1;
 
-			VK_CHECK(vkCreateImageView(m_VkDevice->m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
+			VK_CHECK(vkCreateImageView(m_VkDevice.m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
 		}
 	}
 

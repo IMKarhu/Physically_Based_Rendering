@@ -9,16 +9,16 @@
 
 namespace karhu
 {
-	Texture::Texture(std::shared_ptr<struct Vulkan_Device> device)
+	Texture::Texture(Vulkan_Device& device)
 		: m_VkDevice(device)
 	{
 	}
 	Texture::~Texture()
 	{
-		vkDestroySampler(m_VkDevice->m_Device, m_Sampler, nullptr);
-		vkDestroyImageView(m_VkDevice->m_Device, m_ImageView, nullptr);
-		vkDestroyImage(m_VkDevice->m_Device, m_TextureImage, nullptr);
-		vkFreeMemory(m_VkDevice->m_Device, m_TextureMemory, nullptr);
+		vkDestroySampler(m_VkDevice.m_Device, m_Sampler, nullptr);
+		vkDestroyImageView(m_VkDevice.m_Device, m_ImageView, nullptr);
+		vkDestroyImage(m_VkDevice.m_Device, m_TextureImage, nullptr);
+		vkFreeMemory(m_VkDevice.m_Device, m_TextureMemory, nullptr);
 	}
 	void Texture::createTexture(VkCommandPool& commandPool)
 	{
@@ -37,9 +37,9 @@ namespace karhu
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 		void* vData;
-		VK_CHECK(vkMapMemory(m_VkDevice->m_Device, stagingBufferMemory, 0, imageSize, 0, &vData));
+		VK_CHECK(vkMapMemory(m_VkDevice.m_Device, stagingBufferMemory, 0, imageSize, 0, &vData));
 		memcpy(vData, pixels, static_cast<size_t>(imageSize));
-		vkUnmapMemory(m_VkDevice->m_Device, stagingBufferMemory);
+		vkUnmapMemory(m_VkDevice.m_Device, stagingBufferMemory);
 
 		stbi_image_free(pixels);
 
@@ -52,8 +52,8 @@ namespace karhu
 		transitionImagelayout(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool);
 
-		vkDestroyBuffer(m_VkDevice->m_Device, stagingBuffer, nullptr);
-		vkFreeMemory(m_VkDevice->m_Device, stagingBufferMemory, nullptr);
+		vkDestroyBuffer(m_VkDevice.m_Device, stagingBuffer, nullptr);
+		vkFreeMemory(m_VkDevice.m_Device, stagingBufferMemory, nullptr);
 
 	}
 
@@ -74,19 +74,19 @@ namespace karhu
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		VK_CHECK(vkCreateImage(m_VkDevice->m_Device, &imageInfo, nullptr, &image));
+		VK_CHECK(vkCreateImage(m_VkDevice.m_Device, &imageInfo, nullptr, &image));
 
 		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(m_VkDevice->m_Device, image, &memRequirements);
+		vkGetImageMemoryRequirements(m_VkDevice.m_Device, image, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = m_VkDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
+		allocInfo.memoryTypeIndex = m_VkDevice.findMemoryType(memRequirements.memoryTypeBits, properties);
 
-		VK_CHECK(vkAllocateMemory(m_VkDevice->m_Device, &allocInfo, nullptr, &imageMemory));
+		VK_CHECK(vkAllocateMemory(m_VkDevice.m_Device, &allocInfo, nullptr, &imageMemory));
 
-		vkBindImageMemory(m_VkDevice->m_Device, image, imageMemory, 0);
+		vkBindImageMemory(m_VkDevice.m_Device, image, imageMemory, 0);
 	}
 
 	void Texture::createTextureImageView()
@@ -108,7 +108,7 @@ namespace karhu
 		viewCI.subresourceRange.layerCount = 1;
 
 		VkImageView imageView;
-		VK_CHECK(vkCreateImageView(m_VkDevice->m_Device, &viewCI, nullptr, &imageView));
+		VK_CHECK(vkCreateImageView(m_VkDevice.m_Device, &viewCI, nullptr, &imageView));
 		return imageView;
 	}
 
@@ -124,7 +124,7 @@ namespace karhu
 		samplerCI.anisotropyEnable = VK_TRUE;
 
 		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(m_VkDevice->m_PhysicalDevice, &properties);
+		vkGetPhysicalDeviceProperties(m_VkDevice.m_PhysicalDevice, &properties);
 
 		samplerCI.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 		samplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -136,7 +136,7 @@ namespace karhu
 		samplerCI.minLod = 0.0f;
 		samplerCI.maxLod = 0.0f;
 
-		VK_CHECK(vkCreateSampler(m_VkDevice->m_Device, &samplerCI, nullptr, &m_Sampler));
+		VK_CHECK(vkCreateSampler(m_VkDevice.m_Device, &samplerCI, nullptr, &m_Sampler));
 
 	}
 
@@ -210,10 +210,19 @@ namespace karhu
 		buffer.endSingleTimeCommands(commandBuffer, commandPool);
 	}
 
-	vkglTFModel::vkglTFModel(std::shared_ptr<struct Vulkan_Device> device)
-		:m_VkDevice(std::move(device))
-		,m_Texture(std::move(device))
+	vkglTFModel::vkglTFModel(Vulkan_Device& device)
+		:m_VkDevice(device)
+		,m_Texture(device)
 	{
+	}
+
+	vkglTFModel::~vkglTFModel()
+	{
+		/*vkDestroyBuffer(m_VkDevice.m_Device, m_IndexBuffer.m_Buffer, nullptr);
+		vkFreeMemory(m_VkDevice.m_Device, m_IndexBuffer.m_BufferMemory, nullptr);
+		vkDestroyBuffer(m_VkDevice.m_Device, m_VertexBuffer.m_Buffer, nullptr);
+		vkFreeMemory(m_VkDevice.m_Device, m_VertexBuffer.m_BufferMemory, nullptr);
+		*/
 	}
 
 	void vkglTFModel::loadNode(const auto& inputNode, const auto& input, vkglTFModel::Node* parent, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer)

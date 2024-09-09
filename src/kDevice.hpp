@@ -25,10 +25,17 @@ namespace karhu
 
 	struct Vulkan_Device
 	{
-		Vulkan_Device() = default;
-		Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface);
+		Vulkan_Device(VkInstance m_Instance, VkSurfaceKHR m_Surface);
+		//Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface);
 		~Vulkan_Device();
 
+		//No copying or moving
+		Vulkan_Device(const Vulkan_Device&) = delete;
+		void operator=(const Vulkan_Device&) = delete;
+		Vulkan_Device(Vulkan_Device&&) = delete;
+		Vulkan_Device& operator=(Vulkan_Device&&) = delete;
+
+		void init();
 		void pickPhysicalDevice();
 		void createLogicalDevice();
 		bool isDeviceSuitable(VkPhysicalDevice device);
@@ -42,6 +49,6 @@ namespace karhu
 		VkQueue m_PresentQueue = VK_NULL_HANDLE;
 
 		VkInstance m_Instance = VK_NULL_HANDLE;
-		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+		VkSurfaceKHR m_Surface;
 	};
 }

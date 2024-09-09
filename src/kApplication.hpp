@@ -1,4 +1,5 @@
 #pragma once
+#include "kTinyRenderer.hpp"
 #include "kWindow.hpp"
 #include "kDevice.hpp"
 #include "kSwapChain.hpp"
@@ -10,41 +11,6 @@
 
 namespace karhu
 {
-    /*struct Vertex
-    {
-        glm::vec3 pos;
-        glm::vec3 color;
-        glm::vec2 texCoords;
-
-        static VkVertexInputBindingDescription getBindingDescription()
-        {
-            VkVertexInputBindingDescription description{};
-            description.binding = 0;
-            description.stride = sizeof(Vertex);
-            description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-            return description;
-        }
-        static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription()
-        {
-            std::array<VkVertexInputAttributeDescription, 3> attributeDescription{};
-            attributeDescription[0].binding = 0;
-            attributeDescription[0].location = 0;
-            attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescription[0].offset = offsetof(Vertex, pos);
-
-            attributeDescription[1].binding = 0;
-            attributeDescription[1].location = 1;
-            attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescription[1].offset = offsetof(Vertex, color);
-
-            attributeDescription[2].binding = 0;
-            attributeDescription[2].location = 2;
-            attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescription[2].offset = offsetof(Vertex, texCoords);
-
-            return attributeDescription;
-        }
-    };*/
     class vkglTFModel;
     class Application
     {
@@ -82,11 +48,11 @@ namespace karhu
         bool hasStencilComponent(VkFormat format);
         void loadGltfFile(std::string fileName);
     private:
-        std::unique_ptr<kWindow> m_Window;
-        std::shared_ptr<Vulkan_Device> m_VkDevice;
+        //std::unique_ptr<kWindow> m_Window;
+       /* std::shared_ptr<Vulkan_Device> m_VkDevice;
         std::shared_ptr<Vulkan_SwapChain> m_VkSwapChain;
-        std::shared_ptr<kDescriptors> m_Descriptor;
-        std::shared_ptr<vkglTFModel> m_Model;
+        std::shared_ptr<kDescriptors> m_Descriptor;*/
+        std::vector<vkglTFModel *> m_Models;
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
         VkSurfaceKHR m_Surface;
@@ -122,5 +88,6 @@ namespace karhu
         VkImage m_DepthImage;
         VkDeviceMemory m_DepthImageMemory;
         VkImageView m_DepthImageView;
+        engine::TinyRenderer* m_Renderer;
     };
 } // namespace karhu

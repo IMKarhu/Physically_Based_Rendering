@@ -2,7 +2,7 @@
 
 namespace karhu
 {
-    Buffer::Buffer(std::shared_ptr<struct Vulkan_Device> device)
+    Buffer::Buffer(Vulkan_Device& device)
         : m_VkDevice(device)
     {
     }
@@ -15,20 +15,20 @@ namespace karhu
         createinfo.usage = usage;
         createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VK_CHECK(vkCreateBuffer(m_VkDevice->m_Device, &createinfo, nullptr, &buffer));
+        VK_CHECK(vkCreateBuffer(m_VkDevice.m_Device, &createinfo, nullptr, &buffer));
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_VkDevice->m_Device, buffer, &memRequirements);
+        vkGetBufferMemoryRequirements(m_VkDevice.m_Device, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocinfo{};
         allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocinfo.allocationSize = memRequirements.size;
         /*VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT*/
-        allocinfo.memoryTypeIndex = m_VkDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
+        allocinfo.memoryTypeIndex = m_VkDevice.findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        VK_CHECK(vkAllocateMemory(m_VkDevice->m_Device, &allocinfo, nullptr, &bufferMemory));
+        VK_CHECK(vkAllocateMemory(m_VkDevice.m_Device, &allocinfo, nullptr, &bufferMemory));
         //  printf("Hello\n");
-        VK_CHECK(vkBindBufferMemory(m_VkDevice->m_Device, buffer, bufferMemory, 0));
+        VK_CHECK(vkBindBufferMemory(m_VkDevice.m_Device, buffer, bufferMemory, 0));
 	}
 
     void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandPool& commandPool)
@@ -52,7 +52,7 @@ namespace karhu
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice->m_Device, &allocInfo, &commandBuffer));
+        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice.m_Device, &allocInfo, &commandBuffer));
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -71,9 +71,9 @@ namespace karhu
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        VK_CHECK(vkQueueSubmit(m_VkDevice->m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-        VK_CHECK(vkQueueWaitIdle(m_VkDevice->m_GraphicsQueue));
-        vkFreeCommandBuffers(m_VkDevice->m_Device, commandPool, 1, &commandBuffer);
+        VK_CHECK(vkQueueSubmit(m_VkDevice.m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
+        VK_CHECK(vkQueueWaitIdle(m_VkDevice.m_GraphicsQueue));
+        vkFreeCommandBuffers(m_VkDevice.m_Device, commandPool, 1, &commandBuffer);
     }
 }
 

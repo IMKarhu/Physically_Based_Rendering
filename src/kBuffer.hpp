@@ -10,7 +10,7 @@ namespace karhu
 	class Buffer
 	{
     public:
-        Buffer(std::shared_ptr<struct Vulkan_Device> device);
+        Buffer(Vulkan_Device& device);
 
 		template<typename T>
         void createVkBuffer(const std::vector<T>& data, VkBuffer& buffer, VkDeviceMemory& memory, VkBufferUsageFlags usageflags, VkCommandPool& commandPool);
@@ -20,7 +20,7 @@ namespace karhu
         VkCommandBuffer beginSingleTimeCommands(VkCommandPool& commandPool);
         void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool& commandPool);
 	private:
-        std::shared_ptr<struct Vulkan_Device> m_VkDevice;
+        Vulkan_Device& m_VkDevice;
 	};
 	
     template<typename T>
@@ -34,17 +34,17 @@ namespace karhu
             stagingBuffer, stagingBufferMemory);
 
         void* vData;
-        VK_CHECK(vkMapMemory(m_VkDevice->m_Device, stagingBufferMemory, 0, bufferSize, 0, &vData));
+        VK_CHECK(vkMapMemory(m_VkDevice.m_Device, stagingBufferMemory, 0, bufferSize, 0, &vData));
         memcpy(vData, data.data(), (size_t)bufferSize);
-        vkUnmapMemory(m_VkDevice->m_Device, stagingBufferMemory);
+        vkUnmapMemory(m_VkDevice.m_Device, stagingBufferMemory);
 
         createBuffers(bufferSize, usageflags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             buffer, memory);
 
         copyBuffer(stagingBuffer, buffer, bufferSize, commandPool);
 
-        vkDestroyBuffer(m_VkDevice->m_Device, stagingBuffer, nullptr);
-        vkFreeMemory(m_VkDevice->m_Device, stagingBufferMemory, nullptr);
+        vkDestroyBuffer(m_VkDevice.m_Device, stagingBuffer, nullptr);
+        vkFreeMemory(m_VkDevice.m_Device, stagingBufferMemory, nullptr);
     }
 
 } //namespace karhu

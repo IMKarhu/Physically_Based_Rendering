@@ -25,12 +25,14 @@ namespace karhu
 		void waitEvents();
 
 		const VkInstance& getInstance() { return m_Instance; }
+		const VkSurfaceKHR& getSurface() { return m_Surface; }
 		GLFWwindow* getWindow() { return m_Window; }
 		const bool& getResize() { return m_Resized; }
 		void setResize(const bool& resized);
 	private:
 		void initWindow();
 		void createInstance();
+		void createSurface();
 		static void frameBufferResizeCallback(GLFWwindow* window, int width, int height);
 	private:
 		GLFWwindow* m_Window = nullptr;
@@ -40,5 +42,6 @@ namespace karhu
 		bool m_Resized = false;
 
 		VkInstance m_Instance;
+		VkSurfaceKHR m_Surface;
 	};
 } // namespace karhu

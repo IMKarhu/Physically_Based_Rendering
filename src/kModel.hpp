@@ -19,8 +19,14 @@ namespace karhu
 	class Texture
 	{
 	public:
-		explicit Texture(std::shared_ptr<struct Vulkan_Device> device);
+		explicit Texture(Vulkan_Device& device);
 		~Texture();
+
+		Texture(const Texture&) = delete;
+		Texture(Texture&& other) = delete;
+
+		Texture& operator=(Texture&) = delete;
+		Texture& operator=(Texture&&) = delete;
 		//void loadFile(std::string fileName, VkFormat format);
 		void createTexture(VkCommandPool& commandPool);
 		void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
@@ -34,12 +40,12 @@ namespace karhu
 		VkImageView imageView() const { return m_ImageView; }
 		VkSampler textureSampler() const { return m_Sampler; }
 	private:
-		std::shared_ptr<struct Vulkan_Device> m_VkDevice;
+		Vulkan_Device& m_VkDevice;
 		Buffer buffer{ m_VkDevice };
-		VkImage m_TextureImage;
-		VkDeviceMemory m_TextureMemory;
-		VkImageView m_ImageView;
-		VkSampler m_Sampler;
+		VkImage m_TextureImage = VK_NULL_HANDLE;
+		VkDeviceMemory m_TextureMemory = VK_NULL_HANDLE;
+		VkImageView m_ImageView = VK_NULL_HANDLE;
+		VkSampler m_Sampler = VK_NULL_HANDLE;
 		VkDescriptorSet m_DescriptorSet;
 		uint32_t m_Width;
 		uint32_t m_Height;
@@ -97,8 +103,8 @@ namespace karhu
 	class vkglTFModel
 	{
 	public:
-		explicit vkglTFModel(std::shared_ptr<struct Vulkan_Device> device);
-		
+		explicit vkglTFModel(Vulkan_Device& device);
+		~vkglTFModel();
 
 		struct
 		{
@@ -148,7 +154,7 @@ namespace karhu
 		void loadgltfFile(std::string fileName, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer);
 		
 	private:
-		std::shared_ptr<struct Vulkan_Device> m_VkDevice;
+		Vulkan_Device& m_VkDevice;
 		
 	};
 } // namespace karhu

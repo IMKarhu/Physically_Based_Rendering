@@ -5,18 +5,22 @@
 
 namespace karhu
 {
-	Vulkan_Device::Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface)
+	Vulkan_Device::Vulkan_Device(VkInstance instance, VkSurfaceKHR surface)
+		:m_Instance(instance)
+		,m_Surface(surface)
 	{
-		m_Instance = instance;
-		m_Surface = surface;
-		pickPhysicalDevice();
-		createLogicalDevice();
 	}
 
 	Vulkan_Device::~Vulkan_Device()
 	{
 		printf("device destroyed\n");
 		vkDestroyDevice(m_Device, nullptr);
+	}
+
+	void Vulkan_Device::init()
+	{
+		pickPhysicalDevice();
+		createLogicalDevice();
 	}
 
 	void Vulkan_Device::pickPhysicalDevice()

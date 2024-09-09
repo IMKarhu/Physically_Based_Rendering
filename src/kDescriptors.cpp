@@ -4,14 +4,14 @@
 
 namespace karhu
 {
-    kDescriptors::kDescriptors(std::shared_ptr<Vulkan_Device> device)
+    kDescriptors::kDescriptors(Vulkan_Device& device)
         :m_VkDevice(device)
     {
-        m_Bindings.reserve(2);
     }
 
     kDescriptors::~kDescriptors()
     {
+        vkDestroyDescriptorPool(m_VkDevice.m_Device, m_DescriptorPool, nullptr);
     }
 
     VkDescriptorSetLayout kDescriptors::createDescriptorSetLayout(VkDescriptorSetLayout layout)
@@ -26,7 +26,7 @@ namespace karhu
         layoutCI.bindingCount = static_cast<uint32_t>(bindings.size());
         layoutCI.pBindings = bindings.data();
 
-        VK_CHECK(vkCreateDescriptorSetLayout(m_VkDevice->m_Device, &layoutCI, nullptr, &layout));
+        VK_CHECK(vkCreateDescriptorSetLayout(m_VkDevice.m_Device, &layoutCI, nullptr, &layout));
         return layout;
     }
     void kDescriptors::addBind(uint32_t binding, VkDescriptorType type, uint32_t descriptorcount, VkShaderStageFlagBits stageflags)
@@ -55,7 +55,7 @@ namespace karhu
         poolcreateInfo.pPoolSizes = poolSizes.data();
         poolcreateInfo.maxSets = static_cast<uint32_t>(maxFramesInFlight);
 
-        VK_CHECK(vkCreateDescriptorPool(m_VkDevice->m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
+        VK_CHECK(vkCreateDescriptorPool(m_VkDevice.m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
     }
     
     std::vector<VkDescriptorSet> kDescriptors::createDescriptorSets(const int maxFramesInFlight, VkDescriptorSetLayout layout, const std::vector<VkBuffer>& uniformBuffers, const Texture& texture)
@@ -71,7 +71,7 @@ namespace karhu
         allocInfo.pSetLayouts = layouts.data();
 
         descriptorSets.resize(maxFramesInFlight);
-        VK_CHECK(vkAllocateDescriptorSets(m_VkDevice->m_Device, &allocInfo, descriptorSets.data()));
+        VK_CHECK(vkAllocateDescriptorSets(m_VkDevice.m_Device, &allocInfo, descriptorSets.data()));
 
         for (size_t i = 0; i < maxFramesInFlight; i++)
         {
@@ -102,7 +102,7 @@ namespace karhu
             descriptorWrites[1].descriptorCount = 1;
             descriptorWrites[1].pImageInfo = &imageInfo;
 
-            vkUpdateDescriptorSets(m_VkDevice->m_Device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            vkUpdateDescriptorSets(m_VkDevice.m_Device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
         return descriptorSets;
     }
