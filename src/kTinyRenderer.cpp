@@ -6,6 +6,7 @@
 #include "types.hpp"
 #include <chrono>
 
+
 namespace engine
 {
 	TinyRenderer::TinyRenderer()
@@ -37,9 +38,6 @@ namespace engine
 	{
 		setupDebugMessenger();
 		m_MaxFramesInFlight = maxFramesInFlight;
-		//createSurface();
-		//m_Device.m_Instance = m_Window->getInstance();
-		//m_Device.m_Surface = m_Surface;
 		m_Device.init();
 		
 		m_SwapChain.createSwapChain(m_Window->getSurface(), m_Window->getWindow());
@@ -51,17 +49,15 @@ namespace engine
 
 		m_DescriptorLayout = m_Descriptors.createDescriptorSetLayout(m_DescriptorLayout);
 
-		
 		createGraphicsPipeline();
 		createCommandPool();
 		createDepthResources();
 		createFrameBuffers();
 
-		/*create texture
-		  create imageview
-		  create texture sampler.
-		 */
-		 models[0]->m_Texture.createTexture(m_CommandPool);
+		m_Camera = new karhu::Camera(m_Window->getWindow(), m_SwapChain.m_SwapChainExtent.width,
+			m_SwapChain.m_SwapChainExtent.height);
+		/*Depth stuff*/
+		 models[0]->m_Texture.createTexture("../textures/statue.jpg", m_CommandPool);
 		 models[0]->m_Texture.createTextureImageView();
 		 models[0]->m_Texture.createSampler();
 
@@ -107,7 +103,7 @@ namespace engine
 		vkResetCommandBuffer(m_CommandBuffers[currentFrame], 0);
 		recordCommandBuffer(m_CommandBuffers[currentFrame], imageIndex, model);
 
-		updateUBOs(imageIndex);
+		updateUBOs(imageIndex, currentFrame);
 
 		VkSubmitInfo submitinfo{};
 		submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -227,9 +223,6 @@ namespace engine
 		pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorLayout;
 
 		m_Pipeline.createGraphicsPipeline(pipelineStruct);
-	}
-	void TinyRenderer::createSurface()
-	{
 	}
 	void TinyRenderer::createCommandPool()
 	{
@@ -383,17 +376,21 @@ namespace engine
 		createDepthResources();
 		createFrameBuffers();
 	}
-	void TinyRenderer::updateUBOs(uint32_t index)
+	void TinyRenderer::updateUBOs(uint32_t index, uint32_t currentFrame)
 	{
+		
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
+		m_Camera->update(time);
 		karhu::UniformBufferObject ubo{};
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), m_SwapChain.m_SwapChainExtent.width / (float)m_SwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+		//ubo.model = m_Camera->modelMat();
+		//ubo.view = m_Camera->viewMat();
+		//ubo.proj = m_Camera->perspectiveMat();
 		ubo.proj[1][1] *= -1;
 
 		memcpy(m_UniformBuffersMapped[index], &ubo, sizeof(ubo));

@@ -8,6 +8,7 @@
 #include "kGraphicsPipeline.hpp"
 #include "kDescriptors.hpp"
 #include "kModel.hpp"
+#include "kCamera.hpp"
 
 
 namespace engine
@@ -32,7 +33,6 @@ namespace engine
 		karhu::Vulkan_Device& getDeviceStruct() { return m_Device; }
 	private:
 		void createGraphicsPipeline();
-		void createSurface();
 		void createCommandPool();
 		void createCommandBuffers(uint32_t maxFramesInFlight);
 		void createDepthResources();
@@ -43,7 +43,7 @@ namespace engine
 		void createSyncObjects(uint32_t maxFramesinFlight);
 		void cleanUpSwapChain();
 		void reCreateSwapChain();
-		void updateUBOs(uint32_t index);
+		void updateUBOs(uint32_t index, uint32_t currentFrame);
 		void setupDebugMessenger();
 		VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
 			const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
@@ -80,5 +80,6 @@ namespace engine
 		karhu::Vulkan_SwapChain m_SwapChain{ m_Device };
 		karhu::GraphicsPipeline m_Pipeline{ m_Device };
 		karhu::kDescriptors m_Descriptors{ m_Device };
+		karhu::Camera* m_Camera;
 	};
 } //engine
