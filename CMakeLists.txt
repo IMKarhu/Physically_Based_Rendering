@@ -16,12 +16,13 @@ add_subdirectory(ext/glm)
 add_subdirectory(ext/glfw-3.3.8)
 add_subdirectory(ext/VulkanMemoryAllocator)
 add_subdirectory(ext/tinygltf)
+add_subdirectory(ext/assimp-5.4.3)
 
 
 file(GLOB_RECURSE CPP_SOURCE_FILES "src/*.h" "src/*.hpp" "src/*.cpp")
 add_executable(PBR ${CPP_SOURCE_FILES})
 
-target_link_libraries(PBR PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator PUBLIC tinygltf Vulkan::Vulkan)
+target_link_libraries(PBR PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator PUBLIC tinygltf assimp Vulkan::Vulkan)
 target_include_directories(PBR PUBLIC
                             "${PROJECT_SOURCE_DIR}/ext/tinygltf")
 
