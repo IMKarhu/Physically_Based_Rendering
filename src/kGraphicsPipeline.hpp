@@ -51,6 +51,12 @@ namespace karhu {
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR
 		};
+		/* depth stuff. */
+		VkImage m_DepthImage;
+		VkDeviceMemory m_DepthImageMemory;
+		VkImageView m_DepthImageView;
+
+		/* vulkan device handle.*/
 		Vulkan_Device& m_Device;
 	};
 }
