@@ -2,6 +2,7 @@
 #include "kWindow.hpp"
 #include "kDevice.hpp"
 #include "kSwapChain.hpp"
+#include "kGraphicsPipeline.hpp"
 #include "kDescriptors.hpp"
 
 #include <memory>
@@ -18,8 +19,6 @@ namespace karhu
         Application();
         ~Application();
         void run();
-        void createGraphicsPipeline();
-        void createRenderPass();
         void createFrameBuffers();
         void createCommandPool();
         void createCommandBuffers();
@@ -39,29 +38,19 @@ namespace karhu
             const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
         void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
-        void createSurface();
-        VkSwapchainCreateInfoKHR fillSwapchainCI();
-        static std::vector<char> readFile(const std::string& fileName);
-        VkShaderModule createShaderModule(const std::vector<char>& code);
+        void createGraphicsPipeline();
         void cleanUpSwapChain();
         void reCreateSwapChain();
     private:
         std::unique_ptr<kWindow> m_Window = std::make_unique<kWindow>("Vulkan", 1080, 720);
         Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
         Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
+        kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
         std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
 
         VkDebugUtilsMessengerEXT m_DebugMessenger;
-        VkSurfaceKHR m_Surface;
-        VkRenderPass m_RenderPass;
         VkDescriptorSetLayout m_DescriptorLayout;
-        VkPipelineLayout m_PipelineLayout;
-        VkPipeline m_GraphicsPipeline;
-        std::vector<VkDynamicState> m_DynamicStates = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
-        };
         std::vector<VkFramebuffer> m_FrameBuffers;
         VkCommandPool m_CommandPool;
         std::vector<VkCommandBuffer> m_CommandBuffers;
