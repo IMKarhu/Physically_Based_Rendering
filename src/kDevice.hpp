@@ -1,7 +1,7 @@
 #pragma once
 #include "utils/vkUtils.hpp"
 #include <optional>
-#include <experimental/optional>
+//#include <experimental/optional>
 #include <set>
 
 namespace karhu
@@ -21,10 +21,16 @@ namespace karhu
 
 	struct Vulkan_Device
 	{
-		Vulkan_Device() = default;
+		//Vulkan_Device() = default;
 		Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface);
 		~Vulkan_Device();
 
+		Vulkan_Device(const Vulkan_Device&) = delete;
+		void operator=(const Vulkan_Device&) = delete;
+		Vulkan_Device(Vulkan_Device&&) = delete;
+		Vulkan_Device& operator=(Vulkan_Device&&) = delete;
+
+		void init();
 		void pickPhysicalDevice();
 		void createLogicalDevice();
 		bool isDeviceSuitable(VkPhysicalDevice device);
@@ -34,10 +40,10 @@ namespace karhu
 
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 		VkDevice m_Device = VK_NULL_HANDLE;
-		VkQueue m_GraphicsQueue;
-		VkQueue m_PresentQueue;
+		VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+		VkQueue m_PresentQueue = VK_NULL_HANDLE;
 
 		VkInstance m_Instance = VK_NULL_HANDLE;
-		VkSurfaceKHR m_Surface;
+		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 	};
 }

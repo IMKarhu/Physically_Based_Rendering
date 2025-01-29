@@ -1,20 +1,26 @@
 #pragma once
 #include "utils/vkUtils.hpp"
+#include "kDevice.hpp"
 #include <vector>
 
 namespace karhu
 {
 	struct Vulkan_SwapChain
 	{
-		Vulkan_SwapChain() = default;
-		Vulkan_SwapChain(VkDevice device, GLFWwindow* window);
+		//Vulkan_SwapChain() = default;
+		Vulkan_SwapChain(Vulkan_Device& device);
 		~Vulkan_SwapChain();
+
+		Vulkan_SwapChain(const Vulkan_SwapChain&) = delete;
+		void operator=(const Vulkan_SwapChain&) = delete;
+		Vulkan_SwapChain(Vulkan_SwapChain&&) = delete;
+		Vulkan_SwapChain& operator=(Vulkan_SwapChain&&) = delete;
 
 		VkSurfaceFormatKHR chooseSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);
 		VkPresentModeKHR chooseSwapchainPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
 
-		void createSwapChain(SwapChainSupportDetails swapChainSupport, VkSurfaceKHR surface, VkSwapchainCreateInfoKHR createInfo);
+		void createSwapChain(VkSurfaceKHR surface, GLFWwindow* window);
 		void createImageViews();
 
 		VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
@@ -25,6 +31,6 @@ namespace karhu
 		std::vector<VkImageView> m_SwapChainImageViews;
 	private:
 		GLFWwindow* m_Window;
-		VkDevice m_Device;
+		Vulkan_Device& m_Device;
 	};
 }

@@ -7,6 +7,7 @@ namespace karhu
 	{
 		initWindow();
 		createInstance();
+		createSurface();
 	}
 
 	kWindow::~kWindow()
@@ -94,6 +95,10 @@ namespace karhu
 		{
 			std::cout << "Instance succesfully created!\n" << std::endl;
 		}
+	}
+	void kWindow::createSurface()
+	{
+		glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface);
 	}
 	void kWindow::frameBufferResizeCallback(GLFWwindow* window, int width, int height)
 	{

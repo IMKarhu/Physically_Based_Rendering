@@ -6,10 +6,9 @@
 
 namespace karhu
 {
-	Vulkan_SwapChain::Vulkan_SwapChain(VkDevice device, GLFWwindow* window)
+	Vulkan_SwapChain::Vulkan_SwapChain(Vulkan_Device& device)
+		:m_Device(device)
 	{
-		m_Device = device;
-		m_Window = window;
 		printf("constructor called!\n");
 	}
 
@@ -46,7 +45,7 @@ namespace karhu
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D Vulkan_SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+	VkExtent2D Vulkan_SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window)
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
@@ -55,7 +54,7 @@ namespace karhu
 		else
 		{
 			int width, height;
-			glfwGetFramebufferSize(m_Window, &width, &height);
+			glfwGetFramebufferSize(window, &width, &height);
 
 			VkExtent2D actualExtent = {
 				static_cast<uint32_t>(width),
@@ -69,13 +68,13 @@ namespace karhu
 		}
 	}
 
-	void Vulkan_SwapChain::createSwapChain(SwapChainSupportDetails swapChainSupport, VkSurfaceKHR surface, VkSwapchainCreateInfoKHR createInfo)
+	void Vulkan_SwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window)
 	{
-		SwapChainSupportDetails swapchainSupport = swapChainSupport;
+		SwapChainSupportDetails swapchainSupport = m_Device.querySwapChainSupport(m_Device.m_PhysicalDevice);
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapchainSurfaceFormat(swapchainSupport.formats);
 		VkPresentModeKHR presentMode = chooseSwapchainPresentMode(swapchainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapchainSupport.capabilities);
+		VkExtent2D extent = chooseSwapExtent(swapchainSupport.capabilities, window);
 
 		uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
 
@@ -93,20 +92,33 @@ namespace karhu
 		createinfo.imageExtent = extent;
 		createinfo.imageArrayLayers = 1;
 		createinfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-		createinfo.imageSharingMode = createInfo.imageSharingMode;
-		createinfo.queueFamilyIndexCount = createInfo.queueFamilyIndexCount;
-		createinfo.pQueueFamilyIndices = createInfo.pQueueFamilyIndices;
+
+        QueueFamilyIndices indices = m_Device.findQueueFamilies(m_Device.m_PhysicalDevice);
+        uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+        if (indices.graphicsFamily != indices.presentFamily)
+        {
+            createinfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            createinfo.queueFamilyIndexCount = 2;
+            createinfo.pQueueFamilyIndices = queueFamilyIndices;
+        }
+        else
+        {
+            createinfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            createinfo.queueFamilyIndexCount = 0;
+            createinfo.pQueueFamilyIndices = nullptr;
+        }
+
 		createinfo.preTransform = swapchainSupport.capabilities.currentTransform;
 		createinfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		createinfo.presentMode = presentMode;
 		createinfo.clipped = VK_TRUE;
 		createinfo.oldSwapchain = VK_NULL_HANDLE;
 
-		VK_CHECK(vkCreateSwapchainKHR(m_Device, &createinfo, nullptr, &m_SwapChain));
+		VK_CHECK(vkCreateSwapchainKHR(m_Device.m_Device, &createinfo, nullptr, &m_SwapChain));
 
-		VK_CHECK(vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, nullptr));
+		VK_CHECK(vkGetSwapchainImagesKHR(m_Device.m_Device, m_SwapChain, &imageCount, nullptr));
 		m_SwapChainImages.resize(imageCount);
-		VK_CHECK(vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data()));
+		VK_CHECK(vkGetSwapchainImagesKHR(m_Device.m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data()));
 
 		m_SwapChainImageFormat = surfaceFormat.format;
 		m_SwapChainExtent = extent;
@@ -134,7 +146,7 @@ namespace karhu
 			createinfo.subresourceRange.baseArrayLayer = 0;
 			createinfo.subresourceRange.layerCount = 1;
 
-			VK_CHECK(vkCreateImageView(m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
+			VK_CHECK(vkCreateImageView(m_Device.m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
 		}
 	}
 

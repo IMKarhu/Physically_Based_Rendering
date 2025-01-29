@@ -46,9 +46,9 @@ namespace karhu
         void cleanUpSwapChain();
         void reCreateSwapChain();
     private:
-        std::unique_ptr<kWindow> m_Window;
-        std::shared_ptr<Vulkan_Device> m_VkDevice;
-        std::shared_ptr<Vulkan_SwapChain> m_VkSwapChain;
+        std::unique_ptr<kWindow> m_Window = std::make_unique<kWindow>("Vulkan", 1080, 720);
+        Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
+        Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
         std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
 
