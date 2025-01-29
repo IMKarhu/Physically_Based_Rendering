@@ -19,10 +19,10 @@ namespace karhu
         }
         vkDestroyDescriptorPool(m_VkDevice.m_Device, m_DescriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(m_VkDevice.m_Device, m_DescriptorLayout, nullptr);
-        vkDestroyBuffer(m_VkDevice.m_Device, m_IndexBuffer, nullptr);
+        /*vkDestroyBuffer(m_VkDevice.m_Device, m_IndexBuffer, nullptr);
         vkFreeMemory(m_VkDevice.m_Device, m_IndexBufferMemory, nullptr);
         vkDestroyBuffer(m_VkDevice.m_Device, m_VertexBuffer, nullptr);
-        vkFreeMemory(m_VkDevice.m_Device, m_VertexBufferMemory, nullptr);
+        vkFreeMemory(m_VkDevice.m_Device, m_VertexBufferMemory, nullptr);*/
         for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
             vkDestroySemaphore(m_VkDevice.m_Device, m_Semaphores.availableSemaphores[i], nullptr);
@@ -63,8 +63,7 @@ namespace karhu
         createGraphicsPipeline();
         createFrameBuffers();
         createCommandPool();
-        createVertexBuffer();
-        createIndexBuffer();
+        m_Model = std::make_unique<kModel>(m_VkDevice, m_Vertices, m_Indices, m_CommandPool);
         createUniformBuffers();
 
         /*Descriptor pool creation.*/
@@ -209,11 +208,12 @@ namespace karhu
 
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vBuffers[] = { m_VertexBuffer };
+        /*VkBuffer vBuffers[] = {m_VertexBuffer};
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);*/
+        m_Model->bind(commandBuffer);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipelineLayout(), 0, 1, &m_DescriptorSets[index], 0, nullptr);
 
@@ -221,7 +221,8 @@ namespace karhu
         //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
         //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+        //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+        m_Model->draw(commandBuffer, m_Indices);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -253,53 +254,6 @@ namespace karhu
 
     }
 
-    void Application::createVertexBuffer()
-    {
-        VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        VK_CHECK(vkMapMemory(m_VkDevice.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
-        memcpy(data, m_Vertices.data(), (size_t)bufferSize);
-        vkUnmapMemory(m_VkDevice.m_Device, stagingBufferMemory);
-
-        createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            m_VertexBuffer, m_VertexBufferMemory);
-
-        copyBuffer(stagingBuffer, m_VertexBuffer, bufferSize);
-
-        vkDestroyBuffer(m_VkDevice.m_Device, stagingBuffer, nullptr);
-        vkFreeMemory(m_VkDevice.m_Device, stagingBufferMemory, nullptr);
-
-    }
-
-    void Application::createIndexBuffer()
-    {
-        VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        VK_CHECK(vkMapMemory(m_VkDevice.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
-        memcpy(data, m_Indices.data(), (size_t)bufferSize);
-        vkUnmapMemory(m_VkDevice.m_Device, stagingBufferMemory);
-
-        createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            m_IndexBuffer, m_IndexBufferMemory);
-
-        copyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
-
-        vkDestroyBuffer(m_VkDevice.m_Device, stagingBuffer, nullptr);
-        vkFreeMemory(m_VkDevice.m_Device, stagingBufferMemory, nullptr);
-    }
-
     void Application::createUniformBuffers()
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -310,69 +264,10 @@ namespace karhu
 
         for (size_t i = 0; i < m_MaxFramesInFlight; i++)
         {
-            createBuffers(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            m_VkDevice.createBuffers(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 m_UniformBuffers[i], m_UniformBuffersMemory[i]);
             vkMapMemory(m_VkDevice.m_Device, m_UniformBuffersMemory[i], 0, bufferSize, 0, &m_UniformBuffersMapped[i]);
         }
-    }
-
-    void Application::createBuffers(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
-    {
-        VkBufferCreateInfo createinfo{};
-        createinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        createinfo.size = size; //byte size of one vertices multiplied by size of vector
-        createinfo.usage = usage;
-        createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        VK_CHECK(vkCreateBuffer(m_VkDevice.m_Device, &createinfo, nullptr, &buffer));
-
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_VkDevice.m_Device, buffer, &memRequirements);
-
-        VkMemoryAllocateInfo allocinfo{};
-        allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocinfo.allocationSize = memRequirements.size;
-        /*VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT*/
-        allocinfo.memoryTypeIndex = m_VkDevice.findMemoryType(memRequirements.memoryTypeBits, properties);
-
-        VK_CHECK(vkAllocateMemory(m_VkDevice.m_Device, &allocinfo, nullptr, &bufferMemory));
-        //  printf("Hello\n");
-        VK_CHECK(vkBindBufferMemory(m_VkDevice.m_Device, buffer, bufferMemory, 0));
-    }
-
-    void Application::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-    {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = m_CommandPool;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer;
-        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice.m_Device, &allocInfo, &commandBuffer));
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;
-        copyRegion.dstOffset = 0;
-        copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-        vkEndCommandBuffer(commandBuffer);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        VK_CHECK(vkQueueSubmit(m_VkDevice.m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-        VK_CHECK(vkQueueWaitIdle(m_VkDevice.m_GraphicsQueue));
-        vkFreeCommandBuffers(m_VkDevice.m_Device, m_CommandPool, 1, &commandBuffer);
     }
 
     void Application::updateUBOs(uint32_t currentImage)

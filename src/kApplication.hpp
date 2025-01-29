@@ -3,6 +3,7 @@
 #include "kDevice.hpp"
 #include "kSwapChain.hpp"
 #include "kGraphicsPipeline.hpp"
+#include "kModel.hpp"
 #include "kDescriptors.hpp"
 
 #include <memory>
@@ -24,11 +25,7 @@ namespace karhu
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
         void createSyncObjects();
-        void createVertexBuffer();
-        void createIndexBuffer();
         void createUniformBuffers();
-        void createBuffers(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void updateUBOs(uint32_t currentImage);
         void update(float deltaTime);
         void drawFrame();
@@ -46,6 +43,7 @@ namespace karhu
         Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
         Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
         kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
+        std::unique_ptr<kModel> m_Model;
         std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
 
@@ -73,10 +71,6 @@ namespace karhu
         const std::vector<uint16_t> m_Indices = {
             0,1,2,2,3,0
         };
-        VkBuffer m_VertexBuffer;
-        VkDeviceMemory m_VertexBufferMemory;
-        VkBuffer m_IndexBuffer;
-        VkDeviceMemory m_IndexBufferMemory;
 
         std::vector<VkBuffer> m_UniformBuffers;
         std::vector<VkDeviceMemory> m_UniformBuffersMemory;

@@ -121,24 +121,25 @@ namespace karhu
 
         VK_CHECK(vkCreatePipelineLayout(m_Device.m_Device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_PipelineLayout));
 
-        pipelineStruct.pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineStruct.pipelineInfo.stageCount = 2;
-        pipelineStruct.pipelineInfo.pStages = stages;
-        pipelineStruct.pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineStruct.pipelineInfo.pInputAssemblyState = &pipelineStruct.inputAssembly;
-        pipelineStruct.pipelineInfo.pViewportState = &pipelineStruct.viewportState;
-        pipelineStruct.pipelineInfo.pRasterizationState = &pipelineStruct.rasterizer;
-        pipelineStruct.pipelineInfo.pMultisampleState = &pipelineStruct.multisampling;
-        pipelineStruct.pipelineInfo.pDepthStencilState = nullptr; // Optional
-        pipelineStruct.pipelineInfo.pColorBlendState = &pipelineStruct.colorBlending;
-        pipelineStruct.pipelineInfo.pDynamicState = &pipelineStruct.dynamiccreateinfo;
-        pipelineStruct.pipelineInfo.layout = m_PipelineLayout;
-        pipelineStruct.pipelineInfo.renderPass = m_RenderPass;
-        pipelineStruct.pipelineInfo.subpass = 0;
-        pipelineStruct.pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-        pipelineStruct.pipelineInfo.basePipelineIndex = -1; // Optional
+        VkGraphicsPipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.stageCount = 2;
+        pipelineInfo.pStages = stages;
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &pipelineStruct.inputAssembly;
+        pipelineInfo.pViewportState = &pipelineStruct.viewportState;
+        pipelineInfo.pRasterizationState = &pipelineStruct.rasterizer;
+        pipelineInfo.pMultisampleState = &pipelineStruct.multisampling;
+        pipelineInfo.pDepthStencilState = nullptr; // Optional
+        pipelineInfo.pColorBlendState = &pipelineStruct.colorBlending;
+        pipelineInfo.pDynamicState = &pipelineStruct.dynamiccreateinfo;
+        pipelineInfo.layout = m_PipelineLayout;
+        pipelineInfo.renderPass = m_RenderPass;
+        pipelineInfo.subpass = 0;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+        pipelineInfo.basePipelineIndex = -1; // Optional
 
-        VK_CHECK(vkCreateGraphicsPipelines(m_Device.m_Device, VK_NULL_HANDLE, 1, &pipelineStruct.pipelineInfo, nullptr, &m_GraphicsPipeline));
+        VK_CHECK(vkCreateGraphicsPipelines(m_Device.m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline));
 
         vkDestroyShaderModule(m_Device.m_Device, vertexShaderModule, nullptr);
         vkDestroyShaderModule(m_Device.m_Device, fragmentShaderModule, nullptr);
