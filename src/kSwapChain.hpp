@@ -21,6 +21,7 @@ namespace karhu
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
 
 		void createSwapChain(VkSurfaceKHR surface, GLFWwindow* window);
+		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags); //refactor somewhere else, image class?
 		void createImageViews();
 
 		VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;

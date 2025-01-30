@@ -124,29 +124,32 @@ namespace karhu
 		m_SwapChainExtent = extent;
 	}
 
+	VkImageView Vulkan_SwapChain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	{
+		VkImageViewCreateInfo viewInfo{};
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.image = image;
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.format = format;
+		viewInfo.subresourceRange.aspectMask = aspectFlags;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = 1;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = 1;
+
+		VkImageView imageView;
+		VK_CHECK(vkCreateImageView(m_Device.m_Device, &viewInfo, nullptr, &imageView));
+
+		return imageView;
+	}
+
 	void Vulkan_SwapChain::createImageViews()
 	{
 		m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
 		for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
 		{
-			VkImageViewCreateInfo createinfo{};
-			createinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createinfo.image = m_SwapChainImages[i];
-			createinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createinfo.format = m_SwapChainImageFormat;
-			createinfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createinfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createinfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createinfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-			createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createinfo.subresourceRange.baseMipLevel = 0;
-			createinfo.subresourceRange.levelCount = 1;
-			createinfo.subresourceRange.baseArrayLayer = 0;
-			createinfo.subresourceRange.layerCount = 1;
-
-			VK_CHECK(vkCreateImageView(m_Device.m_Device, &createinfo, nullptr, &m_SwapChainImageViews[i]));
+			m_SwapChainImageViews[i] = createImageView(m_SwapChainImages[i], m_SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 		}
 	}
 

@@ -34,7 +34,7 @@ namespace karhu {
 		kGraphicsPipeline& operator=(kGraphicsPipeline&&) = delete;
 
 		void createPipeline(GraphicsPipelineStruct pipelineStruct);
-		void createRenderpass(VkFormat& swapchainImageFormat);
+		void createRenderpass(VkFormat& swapchainImageFormat, VkFormat depthFormat);
 
 		VkRenderPass getRenderPass() { return m_RenderPass; }
 		VkPipeline getPipeline() { return m_GraphicsPipeline; }
@@ -52,9 +52,9 @@ namespace karhu {
 			VK_DYNAMIC_STATE_SCISSOR
 		};
 		/* depth stuff. */
-		VkImage m_DepthImage;
+		/*VkImage m_DepthImage;
 		VkDeviceMemory m_DepthImageMemory;
-		VkImageView m_DepthImageView;
+		VkImageView m_DepthImageView;*/
 
 		/* vulkan device handle.*/
 		Vulkan_Device& m_Device;

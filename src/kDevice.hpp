@@ -39,6 +39,7 @@ namespace karhu
 		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 		uint32_t findMemoryType(uint32_t filter, VkMemoryPropertyFlags properties);
+		VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 		VkDevice m_Device = VK_NULL_HANDLE;

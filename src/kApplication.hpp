@@ -36,6 +36,16 @@ namespace karhu
         void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
         void createGraphicsPipeline();
+        void createDepthResources(); //refactor somewhere else image class?
+        VkFormat findDepthFormat(); // refactor somewhere elseimage class?
+        bool hasStencilComponent(VkFormat format); //refactor somewhere else iamge class?
+        void createImage(uint32_t width,
+                         uint32_t height,
+                         VkFormat format,
+                         VkImageTiling tiling,
+                         VkImageUsageFlags usage,
+                         VkMemoryPropertyFlags properties,
+                         VkImage& image, VkDeviceMemory& imageMemory); //reafctor somewhere else image class?
         void cleanUpSwapChain();
         void reCreateSwapChain();
     private:
@@ -84,5 +94,9 @@ namespace karhu
 
         VkDescriptorPool m_DescriptorPool;
         std::vector<VkDescriptorSet> m_DescriptorSets;
+
+        VkImage m_DepthImage;
+        VkDeviceMemory m_DepthImageMemory;
+        VkImageView m_DepthImageView;
     };
 } // namespace karhu
