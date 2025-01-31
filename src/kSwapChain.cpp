@@ -10,6 +10,8 @@ namespace karhu
 		:m_Device(device)
 	{
 		printf("constructor called!\n");
+		createCommandPool();
+		createCommandBuffers();
 	}
 
 	Vulkan_SwapChain::~Vulkan_SwapChain()
@@ -19,6 +21,7 @@ namespace karhu
 		{
 			vkDestroyImageView(m_Device, imageView, nullptr);
 		}*/
+		vkDestroyCommandPool(m_Device.m_Device, m_CommandPool, nullptr);
 	}
 
 	VkSurfaceFormatKHR Vulkan_SwapChain::chooseSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats)
@@ -151,6 +154,31 @@ namespace karhu
 		{
 			m_SwapChainImageViews[i] = createImageView(m_SwapChainImages[i], m_SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 		}
+	}
+
+	void Vulkan_SwapChain::createCommandBuffers()
+	{
+		m_CommandBuffers.resize(m_MaxFramesInFlight);
+
+		VkCommandBufferAllocateInfo allocinfo{};
+		allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocinfo.commandPool = m_CommandPool;
+		allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocinfo.commandBufferCount = (uint32_t)m_CommandBuffers.size();
+
+		VK_CHECK(vkAllocateCommandBuffers(m_Device.m_Device, &allocinfo, m_CommandBuffers.data()));
+	}
+
+	void Vulkan_SwapChain::createCommandPool()
+	{
+		QueueFamilyIndices indices = m_Device.findQueueFamilies(m_Device.m_PhysicalDevice);
+
+		VkCommandPoolCreateInfo createinfo{};
+		createinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		createinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		createinfo.queueFamilyIndex = indices.graphicsFamily.value();
+
+		VK_CHECK(vkCreateCommandPool(m_Device.m_Device, &createinfo, nullptr, &m_CommandPool));
 	}
 
 }

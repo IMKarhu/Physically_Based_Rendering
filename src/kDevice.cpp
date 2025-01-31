@@ -9,16 +9,22 @@ namespace karhu
 		:m_Instance(instance)
 		,m_Surface(surface)
 	{
+		init();
 	}
 
 	Vulkan_Device::~Vulkan_Device()
 	{
 		printf("device destroyed\n");
+		if (enableValidationLayers)
+		{
+			destroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
+		}
 		vkDestroyDevice(m_Device, nullptr);
 	}
 
 	void Vulkan_Device::init()
 	{
+		setupDebugMessenger();
 		pickPhysicalDevice();
 		createLogicalDevice();
 	}
@@ -264,5 +270,40 @@ namespace karhu
 			}
 		}
 		throw std::runtime_error("Could not find Supported format!\n");
+	}
+	void Vulkan_Device::setupDebugMessenger()
+	{
+		if (!enableValidationLayers)
+		{
+			return;
+		}
+
+		VkDebugUtilsMessengerCreateInfoEXT createinfo{};
+		vkUtils::populateDebugMessengerCreateInfo(createinfo);
+
+		if (createDebugUtilsMessengerEXT(m_Instance, &createinfo, nullptr, &m_DebugMessenger) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create debug messenger!\n");
+		}
+	}
+	VkResult Vulkan_Device::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+	{
+		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr)
+		{
+			return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+		}
+		else
+		{
+			return VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	}
+	void Vulkan_Device::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+	{
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr)
+		{
+			func(instance, debugMessenger, pAllocator);
+		}
 	}
 }

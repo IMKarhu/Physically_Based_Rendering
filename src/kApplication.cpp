@@ -12,40 +12,24 @@ namespace karhu
     {
         printf("app destroyed\n");
         cleanUpSwapChain();
-        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
+        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
         {
             vkDestroyBuffer(m_VkDevice.m_Device, m_UniformBuffers[i], nullptr);
             vkFreeMemory(m_VkDevice.m_Device, m_UniformBuffersMemory[i], nullptr);
         }
         vkDestroyDescriptorPool(m_VkDevice.m_Device, m_DescriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(m_VkDevice.m_Device, m_DescriptorLayout, nullptr);
-        /*vkDestroyBuffer(m_VkDevice.m_Device, m_IndexBuffer, nullptr);
-        vkFreeMemory(m_VkDevice.m_Device, m_IndexBufferMemory, nullptr);
-        vkDestroyBuffer(m_VkDevice.m_Device, m_VertexBuffer, nullptr);
-        vkFreeMemory(m_VkDevice.m_Device, m_VertexBufferMemory, nullptr);*/
-        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
+        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
         {
             vkDestroySemaphore(m_VkDevice.m_Device, m_Semaphores.availableSemaphores[i], nullptr);
             vkDestroySemaphore(m_VkDevice.m_Device, m_Semaphores.finishedSemaphores[i], nullptr);
             vkDestroyFence(m_VkDevice.m_Device, m_InFlightFences[i], nullptr);
         }
-
-        vkDestroyCommandPool(m_VkDevice.m_Device, m_CommandPool, nullptr);
-
-        //vkDestroyPipeline(m_VkDevice.m_Device, m_GraphicsPipeline, nullptr);
-        //vkDestroyPipelineLayout(m_VkDevice.m_Device, m_PipelineLayout, nullptr);
-        //vkDestroyRenderPass(m_VkDevice.m_Device, m_RenderPass, nullptr);
         vkDestroySurfaceKHR(m_Window->getInstance(), m_Window->getSurface(), nullptr);
-        if (enableValidationLayers)
-        {
-            destroyDebugUtilsMessengerEXT(m_Window->getInstance(), m_DebugMessenger, nullptr);
-        }
     }
 
     void Application::run()
     {
-        setupDebugMessenger();
-        m_VkDevice.init();
         printf("before swapchain creation.");
         m_VkSwapChain.createSwapChain(m_Window->getSurface(), m_Window->getWindow());
         m_VkSwapChain.createImageViews();
@@ -63,36 +47,35 @@ namespace karhu
         createGraphicsPipeline();
         createDepthResources();
         createFrameBuffers();
-        createCommandPool();
-        m_Model = std::make_unique<kModel>(m_VkDevice, m_Vertices, m_Indices, m_CommandPool);
+        m_Model = std::make_unique<kModel>(m_VkDevice, m_Vertices, m_Indices, m_VkSwapChain.m_CommandPool);
         createUniformBuffers();
 
         /*Descriptor pool creation.*/
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(m_MaxFramesInFlight);
+        poolSize.descriptorCount = static_cast<uint32_t>(m_VkSwapChain.m_MaxFramesInFlight);
 
         VkDescriptorPoolCreateInfo poolcreateInfo{};
         poolcreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolcreateInfo.poolSizeCount = 1;
         poolcreateInfo.pPoolSizes = &poolSize;
-        poolcreateInfo.maxSets = static_cast<uint32_t>(m_MaxFramesInFlight);
+        poolcreateInfo.maxSets = static_cast<uint32_t>(m_VkSwapChain.m_MaxFramesInFlight);
 
         VK_CHECK(vkCreateDescriptorPool(m_VkDevice.m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
 
         /*Descriptor set creation.*/
-        std::vector<VkDescriptorSetLayout> layouts(m_MaxFramesInFlight, m_DescriptorLayout);
+        std::vector<VkDescriptorSetLayout> layouts(m_VkSwapChain.m_MaxFramesInFlight, m_DescriptorLayout);
 
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_DescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_MaxFramesInFlight);
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_VkSwapChain.m_MaxFramesInFlight);
         allocInfo.pSetLayouts = layouts.data();
         printf("hello3\n");
-        m_DescriptorSets.resize(m_MaxFramesInFlight);
+        m_DescriptorSets.resize(m_VkSwapChain.m_MaxFramesInFlight);
         VK_CHECK(vkAllocateDescriptorSets(m_VkDevice.m_Device, &allocInfo, m_DescriptorSets.data()));
 
-        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
+        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
         {
             printf("hello: %d\n", i);
             VkDescriptorBufferInfo bufferInfo{};
@@ -112,7 +95,6 @@ namespace karhu
             vkUpdateDescriptorSets(m_VkDevice.m_Device, 1, &descriptorWrite, 0, nullptr);
         }
 
-        createCommandBuffers();
         createSyncObjects();
 
 
@@ -143,31 +125,6 @@ namespace karhu
 
             VK_CHECK(vkCreateFramebuffer(m_VkDevice.m_Device, &createinfo, nullptr, &m_FrameBuffers[i]));
         }
-    }
-
-    void Application::createCommandPool()
-    {
-        QueueFamilyIndices indices = m_VkDevice.findQueueFamilies(m_VkDevice.m_PhysicalDevice);
-
-        VkCommandPoolCreateInfo createinfo{};
-        createinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        createinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        createinfo.queueFamilyIndex = indices.graphicsFamily.value();
-
-        VK_CHECK(vkCreateCommandPool(m_VkDevice.m_Device, &createinfo, nullptr, &m_CommandPool));
-    }
-
-    void Application::createCommandBuffers()
-    {
-        m_CommandBuffers.resize(m_MaxFramesInFlight);
-
-        VkCommandBufferAllocateInfo allocinfo{};
-        allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocinfo.commandPool = m_CommandPool;
-        allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocinfo.commandBufferCount = (uint32_t)m_CommandBuffers.size();
-
-        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice.m_Device, &allocinfo, m_CommandBuffers.data()));
     }
 
     void Application::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index)
@@ -235,9 +192,9 @@ namespace karhu
 
     void Application::createSyncObjects()
     {
-        m_Semaphores.availableSemaphores.resize(m_MaxFramesInFlight);
-        m_Semaphores.finishedSemaphores.resize(m_MaxFramesInFlight);
-        m_InFlightFences.resize(m_MaxFramesInFlight);
+        m_Semaphores.availableSemaphores.resize(m_VkSwapChain.m_MaxFramesInFlight);
+        m_Semaphores.finishedSemaphores.resize(m_VkSwapChain.m_MaxFramesInFlight);
+        m_InFlightFences.resize(m_VkSwapChain.m_MaxFramesInFlight);
 
         VkSemaphoreCreateInfo createinfo{};
         createinfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -246,7 +203,7 @@ namespace karhu
         fenceinfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceinfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
+        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
         {
             if (vkCreateSemaphore(m_VkDevice.m_Device, &createinfo, nullptr, &m_Semaphores.availableSemaphores[i]) != VK_SUCCESS ||
                 vkCreateSemaphore(m_VkDevice.m_Device, &createinfo, nullptr, &m_Semaphores.finishedSemaphores[i]) != VK_SUCCESS ||
@@ -262,11 +219,11 @@ namespace karhu
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        m_UniformBuffers.resize(m_MaxFramesInFlight);
-        m_UniformBuffersMemory.resize(m_MaxFramesInFlight);
-        m_UniformBuffersMapped.resize(m_MaxFramesInFlight);
+        m_UniformBuffers.resize(m_VkSwapChain.m_MaxFramesInFlight);
+        m_UniformBuffersMemory.resize(m_VkSwapChain.m_MaxFramesInFlight);
+        m_UniformBuffersMapped.resize(m_VkSwapChain.m_MaxFramesInFlight);
 
-        for (size_t i = 0; i < m_MaxFramesInFlight; i++)
+        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
         {
             m_VkDevice.createBuffers(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 m_UniformBuffers[i], m_UniformBuffersMemory[i]);
@@ -318,8 +275,8 @@ namespace karhu
 
         vkResetFences(m_VkDevice.m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
 
-        vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
-        recordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
+        vkResetCommandBuffer(m_VkSwapChain.m_CommandBuffers[m_CurrentFrame], 0);
+        recordCommandBuffer(m_VkSwapChain.m_CommandBuffers[m_CurrentFrame], imageIndex);
 
         updateUBOs(imageIndex);
 
@@ -332,7 +289,7 @@ namespace karhu
         submitinfo.pWaitSemaphores = waitSemaphores;
         submitinfo.pWaitDstStageMask = waitStages;
         submitinfo.commandBufferCount = 1;
-        submitinfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
+        submitinfo.pCommandBuffers = &m_VkSwapChain.m_CommandBuffers[m_CurrentFrame];
         VkSemaphore signalSemaphores[] = { m_Semaphores.finishedSemaphores[m_CurrentFrame] };
         submitinfo.signalSemaphoreCount = 1;
         submitinfo.pSignalSemaphores = signalSemaphores;
@@ -360,47 +317,8 @@ namespace karhu
         {
             throw std::runtime_error("Failed to present swapchain image1\n");
         }
-        m_CurrentFrame = (m_CurrentFrame + 1) % m_MaxFramesInFlight;
+        m_CurrentFrame = (m_CurrentFrame + 1) % m_VkSwapChain.m_MaxFramesInFlight;
     }
-
-    void Application::setupDebugMessenger()
-    {
-        if (!enableValidationLayers)
-        {
-            return;
-        }
-
-        VkDebugUtilsMessengerCreateInfoEXT createinfo{};
-        vkUtils::populateDebugMessengerCreateInfo(createinfo);
-
-        if (createDebugUtilsMessengerEXT(m_Window->getInstance(), &createinfo, nullptr, &m_DebugMessenger) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create debug messenger!\n");
-        }
-    }
-
-    VkResult Application::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
-    {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr)
-        {
-            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-        }
-        else
-        {
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-    }
-
-    void Application::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
-    {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr)
-        {
-            func(instance, debugMessenger, pAllocator);
-        }
-    }
-
     
     void Application::createGraphicsPipeline()
     {

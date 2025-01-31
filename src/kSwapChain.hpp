@@ -23,6 +23,8 @@ namespace karhu
 		void createSwapChain(VkSurfaceKHR surface, GLFWwindow* window);
 		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags); //refactor somewhere else, image class?
 		void createImageViews();
+		void createCommandBuffers();
+		void createCommandPool();
 
 		VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 		std::vector<VkImage> m_SwapChainImages;
@@ -30,6 +32,9 @@ namespace karhu
 		VkExtent2D m_SwapChainExtent;
 
 		std::vector<VkImageView> m_SwapChainImageViews;
+		const int m_MaxFramesInFlight = 2;
+		VkCommandPool m_CommandPool;
+		std::vector<VkCommandBuffer> m_CommandBuffers;
 	private:
 		GLFWwindow* m_Window;
 		Vulkan_Device& m_Device;

@@ -21,8 +21,6 @@ namespace karhu
         ~Application();
         void run();
         void createFrameBuffers();
-        void createCommandPool();
-        void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t index);
         void createSyncObjects();
         void createUniformBuffers();
@@ -30,10 +28,6 @@ namespace karhu
         void update(float deltaTime);
         void drawFrame();
     private:
-        void setupDebugMessenger();
-        VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-            const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-        void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
         void createGraphicsPipeline();
         void createDepthResources(); //refactor somewhere else image class?
@@ -56,12 +50,8 @@ namespace karhu
         std::unique_ptr<kModel> m_Model;
         std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
-
-        VkDebugUtilsMessengerEXT m_DebugMessenger;
         VkDescriptorSetLayout m_DescriptorLayout;
         std::vector<VkFramebuffer> m_FrameBuffers;
-        VkCommandPool m_CommandPool;
-        std::vector<VkCommandBuffer> m_CommandBuffers;
         struct m_Semaphores
         {
             std::vector<VkSemaphore> availableSemaphores;
@@ -70,7 +60,7 @@ namespace karhu
         std::vector<VkFence> m_InFlightFences;
         float m_DeltaTime = 0.0f;
         uint32_t m_CurrentFrame = 0;
-        const int m_MaxFramesInFlight = 2;
+        
 
         const std::vector<Vertex> m_Vertices = {
             {{-0.5f,-0.5f, 0.0f},{1.0f, 0.0f, 0.0f}},
