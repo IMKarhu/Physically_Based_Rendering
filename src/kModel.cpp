@@ -15,6 +15,7 @@ namespace karhu
 		vkFreeMemory(m_Device.m_Device, m_IndexBuffer.m_IndexBufferMemory, nullptr);
 		vkDestroyBuffer(m_Device.m_Device, m_VertexBuffer.m_VertexBuffer, nullptr);
 		vkFreeMemory(m_Device.m_Device, m_VertexBuffer.m_VertexBufferMemory, nullptr);
+		printf("model Destroyed\n");
 	}
 
 	void kModel::bind(VkCommandBuffer commandBuffer)
