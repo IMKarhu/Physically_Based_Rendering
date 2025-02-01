@@ -13,6 +13,7 @@
 namespace karhu
 {
 	class kModel;
+	class kCamera;
 
 	class kRenderer
 	{
@@ -27,7 +28,7 @@ namespace karhu
 		void recordCommandBuffer(kModel *model, const std::vector<uint16_t>& indices, uint32_t currentFrameIndex, uint32_t index);
 		void createSyncObjects();
 		void createUniformBuffers();
-		void updateUBOs(uint32_t currentImage);
+		void updateUBOs(uint32_t currentImage, kCamera& camera);
 		void beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		Vulkan_Device& getDevice() { return m_VkDevice; }

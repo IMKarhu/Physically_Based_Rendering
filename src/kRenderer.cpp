@@ -1,5 +1,6 @@
 #include "kRenderer.hpp"
 #include "kModel.hpp"
+#include "kCamera.hpp"
 
 namespace karhu
 {
@@ -219,17 +220,22 @@ namespace karhu
         }
     }
 
-    void kRenderer::updateUBOs(uint32_t currentImage)
+    void kRenderer::updateUBOs(uint32_t currentImage, kCamera& camera)
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
+        camera.setPerspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+        camera.setView(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        camera.setModel(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, .0f, 1.0f));
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+        //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //ubo.proj = glm::perspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+        ubo.model = camera.getModel();
+        ubo.view = camera.getView();
+        ubo.proj = camera.getProjection();
         ubo.proj[1][1] *= -1;
 
         memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));

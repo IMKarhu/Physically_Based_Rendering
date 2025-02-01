@@ -1,4 +1,5 @@
 #include "kApplication.hpp"
+#include "kCamera.hpp"
 
 
 namespace karhu
@@ -22,13 +23,14 @@ namespace karhu
 
     void Application::update(float deltaTime)
     {
+        kCamera m_Camera{};
         while (!m_Renderer.getWindowShouldclose())
         {
             m_Renderer.windowPollEvents();
             uint32_t imageIndex = 0;
             m_Renderer.beginFrame(m_CurrentFrame, imageIndex);
             m_Renderer.recordCommandBuffer(m_Model, m_Indices,  m_CurrentFrame, imageIndex);
-            m_Renderer.updateUBOs(imageIndex);
+            m_Renderer.updateUBOs(imageIndex, m_Camera);
             m_Renderer.endFrame(m_CurrentFrame, imageIndex);
             //drawFrame();
         }
