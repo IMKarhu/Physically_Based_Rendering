@@ -11,9 +11,9 @@ namespace karhu
 	{
 		m_ViewMatrix = glm::lookAt(position, direction, up);
 	}
-	void kCamera::setModel(glm::mat4 model, float angle, glm::vec3 axis)
+	void kCamera::setModel(glm::mat4 model)
 	{
-		m_ModelMatrix = glm::rotate(model, angle, axis);
+		m_ModelMatrix = model;
 	}
 }
 

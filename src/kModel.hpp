@@ -7,7 +7,7 @@ namespace karhu
 	class kModel
 	{
 	public:
-		kModel(Vulkan_Device& device, const std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices, VkCommandPool commandPool);
+		kModel(Vulkan_Device& device, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, VkCommandPool commandPool);
 		~kModel();
 
 		kModel(const kModel&) = delete;
@@ -24,10 +24,10 @@ namespace karhu
 		}m_IndexBuffer;
 
 		void bind(VkCommandBuffer commandBuffer);
-		void draw(VkCommandBuffer commandBuffer, std::vector<uint16_t> indices);
+		void draw(VkCommandBuffer commandBuffer, std::vector<uint32_t> indices);
 	private:
 		void createVertexBuffer(const std::vector<Vertex> vertices, VkCommandPool commandPool);
-		void createIndexBuffer(const std::vector<uint16_t> indices, VkCommandPool commandPool);
+		void createIndexBuffer(const std::vector<uint32_t> indices, VkCommandPool commandPool);
 	private:
 		Vulkan_Device& m_Device;
 	};

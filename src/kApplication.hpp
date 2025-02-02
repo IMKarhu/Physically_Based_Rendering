@@ -1,6 +1,6 @@
 #pragma once
 #include "kRenderer.hpp"
-#include "kModel.hpp"
+#include "kEntity.hpp"
 
 #include <memory>
 #include <fstream>
@@ -17,10 +17,11 @@ namespace karhu
         ~Application();
         void run();
         void update(float deltaTime);
+        void renderEntities(kCamera& camera, uint32_t currentFrameIndex, uint32_t index);
     private:
         kRenderer m_Renderer{};
         //std::unique_ptr<kModel> m_Model;
-        kModel* m_Model;
+        std::vector<kEntity> m_Entities;
 
         float m_DeltaTime = 0.0f;
         uint32_t m_CurrentFrame = 0;
@@ -36,7 +37,7 @@ namespace karhu
             {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
             {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
         };
-        const std::vector<uint16_t> m_Indices = {
+        const std::vector<uint32_t> m_Indices = {
             0,1,2,2,3,0,
             4,5,6,6,7,4
         };

@@ -12,7 +12,8 @@
 
 namespace karhu
 {
-	class kModel;
+	//class kModel;
+	class kEntity;
 	class kCamera;
 
 	class kRenderer
@@ -25,13 +26,17 @@ namespace karhu
 		void operator=(const kRenderer&) = delete;
 
 		void createFrameBuffers();
-		void recordCommandBuffer(kModel *model, const std::vector<uint16_t>& indices, uint32_t currentFrameIndex, uint32_t index);
+		void recordCommandBuffer(kEntity& entity, const std::vector<uint32_t>& indices, uint32_t currentFrameIndex, uint32_t index);
+		void beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
+		void endRecordCommandBuffer(uint32_t currentFrameIndex);
 		void createSyncObjects();
-		void createUniformBuffers();
-		void updateUBOs(uint32_t currentImage, kCamera& camera);
+		void createUniformBuffers(std::vector<kEntity>& entities);
+		void updateUBOs(std::vector<kEntity>& entities, kCamera& camera);
 		void beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		Vulkan_Device& getDevice() { return m_VkDevice; }
+		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
+		kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
 		VkCommandPool getCommandPool() const { return m_VkSwapChain.m_CommandPool; }
 		bool getWindowShouldclose() { return m_Window->shouldClose(); }
 		void windowPollEvents() { return m_Window->pollEvents(); }
@@ -54,7 +59,8 @@ namespace karhu
 		Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
 		Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
 		kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
-		std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
+		kDescriptors m_DescriptorBuilder{ m_VkDevice };
+		//std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
 		VkDescriptorSetLayout m_DescriptorLayout;
 		std::vector<VkFramebuffer> m_FrameBuffers;

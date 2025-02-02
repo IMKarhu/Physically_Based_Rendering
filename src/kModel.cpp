@@ -2,7 +2,7 @@
 
 namespace karhu
 {
-	kModel::kModel(Vulkan_Device& device, const std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices, VkCommandPool commandPool)
+	kModel::kModel(Vulkan_Device& device, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, VkCommandPool commandPool)
 		:m_Device(device)
 	{
 		createVertexBuffer(vertices, commandPool);
@@ -24,10 +24,10 @@ namespace karhu
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
 
-		vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	}
 
-	void kModel::draw(VkCommandBuffer commandBuffer, std::vector<uint16_t> indices)
+	void kModel::draw(VkCommandBuffer commandBuffer, std::vector<uint32_t> indices)
 	{
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 	}
@@ -55,7 +55,7 @@ namespace karhu
 		vkFreeMemory(m_Device.m_Device, stagingBufferMemory, nullptr);
 	}
 
-	void kModel::createIndexBuffer(const std::vector<uint16_t> indices, VkCommandPool commandPool)
+	void kModel::createIndexBuffer(const std::vector<uint32_t> indices, VkCommandPool commandPool)
 	{
 		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 

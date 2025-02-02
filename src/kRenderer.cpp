@@ -1,5 +1,5 @@
 #include "kRenderer.hpp"
-#include "kModel.hpp"
+#include "kEntity.hpp"
 #include "kCamera.hpp"
 
 namespace karhu
@@ -10,65 +10,13 @@ namespace karhu
         m_VkSwapChain.createImageViews();
         m_GraphicsPipeline.createRenderpass(m_VkSwapChain.m_SwapChainImageFormat, findDepthFormat());
 
-        VkDescriptorSetLayoutBinding binding{};
-        binding = Helpers::fillLayoutBindingStruct(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-        VkDescriptorSetLayoutCreateInfo createInfo{};
-        createInfo = Helpers::fillDescriptorSetLayoutCreateInfo();
-        createInfo.bindingCount = 1;
-        createInfo.pBindings = &binding;
-
-        VK_CHECK(vkCreateDescriptorSetLayout(m_VkDevice.m_Device, &createInfo, nullptr, &m_DescriptorLayout));
+        m_DescriptorBuilder.createDescriptorSetLayout();
 
         createGraphicsPipeline();
         createDepthResources();
         createFrameBuffers();
-      //  m_Model = std::make_unique<kModel>(m_VkDevice, m_Vertices, m_Indices, m_VkSwapChain.m_CommandPool);
-        createUniformBuffers();
 
-        /*Descriptor pool creation.*/
-        VkDescriptorPoolSize poolSize{};
-        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(m_VkSwapChain.m_MaxFramesInFlight);
-
-        VkDescriptorPoolCreateInfo poolcreateInfo{};
-        poolcreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolcreateInfo.poolSizeCount = 1;
-        poolcreateInfo.pPoolSizes = &poolSize;
-        poolcreateInfo.maxSets = static_cast<uint32_t>(m_VkSwapChain.m_MaxFramesInFlight);
-
-        VK_CHECK(vkCreateDescriptorPool(m_VkDevice.m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
-
-        /*Descriptor set creation.*/
-        std::vector<VkDescriptorSetLayout> layouts(m_VkSwapChain.m_MaxFramesInFlight, m_DescriptorLayout);
-
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_DescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_VkSwapChain.m_MaxFramesInFlight);
-        allocInfo.pSetLayouts = layouts.data();
-        printf("hello3\n");
-        m_DescriptorSets.resize(m_VkSwapChain.m_MaxFramesInFlight);
-        VK_CHECK(vkAllocateDescriptorSets(m_VkDevice.m_Device, &allocInfo, m_DescriptorSets.data()));
-
-        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
-        {
-            printf("hello: %d\n", i);
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_UniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_DescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
-
-            vkUpdateDescriptorSets(m_VkDevice.m_Device, 1, &descriptorWrite, 0, nullptr);
-        }
+        m_DescriptorBuilder.createDescriptorPool(2);
 
         createSyncObjects();
     }
@@ -76,13 +24,7 @@ namespace karhu
     {
         printf("app destroyed\n");
         cleanUpSwapChain();
-        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
-        {
-            vkDestroyBuffer(m_VkDevice.m_Device, m_UniformBuffers[i], nullptr);
-            vkFreeMemory(m_VkDevice.m_Device, m_UniformBuffersMemory[i], nullptr);
-        }
-        vkDestroyDescriptorPool(m_VkDevice.m_Device, m_DescriptorPool, nullptr);
-        vkDestroyDescriptorSetLayout(m_VkDevice.m_Device, m_DescriptorLayout, nullptr);
+        
         for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
         {
             vkDestroySemaphore(m_VkDevice.m_Device, m_Semaphores.availableSemaphores[i], nullptr);
@@ -116,7 +58,26 @@ namespace karhu
         }
     }
 
-    void kRenderer::recordCommandBuffer(kModel *model, const std::vector<uint16_t>& indices, uint32_t currentFrameIndex, uint32_t index)
+    void kRenderer::recordCommandBuffer(kEntity& entity, const std::vector<uint32_t>& indices, uint32_t currentFrameIndex, uint32_t index)
+    {
+        /*VkBuffer vBuffers[] = {m_VertexBuffer};
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
+
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);*/
+        entity.getModel()->bind(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
+
+        vkCmdBindDescriptorSets(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipelineLayout(), 0, 1, &entity.m_DescriptorSet, 0, nullptr);
+
+        //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
+        //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
+        //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
+        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
+        //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+        entity.getModel()->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], indices);
+    }
+
+    void kRenderer::beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index)
     {
         VkCommandBufferBeginInfo info{};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -157,23 +118,10 @@ namespace karhu
         scissor.extent = m_VkSwapChain.m_SwapChainExtent;
 
         vkCmdSetScissor(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], 0, 1, &scissor);
+    }
 
-        /*VkBuffer vBuffers[] = {m_VertexBuffer};
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);*/
-        model->bind(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
-
-        vkCmdBindDescriptorSets(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipelineLayout(), 0, 1, &m_DescriptorSets[index], 0, nullptr);
-
-        //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
-        //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
-        //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
-        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
-        //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
-        model->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], indices);
-
+    void kRenderer::endRecordCommandBuffer(uint32_t currentFrameIndex)
+    {
         vkCmdEndRenderPass(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
 
         VK_CHECK(vkEndCommandBuffer(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]));
@@ -204,41 +152,38 @@ namespace karhu
 
     }
 
-    void kRenderer::createUniformBuffers()
+    void kRenderer::createUniformBuffers(std::vector<kEntity>& entities)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        m_UniformBuffers.resize(m_VkSwapChain.m_MaxFramesInFlight);
-        m_UniformBuffersMemory.resize(m_VkSwapChain.m_MaxFramesInFlight);
-        m_UniformBuffersMapped.resize(m_VkSwapChain.m_MaxFramesInFlight);
-
-        for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
+        for (auto& entity : entities)
         {
+            entity.m_UniformBuffer.m_Device = m_VkDevice.m_Device;
             m_VkDevice.createBuffers(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                m_UniformBuffers[i], m_UniformBuffersMemory[i]);
-            vkMapMemory(m_VkDevice.m_Device, m_UniformBuffersMemory[i], 0, bufferSize, 0, &m_UniformBuffersMapped[i]);
+                entity.m_UniformBuffer.m_Buffer,entity.m_UniformBuffer.m_BufferMemory);
+            vkMapMemory(m_VkDevice.m_Device, entity.m_UniformBuffer.m_BufferMemory, 0, bufferSize, 0, &entity.m_UniformBuffer.m_BufferMapped);
         }
     }
 
-    void kRenderer::updateUBOs(uint32_t currentImage, kCamera& camera)
+    void kRenderer::updateUBOs(std::vector<kEntity>& entities, kCamera& camera)
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
+        /*static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-        camera.setPerspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
-        camera.setView(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        camera.setModel(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, .0f, 1.0f));
-        UniformBufferObject ubo{};
-        //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        //ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        //ubo.proj = glm::perspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
-        ubo.model = camera.getModel();
-        ubo.view = camera.getView();
-        ubo.proj = camera.getProjection();
-        ubo.proj[1][1] *= -1;
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();*/
+        for (auto& entity : entities)
+        {
+            UniformBufferObject ubo{};
+            //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            //ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            //ubo.proj = glm::perspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+            ubo.model = entity.getTransformMatrix();
+            ubo.view = camera.getView();
+            ubo.proj = camera.getProjection();
+            ubo.proj[1][1] *= -1;
 
-        memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+            memcpy(entity.m_UniformBuffer.m_BufferMapped, &ubo, sizeof(ubo));
+        }
     }
 
     void kRenderer::beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex)
@@ -310,7 +255,7 @@ namespace karhu
         pipelineStruct.viewportWidth = m_VkSwapChain.m_SwapChainExtent.width;
         pipelineStruct.viewportheight = m_VkSwapChain.m_SwapChainExtent.height;
         pipelineStruct.scissor.extent = m_VkSwapChain.m_SwapChainExtent;
-        pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorLayout;
+        pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorBuilder.getDescriptorLayout();
 
         m_GraphicsPipeline.createPipeline(pipelineStruct);
     }
