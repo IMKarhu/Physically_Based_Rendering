@@ -22,10 +22,12 @@ namespace karhu
         
         
 
-        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), , m_Renderer.getCommandPool());
+        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/cube.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
+        entity.setPosition({ 0.0f,0.0f,5.0f });
+        entity.setScale({ .25f,.25f,.25f });
         //entity.setRotation({ -90.0f,0.0f,0.0f });
 
         m_Entities.push_back(std::move(entity));
@@ -46,7 +48,7 @@ namespace karhu
     void Application::update(float deltaTime)
     {
         auto cameraEntity = kEntity::createEntity();
-        cameraEntity.setPosition({ 0.0f, 2.0f, 2.5f });
+        cameraEntity.setPosition({ 0.0f, 0.0f, -1.0f });
         kCamera m_Camera{};
         keyboardMovement keyboard{};
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -75,7 +77,7 @@ namespace karhu
         m_Renderer.beginRecordCommandBuffer(currentFrameIndex, index);
         for (auto& entity : m_Entities)
         {
-            m_Renderer.recordCommandBuffer(entity, m_Indices, m_CurrentFrame, index);
+            m_Renderer.recordCommandBuffer(entity, m_CurrentFrame, index);
         }
         m_Renderer.endRecordCommandBuffer(currentFrameIndex);
     }

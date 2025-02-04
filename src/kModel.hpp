@@ -26,15 +26,15 @@ namespace karhu
 		}m_IndexBuffer;
 
 		void bind(VkCommandBuffer commandBuffer);
-		void draw(VkCommandBuffer commandBuffer, std::vector<uint32_t> indices);
+		void draw(VkCommandBuffer commandBuffer);
 		void loadModel(std::string filepath);
 		void processScene(const aiScene* scene);
 		void processNode(aiMesh* mesh);
 
 		std::vector<uint32_t>& getIndices() { return m_Indices; }
 	private:
-		void createVertexBuffer(const std::vector<Vertex> vertices, VkCommandPool commandPool);
-		void createIndexBuffer(const std::vector<uint32_t> indices, VkCommandPool commandPool);
+		void createVertexBuffer(VkCommandPool commandPool);
+		void createIndexBuffer(VkCommandPool commandPool);
 	private:
 		std::vector<Vertex> m_Vertices;
 		std::vector<uint32_t> m_Indices;

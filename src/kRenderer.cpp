@@ -58,7 +58,7 @@ namespace karhu
         }
     }
 
-    void kRenderer::recordCommandBuffer(kEntity& entity, const std::vector<uint32_t>& indices, uint32_t currentFrameIndex, uint32_t index)
+    void kRenderer::recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index)
     {
         /*VkBuffer vBuffers[] = {m_VertexBuffer};
         VkDeviceSize offsets[] = { 0 };
@@ -74,7 +74,7 @@ namespace karhu
         //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
         //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
-        entity.getModel()->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], indices);
+        entity.getModel()->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
     }
 
     void kRenderer::beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index)

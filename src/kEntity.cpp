@@ -19,4 +19,8 @@ namespace karhu
 	{
 		m_Rotation = rotation;
 	}
+	void kEntity::setScale(glm::vec3 scale)
+	{
+		m_Scale = scale;
+	}
 }

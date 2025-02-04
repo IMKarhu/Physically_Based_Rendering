@@ -32,6 +32,8 @@ namespace karhu
 		glm::vec3 getPosition() { return m_Position; }
 		void setRotation(glm::vec3 rotation);
 		glm::vec3& getRotation() { return m_Rotation; }
+		void setScale(glm::vec3 scale);
+		glm::vec3& getScale() { return m_Scale; }
 
 		kBuffer m_UniformBuffer;
 		VkDescriptorSet m_DescriptorSet{ VK_NULL_HANDLE };

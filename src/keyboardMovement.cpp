@@ -25,11 +25,11 @@ namespace karhu
 				entity.setRotation({ 0.0f, rotate.y, fminf(89.0f, fmaxf(-89.0f, z + z)) });
 			}
 		}
-		float yaw = entity.getRotation().z;
-		float pitch = entity.getRotation().y;
+		float yaw = entity.getRotation().y;
+		float pitch = entity.getRotation().z;
 		//glm::vec3 forwardVec{ glm::sin(yaw), 0.0f, glm::cos(yaw)};
-		glm::vec3 forwardVec{ glm::cos(yaw)*glm::cos(pitch), glm::sin(pitch), glm::sin(yaw)*glm::cos(pitch)};
-		const glm::vec3 upVec{ 0.0f, .0f, 1.0f };
+		glm::vec3 forwardVec{ glm::cos(pitch)*glm::cos(yaw), -glm::sin(pitch), glm::sin(yaw)*glm::cos(pitch)};
+		const glm::vec3 upVec{ 0.0f, 1.0f, 0.0f };
 		//const glm::vec3 rightVec{ forwardVec.z, 0.0f, -forwardVec.x };
 		const glm::vec3 rightVec = glm::cross(glm::normalize(forwardVec), glm::normalize(upVec));
 		

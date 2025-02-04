@@ -9,8 +9,10 @@ namespace karhu
 		:m_Device(device)
 	{
 		loadModel(filepath);
-		createVertexBuffer(m_Vertices, commandPool);
-		createIndexBuffer(m_Indices, commandPool);
+		std::cout << "size of vertices: " << m_Vertices.size() << std::endl;
+		std::cout << "size of indices: " << m_Indices.size() << std::endl;
+		createVertexBuffer(commandPool);
+		createIndexBuffer(commandPool);
 	}
 
 	kModel::~kModel()
@@ -31,9 +33,9 @@ namespace karhu
 		vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	}
 
-	void kModel::draw(VkCommandBuffer commandBuffer, std::vector<uint32_t> indices)
+	void kModel::draw(VkCommandBuffer commandBuffer)
 	{
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, m_Indices.size(), 1, 0, 0, 0);
 	}
 
 	void kModel::loadModel(std::string filepath)
@@ -72,6 +74,12 @@ namespace karhu
 			vert.pos.y = mesh->mVertices[i].y;
 			vert.pos.z = mesh->mVertices[i].z;
 
+			vert.normal.x = mesh->mNormals[i].x;
+			vert.normal.y = mesh->mNormals[i].y;
+			vert.normal.z = mesh->mNormals[i].z;
+
+			vert.color = { 1.0f, 1.0f, 0.0f };
+
 			m_Vertices.push_back(vert);
 		}
 
@@ -85,9 +93,9 @@ namespace karhu
 		}
 	}
 
-	void kModel::createVertexBuffer(const std::vector<Vertex> vertices, VkCommandPool commandPool)
+	void kModel::createVertexBuffer(VkCommandPool commandPool)
 	{
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+		VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -96,7 +104,7 @@ namespace karhu
 
 		void* data;
 		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
-		memcpy(data, vertices.data(), (size_t)bufferSize);
+		memcpy(data, m_Vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
 
 		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -108,9 +116,9 @@ namespace karhu
 		vkFreeMemory(m_Device.m_Device, stagingBufferMemory, nullptr);
 	}
 
-	void kModel::createIndexBuffer(const std::vector<uint32_t> indices, VkCommandPool commandPool)
+	void kModel::createIndexBuffer(VkCommandPool commandPool)
 	{
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -119,7 +127,7 @@ namespace karhu
 
 		void* data;
 		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
-		memcpy(data, indices.data(), (size_t)bufferSize);
+		memcpy(data, m_Indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
 
 		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,

@@ -26,7 +26,7 @@ namespace karhu
 		void operator=(const kRenderer&) = delete;
 
 		void createFrameBuffers();
-		void recordCommandBuffer(kEntity& entity, const std::vector<uint32_t>& indices, uint32_t currentFrameIndex, uint32_t index);
+		void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index);
 		void beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
 		void endRecordCommandBuffer(uint32_t currentFrameIndex);
 		void createSyncObjects();
