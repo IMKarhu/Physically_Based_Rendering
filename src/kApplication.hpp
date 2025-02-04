@@ -1,5 +1,6 @@
 #pragma once
 #include "kRenderer.hpp"
+#include "keyboardMovement.hpp"
 #include "kEntity.hpp"
 
 #include <memory>

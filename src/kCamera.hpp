@@ -11,6 +11,7 @@ namespace karhu
 	public:
 		void setPerspective(float fovy, float aspect, float near, float far);
 		void setView(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3(0.0f, -1.0f, 0.0f));
+		void setyxzView(glm::vec3 position, glm::vec3 rotation);
 		void setModel(glm::mat4 model);
 
 		const glm::mat4& getProjection() { return m_ProjectionMatrix; }
@@ -20,5 +21,6 @@ namespace karhu
 		glm::mat4 m_ProjectionMatrix{ 1.0f };
 		glm::mat4 m_ViewMatrix{ 1.0f };
 		glm::mat4 m_ModelMatrix{ 1.0f };
+
 	};
 }

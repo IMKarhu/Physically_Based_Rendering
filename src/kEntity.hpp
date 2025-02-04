@@ -20,16 +20,18 @@ namespace karhu
 		static kEntity createEntity();
 
 		glm::mat4 getTransformMatrix() { auto transform = glm::translate(glm::mat4(1.0f), m_Position);
-										 transform = glm::rotate(transform, m_Rotation.y, { 0.0f, 0.1f, 0.0f });
-										 transform = glm::rotate(transform, m_Rotation.x, { 0.0f, 0.1f, 0.0f });
-										 transform = glm::rotate(transform, m_Rotation.z, { 0.0f, 0.1f, 0.0f });
+										 transform = glm::rotate(transform, m_Rotation.x, { 1.0f, 0.0f, 0.0f });
+										 transform = glm::rotate(transform, m_Rotation.y, { 0.0f, 1.0f, 0.0f });
+										 transform = glm::rotate(transform, m_Rotation.z, { 0.0f, 0.0f, 1.0f });
 										 transform = glm::scale(transform, m_Scale);
 										 return transform; }
 		void setModel(std::shared_ptr<kModel> model);
 		std::shared_ptr<kModel> getModel() { return m_Model; }
 
 		void setPosition(glm::vec3 position);
+		glm::vec3 getPosition() { return m_Position; }
 		void setRotation(glm::vec3 rotation);
+		glm::vec3& getRotation() { return m_Rotation; }
 
 		kBuffer m_UniformBuffer;
 		VkDescriptorSet m_DescriptorSet{ VK_NULL_HANDLE };

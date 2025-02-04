@@ -27,6 +27,8 @@ namespace karhu
 		const VkInstance& getInstance() { return m_Instance; }
 		VkSurfaceKHR getSurface() { return m_Surface; }
 		GLFWwindow* getWindow() { return m_Window; }
+		const int getWidth() const { return m_Width; }
+		const int getheight() const { return m_Height; }
 		const bool& getResize() { return m_Resized; }
 		void setResize(const bool& resized);
 	private:

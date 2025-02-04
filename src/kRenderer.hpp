@@ -40,6 +40,9 @@ namespace karhu
 		VkCommandPool getCommandPool() const { return m_VkSwapChain.m_CommandPool; }
 		bool getWindowShouldclose() { return m_Window->shouldClose(); }
 		void windowPollEvents() { return m_Window->pollEvents(); }
+		GLFWwindow* getWindow() { return m_Window->getWindow(); }
+		const int getWindowWidth() const { return m_Window->getWidth(); }
+		const int getWindowHeight() const { return m_Window->getheight(); }
 	private:
 		void createGraphicsPipeline();
 		void createDepthResources(); //refactor somewhere else image class?
