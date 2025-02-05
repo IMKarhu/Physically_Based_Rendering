@@ -22,12 +22,12 @@ namespace karhu
         
         
 
-        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/cube.gltf", m_Renderer.getCommandPool());
+        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/Avocado.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
-        entity.setPosition({ 0.0f,0.0f,5.0f });
-        entity.setScale({ .25f,.25f,.25f });
+        entity.setPosition({ 0.0f,0.0f,-20.0f });
+        entity.setScale({ 25.0f,25.0f,25.0f });
         //entity.setRotation({ -90.0f,0.0f,0.0f });
 
         m_Entities.push_back(std::move(entity));
@@ -48,7 +48,7 @@ namespace karhu
     void Application::update(float deltaTime)
     {
         auto cameraEntity = kEntity::createEntity();
-        cameraEntity.setPosition({ 0.0f, 0.0f, -1.0f });
+        cameraEntity.setPosition({ 0.0f, 0.0f, -20.0f });
         kCamera m_Camera{};
         keyboardMovement keyboard{};
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -59,10 +59,13 @@ namespace karhu
             float dt = std::chrono::duration<float, std::chrono::seconds::period>(startTime - currentTime).count();
             currentTime = startTime;
 
-            keyboard.update(m_Renderer.getWindow(), dt, cameraEntity, m_Renderer.getWindowWidth(), m_Renderer.getWindowHeight());
+            m_Camera.update(dt);
+            keyboard.update(m_Renderer.getWindow(), dt, m_Camera, m_Renderer.getWindowWidth(), m_Renderer.getWindowHeight());
             m_Camera.setView(cameraEntity.getPosition(), cameraEntity.getRotation(), glm::vec3(0.0f, 1.0f, 0.0f));
             //m_Camera.setyxzView(cameraEntity.getPosition(), cameraEntity.getRotation());
             m_Camera.setPerspective(glm::radians(45.0f), m_Renderer.getSwapChain().m_SwapChainExtent.width / (float)m_Renderer.getSwapChain().m_SwapChainExtent.height, 0.1f, 100.0f);
+
+            //m_Entities[0].setRotation({ m_Entities[0].getRotation().x, dt * glm::radians(90.0f), m_Entities[0].getRotation().z});
             
             uint32_t imageIndex = 0;
             m_Renderer.beginFrame(m_CurrentFrame, imageIndex);

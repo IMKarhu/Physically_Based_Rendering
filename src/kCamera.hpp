@@ -17,10 +17,23 @@ namespace karhu
 		const glm::mat4& getProjection() { return m_ProjectionMatrix; }
 		const glm::mat4& getView() { return m_ViewMatrix; }
 		const glm::mat4& getModel() { return m_ModelMatrix; }
+		glm::mat4 getRotationMatrix();
+
+		void update(float dt);
+
+		struct
+		{
+			glm::vec3 m_Position;
+			glm::vec3 m_Velocity;
+			float m_Pitch{ 0.0f };
+			float m_yaw{ 0.0f };
+		}m_CameraVars;
 	private:
 		glm::mat4 m_ProjectionMatrix{ 1.0f };
 		glm::mat4 m_ViewMatrix{ 1.0f };
 		glm::mat4 m_ModelMatrix{ 1.0f };
+
+		
 
 	};
 }

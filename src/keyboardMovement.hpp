@@ -3,13 +3,15 @@
 
 namespace karhu
 {
-	class kEntity;
+	//class kEntity;
+	class kCamera;
 
 	class keyboardMovement
 	{
 	public:
-		void update(GLFWwindow* window, float dt, kEntity& entity, int width, int height);
+		void update(GLFWwindow* window, float dt, kCamera& camera, int width, int height);
 	private:
-		float m_Speed = 2.5f;
+		float m_Speed = 1.0f;
+		float m_RotateSpeed = 0.5f;
 	};
 }

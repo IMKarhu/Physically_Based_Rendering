@@ -1,6 +1,7 @@
 #include "kCamera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace karhu
 {
@@ -10,7 +11,10 @@ namespace karhu
 	}
 	void kCamera::setView(glm::vec3 position, glm::vec3 direction, glm::vec3 up)
 	{
-		m_ViewMatrix = glm::lookAt(position, direction, up);
+		//m_ViewMatrix = glm::lookAt(position, direction, up);
+		glm::mat4 camTranslation = glm::translate(glm::mat4(1.0f), m_CameraVars.m_Position);
+		glm::mat4 camRotation = getRotationMatrix();
+		m_ViewMatrix = glm::inverse(camTranslation * camRotation);
 	}
 	void kCamera::setyxzView(glm::vec3 position, glm::vec3 rotation)
 	{
@@ -54,6 +58,18 @@ namespace karhu
 	void kCamera::setModel(glm::mat4 model)
 	{
 		m_ModelMatrix = model;
+	}
+	glm::mat4 kCamera::getRotationMatrix()
+	{
+		glm::quat pitchRot = glm::angleAxis(m_CameraVars.m_Pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+		glm::quat yawRot = glm::angleAxis(m_CameraVars.m_yaw, glm::vec3(0.0f, -1.0f, 0.0f));
+
+		return glm::toMat4(yawRot) * glm::toMat4(pitchRot);
+	}
+	void kCamera::update(float dt)
+	{
+		glm::mat4 cameraRot = getRotationMatrix();
+		m_CameraVars.m_Position += glm::vec3(cameraRot * glm::vec4(m_CameraVars.m_Velocity * 10.5f * dt, 0.0f));
 	}
 }
 
