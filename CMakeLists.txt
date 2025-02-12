@@ -13,6 +13,8 @@ add_subdirectory(ext/glfw-3.3.8)
 add_subdirectory(ext/VulkanMemoryAllocator)
 add_subdirectory(ext/assimp-5.4.3)
 
+include_directories("ext/stb-master")
+
 
 file(GLOB_RECURSE CPP_SOURCE_FILES "src/*.h" "src/*.hpp" "src/*.cpp")
 add_executable(PBR ${CPP_SOURCE_FILES})

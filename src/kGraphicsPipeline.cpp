@@ -127,8 +127,14 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1; // nullptr if no descriptors used
         //pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorLayout; // nullptr if no descriptors used SET IN APPLICATION.CPP
-        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+        VkPushConstantRange cameraPushConstant{};
+        cameraPushConstant.offset = 0;
+        cameraPushConstant.size = sizeof(pushConstants);
+        cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
+        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = &cameraPushConstant; // Optional
 
         VK_CHECK(vkCreatePipelineLayout(m_Device.m_Device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_PipelineLayout));
 

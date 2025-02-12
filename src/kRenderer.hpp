@@ -5,6 +5,7 @@
 #include "kGraphicsPipeline.hpp"
 #include "kDescriptors.hpp"
 
+
 #include <memory>
 #include <fstream>
 #include <chrono>
@@ -26,7 +27,7 @@ namespace karhu
 		void operator=(const kRenderer&) = delete;
 
 		void createFrameBuffers();
-		void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index);
+		void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index, glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor);
 		void beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
 		void endRecordCommandBuffer(uint32_t currentFrameIndex);
 		void createSyncObjects();
@@ -43,6 +44,11 @@ namespace karhu
 		GLFWwindow* getWindow() { return m_Window->getWindow(); }
 		const int getWindowWidth() const { return m_Window->getWidth(); }
 		const int getWindowHeight() const { return m_Window->getheight(); }
+		void createTexture(std::string filepath, VkImage& image, VkDeviceMemory& memory, VkCommandPool commandPool); //refactor into image class?
+		void transitionImagelayout(VkImage& image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandPool commandPool);
+		void copyBufferToImage(VkBuffer buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool commandPool);
+		void textureImageView(VkImageView& view, VkImage& image);
+		void createSampler(VkSampler& sampler);
 	private:
 		void createGraphicsPipeline();
 		void createDepthResources(); //refactor somewhere else image class?
@@ -55,6 +61,7 @@ namespace karhu
 			VkImageUsageFlags usage,
 			VkMemoryPropertyFlags properties,
 			VkImage& image, VkDeviceMemory& imageMemory); //reafctor somewhere else image class?
+		
 		void cleanUpSwapChain();
 		void reCreateSwapChain();
 	private:

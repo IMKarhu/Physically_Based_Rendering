@@ -25,6 +25,8 @@ namespace karhu
 		void createImageViews();
 		void createCommandBuffers();
 		void createCommandPool();
+		VkCommandBuffer RecordSingleCommand();
+		void endSingleCommand(VkCommandBuffer commandBuffer);
 
 		VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 		std::vector<VkImage> m_SwapChainImages;

@@ -22,15 +22,22 @@ namespace karhu
         
         
 
-        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/Avocado.gltf", m_Renderer.getCommandPool());
+        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/sphere.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
         entity.setPosition({ 0.0f,0.0f,-20.0f });
-        entity.setScale({ 25.0f,25.0f,25.0f });
-        //entity.setRotation({ -90.0f,0.0f,0.0f });
+        entity.setScale({ 1.0f,1.0f,1.0f });
+        entity.setRotation({ 90.0f,0.0f,0.0f });
+
 
         m_Entities.push_back(std::move(entity));
+
+        auto DirectionalLight = kEntity::createEntity();
+        DirectionalLight.setModel(model);
+        DirectionalLight.setPosition({ 1.0f, 3.0f, 1.0f });
+
+        m_Entities.push_back(std::move(DirectionalLight));
 
        /* auto entity2 = kEntity::createEntity();
         entity2.setModel(model);
@@ -38,6 +45,56 @@ namespace karhu
         entity2.setRotation({ 0.0f,0.0f,0.0f });
 
         m_Entities.push_back(std::move(entity2));*/
+        /*kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        albedo.createTexture("../textures/Default_Albedo.jpg");
+        kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        normal.createTexture("../textures/Default_Normal.jpg");
+        kTexture metallicRoughness{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        metallicRoughness.createTexture("../textures/Default_MetalRoughness.jpg");
+        kTexture ao{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        ao.createTexture("../textures/Default_AO.jpg");
+        kTexture emissive{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        emissive.createTexture("../textures/Default_emissive.jpg");*/
+        kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        albedo.createTexture("../textures/rustediron2_basecolor.png");
+        kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        normal.createTexture("../textures/rustediron2_normal.png");
+        kTexture metallicRoughness{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        metallicRoughness.createTexture("../textures/rustediron2_metallic.png");
+        kTexture ao{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        ao.createTexture("../textures/rustediron2_roughness.png");
+        kTexture emissive{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        emissive.createTexture("../textures/Default_emissive.jpg");
+
+        for (int i = 0; i < m_Entities.size(); i++)
+        {
+            m_Entities[i].getModel()->m_Textures.push_back(albedo);
+            m_Entities[i].getModel()->m_Textures.push_back(normal);
+            m_Entities[i].getModel()->m_Textures.push_back(metallicRoughness);
+            m_Entities[i].getModel()->m_Textures.push_back(ao);
+            m_Entities[i].getModel()->m_Textures.push_back(emissive);
+        }
+        
+
+       /* m_Renderer.createTexture("../textures/Default_Albedo.jpg", m_Entities[0].getModel()->m_Texture.m_texture, m_Entities[0].getModel()->m_Texture.m_Memory, m_Renderer.getCommandPool());
+        m_Renderer.textureImageView(m_Entities[0].getModel()->m_Texture.m_TextureView, m_Entities[0].getModel()->m_Texture.m_texture);
+        m_Renderer.createSampler(m_Entities[0].getModel()->m_Texture.m_Sampler);
+
+        m_Renderer.createTexture("../textures/Default_Normal.jpg", m_Entities[0].getModel()->m_NormalTexture.m_texture, m_Entities[0].getModel()->m_NormalTexture.m_Memory, m_Renderer.getCommandPool());
+        m_Renderer.textureImageView(m_Entities[0].getModel()->m_NormalTexture.m_TextureView, m_Entities[0].getModel()->m_NormalTexture.m_texture);
+        m_Renderer.createSampler(m_Entities[0].getModel()->m_NormalTexture.m_Sampler);
+
+        m_Renderer.createTexture("../textures/Default_MetalRoughness.jpg", m_Entities[0].getModel()->m_MetallicTexture.m_texture, m_Entities[0].getModel()->m_MetallicTexture.m_Memory, m_Renderer.getCommandPool());
+        m_Renderer.textureImageView(m_Entities[0].getModel()->m_MetallicTexture.m_TextureView, m_Entities[0].getModel()->m_MetallicTexture.m_texture);
+        m_Renderer.createSampler(m_Entities[0].getModel()->m_MetallicTexture.m_Sampler);
+
+        m_Renderer.createTexture("../textures/Default_emissive.jpg", m_Entities[0].getModel()->m_RoughnessTexture.m_texture, m_Entities[0].getModel()->m_RoughnessTexture.m_Memory, m_Renderer.getCommandPool());
+        m_Renderer.textureImageView(m_Entities[0].getModel()->m_RoughnessTexture.m_TextureView, m_Entities[0].getModel()->m_RoughnessTexture.m_texture);
+        m_Renderer.createSampler(m_Entities[0].getModel()->m_RoughnessTexture.m_Sampler);
+
+        m_Renderer.createTexture("../textures/Default_AO.jpg", m_Entities[0].getModel()->m_AoTexture.m_texture, m_Entities[0].getModel()->m_AoTexture.m_Memory, m_Renderer.getCommandPool());
+        m_Renderer.textureImageView(m_Entities[0].getModel()->m_AoTexture.m_TextureView, m_Entities[0].getModel()->m_AoTexture.m_texture);
+        m_Renderer.createSampler(m_Entities[0].getModel()->m_AoTexture.m_Sampler);*/
 
         m_Renderer.createUniformBuffers(m_Entities);
         m_Renderer.getDescriptor().createDescriptorSets(m_Entities);
@@ -52,6 +109,7 @@ namespace karhu
         kCamera m_Camera{};
         keyboardMovement keyboard{};
         auto currentTime = std::chrono::high_resolution_clock::now();
+        
         while (!m_Renderer.getWindowShouldclose())
         {
             m_Renderer.windowPollEvents();
@@ -80,7 +138,7 @@ namespace karhu
         m_Renderer.beginRecordCommandBuffer(currentFrameIndex, index);
         for (auto& entity : m_Entities)
         {
-            m_Renderer.recordCommandBuffer(entity, m_CurrentFrame, index);
+            m_Renderer.recordCommandBuffer(entity, m_CurrentFrame, index, camera.m_CameraVars.m_Position, m_Entities[1].getPosition(), glm::vec4(1.0f,1.0f,1.0f,1.0f));
         }
         m_Renderer.endRecordCommandBuffer(currentFrameIndex);
     }

@@ -21,6 +21,11 @@ namespace karhu
 		vkFreeMemory(m_Device.m_Device, m_IndexBuffer.m_IndexBufferMemory, nullptr);
 		vkDestroyBuffer(m_Device.m_Device, m_VertexBuffer.m_VertexBuffer, nullptr);
 		vkFreeMemory(m_Device.m_Device, m_VertexBuffer.m_VertexBufferMemory, nullptr);
+		vkDestroySampler(m_Device.m_Device, m_Texture.m_Sampler, nullptr);
+		vkDestroyImageView(m_Device.m_Device, m_Texture.m_TextureView, nullptr);
+		vkDestroyImage(m_Device.m_Device, m_Texture.m_texture, nullptr);
+		vkFreeMemory(m_Device.m_Device, m_Texture.m_Memory, nullptr);
+		
 		printf("model Destroyed\n");
 	}
 
@@ -44,7 +49,8 @@ namespace karhu
 		const aiScene* scene = importer.ReadFile(filepath, aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
-			aiProcess_SortByPType);
+			aiProcess_SortByPType |
+			aiProcess_FlipUVs);
 
 		if (scene == nullptr)
 		{
@@ -77,6 +83,9 @@ namespace karhu
 			vert.normal.x = mesh->mNormals[i].x;
 			vert.normal.y = mesh->mNormals[i].y;
 			vert.normal.z = mesh->mNormals[i].z;
+
+			vert.texcoords.x = mesh->mTextureCoords[0][i].x;
+			vert.texcoords.y = mesh->mTextureCoords[0][i].y;
 
 			vert.color = { 1.0f, 1.0f, 0.0f };
 

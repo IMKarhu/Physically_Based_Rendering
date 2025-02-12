@@ -18,6 +18,7 @@ namespace karhu
 		kEntity& operator=(kEntity&&) = default;
 
 		static kEntity createEntity();
+		static kEntity createLight();
 
 		glm::mat4 getTransformMatrix() { auto transform = glm::translate(glm::mat4(1.0f), m_Position);
 										 transform = glm::rotate(transform, m_Rotation.x, { 1.0f, 0.0f, 0.0f });
@@ -40,6 +41,7 @@ namespace karhu
 	private:
 		kEntity(uint32_t id) : m_Id(id){}
 		uint32_t m_Id;
+		uint32_t mLightId;
 		std::shared_ptr<kModel> m_Model{};
 		glm::vec3 m_Position{};
 		glm::vec3 m_Scale{ 1.0f, 1.0f, 1.0f };

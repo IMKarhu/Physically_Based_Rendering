@@ -76,6 +76,11 @@ namespace karhu
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{}; /* Leave this as vk_false for now, still need it for device creation. */
+		deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+		VkPhysicalDeviceSynchronization2Features sync2Features{};
+		sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+		sync2Features.synchronization2 = VK_TRUE;
 
 		VkDeviceCreateInfo deviceinfo{};
 		deviceinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -84,6 +89,7 @@ namespace karhu
 		deviceinfo.pEnabledFeatures = &deviceFeatures;
 		deviceinfo.enabledExtensionCount = static_cast<uint32_t>(vkUtils::deviceExtensions.size());
 		deviceinfo.ppEnabledExtensionNames = vkUtils::deviceExtensions.data();
+		deviceinfo.pNext = &sync2Features;
 
 		if (enableValidationLayers)
 		{
@@ -117,7 +123,10 @@ namespace karhu
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 
-		return indices.isComplete() && extensionsSupported && swapChainAdequate;
+		VkPhysicalDeviceFeatures supportedFeatures;
+		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+		return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
 	void Vulkan_Device::createBuffers(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)

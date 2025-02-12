@@ -89,8 +89,8 @@ namespace karhu
 			glfwSetCursorPos(window, width / 2, height / 2);
 
 			
-			camera.m_CameraVars.m_yaw += 0.01f * static_cast<float>(mouseX - width / 2);
-			camera.m_CameraVars.m_Pitch -= 0.01f * static_cast<float>(mouseY - height / 2);
+			camera.m_CameraVars.m_yaw += 0.005f * static_cast<float>(mouseX - width / 2);
+			camera.m_CameraVars.m_Pitch -= 0.005f * static_cast<float>(mouseY - height / 2);
 
 
 			/*if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon())
