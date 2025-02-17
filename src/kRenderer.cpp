@@ -2,6 +2,11 @@
 #include "kEntity.hpp"
 #include "kCamera.hpp"
 
+
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+
 //#define STB_IMAGE_IMPLEMENTATION
 //#include <stb_image.h>
 
@@ -22,10 +27,15 @@ namespace karhu
         m_DescriptorBuilder.createDescriptorPool(2);
 
         createSyncObjects();
+        initializeImGui();
     }
     kRenderer::~kRenderer()
     {
         printf("app destroyed\n");
+        vkDestroyDescriptorPool(m_VkDevice.m_Device, m_ImguiPool, nullptr);
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
         cleanUpSwapChain();
         
         for (size_t i = 0; i < m_VkSwapChain.m_MaxFramesInFlight; i++)
@@ -84,6 +94,18 @@ namespace karhu
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
         //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
         entity.getModel()->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
+
+
+        /*ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+
+        ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);*/
+        
     }
 
     void kRenderer::beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index)
@@ -103,7 +125,7 @@ namespace karhu
         renderpassInfo.renderArea.extent = m_VkSwapChain.m_SwapChainExtent;
 
         std::array<VkClearValue, 2> clearValues = {};
-        clearValues[0].color = { {0.01f ,0.01f ,0.01f ,1.0f} };
+        clearValues[0].color = { {0.0f ,0.0f ,0.0f ,1.0f} };
         clearValues[1].depthStencil = { 1.0f, 0 };
         renderpassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderpassInfo.pClearValues = clearValues.data();
@@ -131,6 +153,7 @@ namespace karhu
 
     void kRenderer::endRecordCommandBuffer(uint32_t currentFrameIndex)
     {
+        /*ImGui::EndFrame();*/
         vkCmdEndRenderPass(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
 
         VK_CHECK(vkEndCommandBuffer(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]));
@@ -176,16 +199,10 @@ namespace karhu
 
     void kRenderer::updateUBOs(std::vector<kEntity>& entities, kCamera& camera)
     {
-        /*static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();*/
         for (auto& entity : entities)
         {
             UniformBufferObject ubo{};
-            //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            //ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            //ubo.proj = glm::perspective(glm::radians(45.0f), m_VkSwapChain.m_SwapChainExtent.width / (float)m_VkSwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+           
             ubo.model = entity.getTransformMatrix();
             ubo.view = camera.getView();
             ubo.proj = camera.getProjection();
@@ -256,6 +273,19 @@ namespace karhu
             throw std::runtime_error("Failed to present swapchain image1\n");
         }
         m_currentFrameIndex = (m_currentFrameIndex + 1) % m_VkSwapChain.m_MaxFramesInFlight;
+    }
+
+    void kRenderer::startImguiLayer(uint32_t currentFrameIndex)
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+
+        ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
     }
 
     void kRenderer::createGraphicsPipeline()
@@ -335,202 +365,6 @@ namespace karhu
         vkBindImageMemory(m_VkDevice.m_Device, image, imageMemory, 0);
     }
 
-    void kRenderer::createTexture(std::string filepath, VkImage& image, VkDeviceMemory& memory, VkCommandPool commandPool)
-    {
-        ///*int width, height, nrChannels;
-        //stbi_uc* pixels = stbi_load(filepath.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
-        //VkDeviceSize imageSize = width * height * 4;
-
-        //if (!pixels)
-        //{
-        //    throw std::runtime_error("unable to load texture!\n");
-        //}
-
-        //VkBuffer staging;
-        //VkDeviceMemory stagingMemory;
-        //m_VkDevice.createBuffers(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging, stagingMemory);
-
-        //void* data;
-        //vkMapMemory(m_VkDevice.m_Device, stagingMemory, 0, imageSize, 0, &data);
-        //memcpy(data, pixels, static_cast<size_t>(imageSize));
-        //vkUnmapMemory(m_VkDevice.m_Device, stagingMemory);
-
-        //stbi_image_free(pixels);*/
-
-        //createImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
-
-        //transitionImagelayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandPool);
-
-        //copyBufferToImage(staging, image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), commandPool);
-
-        //transitionImagelayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool);
-
-        //vkDestroyBuffer(m_VkDevice.m_Device, staging, nullptr);
-        //vkFreeMemory(m_VkDevice.m_Device, stagingMemory, nullptr);
-    }
-
-    void kRenderer::transitionImagelayout(VkImage& image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandPool commandPool)
-    {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandPool;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer;
-        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice.m_Device, &allocInfo, &commandBuffer));
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-        //tähän väliin tavaraa
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
-
-        if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        }
-        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        }
-        else {
-            throw std::invalid_argument("unsupported layout transition!");
-        }
-        
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            0 /* TODO */, 0 /* TODO */,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier);
-
-        vkEndCommandBuffer(commandBuffer);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        VK_CHECK(vkQueueSubmit(m_VkDevice.m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-        VK_CHECK(vkQueueWaitIdle(m_VkDevice.m_GraphicsQueue));
-        vkFreeCommandBuffers(m_VkDevice.m_Device, commandPool, 1, &commandBuffer);
-    }
-
-    void kRenderer::copyBufferToImage(VkBuffer buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool commandPool)
-    {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandPool;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer;
-        VK_CHECK(vkAllocateCommandBuffers(m_VkDevice.m_Device, &allocInfo, &commandBuffer));
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-        //soemthing here
-
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-
-        region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = {
-            width,
-            height,
-            1
-        };
-
-        vkCmdCopyBufferToImage(
-            commandBuffer,
-            buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &region
-        );
-
-        vkEndCommandBuffer(commandBuffer);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        VK_CHECK(vkQueueSubmit(m_VkDevice.m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-        VK_CHECK(vkQueueWaitIdle(m_VkDevice.m_GraphicsQueue));
-        vkFreeCommandBuffers(m_VkDevice.m_Device, commandPool, 1, &commandBuffer);
-    }
-
-    void kRenderer::textureImageView(VkImageView& view, VkImage& image)
-    {
-        view = m_VkSwapChain.createImageView(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    }
-
-    void kRenderer::createSampler(VkSampler& sampler)
-    {
-        VkSamplerCreateInfo samplerInfo{};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.anisotropyEnable = VK_TRUE;
-
-        VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(m_VkDevice.m_PhysicalDevice, &properties);
-
-        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
-        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerInfo.mipLodBias = 0.0f;
-        samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = 0.0f;
-
-        if (vkCreateSampler(m_VkDevice.m_Device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture sampler!");
-        }
-    }
-
     void kRenderer::cleanUpSwapChain()
     {
         vkDestroyImageView(m_VkDevice.m_Device, m_DepthImageView, nullptr);
@@ -571,5 +405,61 @@ namespace karhu
         m_VkSwapChain.createImageViews();
         createDepthResources();
         createFrameBuffers();
+    }
+
+    //poor implementation but its from imgui examples
+    void kRenderer::initializeImGui()
+    {
+        VkDescriptorPoolSize poolSizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 1000;
+        pool_info.poolSizeCount = std::size(poolSizes);
+        pool_info.pPoolSizes = poolSizes;
+
+        VK_CHECK(vkCreateDescriptorPool(m_VkDevice.m_Device, &pool_info, nullptr, &m_ImguiPool));
+
+
+        //initialize imgui
+
+        ImGui::CreateContext();
+
+        ImGui_ImplGlfw_InitForVulkan(m_Window->getWindow(), true);
+
+        ImGui_ImplVulkan_InitInfo initInfo{};
+        initInfo.Instance = m_Window->getInstance();
+        initInfo.PhysicalDevice = m_VkDevice.m_PhysicalDevice;
+        initInfo.Device = m_VkDevice.m_Device;
+        initInfo.Queue = m_VkDevice.m_GraphicsQueue;
+        initInfo.DescriptorPool = m_ImguiPool;
+        initInfo.MinImageCount = 3;
+        initInfo.ImageCount = 3;
+        initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        initInfo.RenderPass = m_GraphicsPipeline.getRenderPass();
+
+        ImGui_ImplVulkan_Init(&initInfo);
+
+        VkCommandBuffer commandBuffer = m_VkSwapChain.RecordSingleCommand();
+        ImGui_ImplVulkan_CreateFontsTexture();
+        m_VkSwapChain.endSingleCommand(commandBuffer);
+
+        vkDeviceWaitIdle(m_VkDevice.m_Device);
+        ImGui_ImplVulkan_DestroyFontsTexture();
+        
     }
 }

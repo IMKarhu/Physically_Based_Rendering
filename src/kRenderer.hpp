@@ -35,6 +35,8 @@ namespace karhu
 		void updateUBOs(std::vector<kEntity>& entities, kCamera& camera);
 		void beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
+		void startImguiLayer(uint32_t currentFrameIndex);
+		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
 		kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
@@ -44,11 +46,6 @@ namespace karhu
 		GLFWwindow* getWindow() { return m_Window->getWindow(); }
 		const int getWindowWidth() const { return m_Window->getWidth(); }
 		const int getWindowHeight() const { return m_Window->getheight(); }
-		void createTexture(std::string filepath, VkImage& image, VkDeviceMemory& memory, VkCommandPool commandPool); //refactor into image class?
-		void transitionImagelayout(VkImage& image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandPool commandPool);
-		void copyBufferToImage(VkBuffer buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool commandPool);
-		void textureImageView(VkImageView& view, VkImage& image);
-		void createSampler(VkSampler& sampler);
 	private:
 		void createGraphicsPipeline();
 		void createDepthResources(); //refactor somewhere else image class?
@@ -64,6 +61,7 @@ namespace karhu
 		
 		void cleanUpSwapChain();
 		void reCreateSwapChain();
+		void initializeImGui();
 	private:
 		std::unique_ptr<kWindow> m_Window = std::make_unique<kWindow>("Vulkan", 1080, 720);
 		Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
@@ -88,6 +86,7 @@ namespace karhu
 		std::vector<void*> m_UniformBuffersMapped;
 
 		VkDescriptorPool m_DescriptorPool;
+		VkDescriptorPool m_ImguiPool;
 		std::vector<VkDescriptorSet> m_DescriptorSets;
 
 		VkImage m_DepthImage;

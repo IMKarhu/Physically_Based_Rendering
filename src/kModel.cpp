@@ -21,10 +21,14 @@ namespace karhu
 		vkFreeMemory(m_Device.m_Device, m_IndexBuffer.m_IndexBufferMemory, nullptr);
 		vkDestroyBuffer(m_Device.m_Device, m_VertexBuffer.m_VertexBuffer, nullptr);
 		vkFreeMemory(m_Device.m_Device, m_VertexBuffer.m_VertexBufferMemory, nullptr);
-		vkDestroySampler(m_Device.m_Device, m_Texture.m_Sampler, nullptr);
-		vkDestroyImageView(m_Device.m_Device, m_Texture.m_TextureView, nullptr);
-		vkDestroyImage(m_Device.m_Device, m_Texture.m_texture, nullptr);
-		vkFreeMemory(m_Device.m_Device, m_Texture.m_Memory, nullptr);
+		for (auto& tex : m_Textures)
+		{
+			vkDestroySampler(m_Device.m_Device, tex.m_TextureVars.m_Sampler, nullptr);
+			vkDestroyImageView(m_Device.m_Device, tex.m_TextureVars.m_TextureView, nullptr);
+			vkDestroyImage(m_Device.m_Device, tex.m_TextureVars.m_texture, nullptr);
+			vkFreeMemory(m_Device.m_Device, tex.m_TextureVars.m_Memory, nullptr);
+		}
+		
 		
 		printf("model Destroyed\n");
 	}
@@ -50,7 +54,8 @@ namespace karhu
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_SortByPType |
-			aiProcess_FlipUVs);
+			aiProcess_FlipUVs |
+			aiProcess_GenSmoothNormals);
 
 		if (scene == nullptr)
 		{

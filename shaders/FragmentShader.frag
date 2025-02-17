@@ -21,13 +21,7 @@ layout( push_constant ) uniform cameraConstants
 } camera;
 
 const float PI = 3.1415926535897932384626433832795;
-const vec3 Directional_Light = normalize(vec3(1.0,3.0,1.0));
-const float AMBIENT = 0.01;
 
-float NDF_GGX(vec3 N, vec3 H, float roughness);
-float SpecularG_SmithGGXCorrelated(vec3 N, vec3 V, vec3 L, float roughness);
-vec3 Schlick(float u, vec3 f0);
-float Lambertian();
 vec3 getNormalFromMap()
 {
     vec3 tangentNormal = texture(normalMap, fragUV).xyz * 2.0 - 1.0;
@@ -52,15 +46,14 @@ float Fd_Lamber();
 
 void main()
 {
-    //vec3 N = normalize();
-    //float roughness = 0.5;
     vec3 normal = getNormalFromMap();
+    //vec3 normal = texture(normalMap, fragUV).rgb;
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
 
-    vec3 albedo = pow(texture(texSampler, fragUV).rgb, vec3(2.2));
-    float metallic = texture(metallicMap, fragUV).r;
-    float roughness = texture(roughnessMap, fragUV).r;
+    vec3 albedo = texture(texSampler, fragUV).rgb;
+    float metallic = texture(metallicMap, fragUV).b;
+    float roughness = texture(metallicMap, fragUV).g;
     float ao = texture(roughnessMap, fragUV).r;
     //normal = normalize(normal * 2.0 - 1.0);
     
@@ -71,143 +64,54 @@ void main()
     //refletance equation
     vec3 Lo = vec3(0.0);
 
-    //per light radiance, if we had more than one, we should calculate this for all the lights
-    vec3 L = normalize(normalize(camera.lightPosition) - fragWorldPosition.xyz);
-    vec3 H = normalize(V + L);
-    float dist = length(normalize(camera.lightPosition) - fragWorldPosition.xyz);
-    float attenuation = 1.0 / (dist * dist);
-    vec3 radiance = vec3(1.0, 1.0, 1.0) * attenuation;
-
-
-    //BRDF
-    float NoV = max(dot(normal, V), 0.000001);
-    float NoL = max(dot(normal, L), 0.000001);
-    float HoV = max(dot(H, V), 0.0);
-    float NoH = max(dot(normal, H), 0.0);
-
-    float D = D_GGX(NoH, roughness); // value between 0 and 1
-    float G = V_SmithGGXCorrelated(NoV, NoL, roughness); // value between 0 and 1
-    vec3 F = F_Schlick(HoV, f0); //RGB values also between 0 and 1
-
-    vec3 SpecularBRDF = D * G * F;
-    SpecularBRDF /= 4.0 * NoV * NoL;
-
-    //energy conservation, diffuse and specular light can't be above 1.0 (unles surface emits light)
-    vec3 kD = vec3(1.0) - F;
-
-    kD *= 1.0 - metallic;
-
-    Lo += (kD * albedo / PI + SpecularBRDF) * radiance * NoL;
-
-    vec3 ambient = vec3(0.03) * albedo;
+    for( int i = 0; i < 1; i++)
+    {
+        //per light radiance, if we had more than one, we should calculate this for all the lights
+        vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+        vec3 H = normalize(V + L);
+        float dist = length(normalize(camera.lightPosition) - fragWorldPosition.xyz);
+        float attenuation = 1.0 / (dist * dist);
+        vec3 radiance = camera.lightColor.xyz * attenuation;
+                        
+        //BRDF
+        float NoV = max(dot(normal, V), 0.000001);
+        float NoL = max(dot(normal, L), 0.000001);
+        float HoV = max(dot(H, V), 0.0);
+        float NoH = max(dot(normal, H), 0.0);
+                
+        float D = D_GGX(NoH, roughness); // value between 0 and 1
+        float G = V_SmithGGXCorrelated(NoV, NoL, roughness); // value between 0 and 1
+        vec3 F = F_Schlick(HoV, f0); //RGB values also between 0 and 1
+                
+        vec3 SpecularBRDF = D * G * F;
+        
+        //energy conservation, diffuse and specular light can't be above 1.0 (unles surface emits light)
+        vec3 kD = vec3(1.0) - F;
+        kD *= 1.0 - metallic;
+        Lo += (kD * albedo / PI + SpecularBRDF) * radiance * NoL;
+    }
+    vec3 ambient = vec3(0.03) * albedo * vec3(1.0, 1.0, 1.0);// * ao;
 
     vec3 color = ambient + Lo;
 
-    color = color / (color + vec3(1.0));
-
-    color = pow(color, vec3(1.0/2.0));
+    //hdr tonemapping
+    //color = color / (color + vec3(1.0));
+    //gamma correction
+    //color = pow(color, vec3(1.0/2.2));
 
     outColor = vec4(color, 1.0);
-
-   // float NDF = NDF_GGX(normal, H, roughness);
-  //  float G = SpecularG_SmithGGXCorrelated(normal, V, L, roughness);
-   // vec3 f = Schlick(max(dot(H, V), 0.0), f0);
-
-   // vec3 numerator    = NDF * G * f; 
-      //  float denominator = 4.0 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
-     //   vec3 specular = numerator / denominator;
-
-    // kS is equal to Fresnel
-      //  vec3 kS = f;
-        // for energy conservation, the diffuse and specular light can't
-        // be above 1.0 (unless the surface emits light); to preserve this
-        // relationship the diffuse component (kD) should equal 1.0 - kS.
-       // vec3 kD = vec3(1.0) - kS;
-        // multiply kD by the inverse metalness such that only non-metals 
-        // have diffuse lighting, or a linear blend if partly metal (pure metals
-        // have no diffuse light).
-       // kD *= 1.0 - metallic;	  
-
-        // scale light by NdotL
-      //  float NdotL = max(dot(normal, L), 0.0);        
-
-        // add to outgoing radiance Lo
-      //  Lo += (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
-
-        // ambient lighting (note that the next IBL tutorial will replace 
-    // this ambient lighting with environment lighting).
-   // vec3 ambient = vec3(0.03) * albedo * ao;
-    
-   // vec3 color = ambient + Lo;
-
-    // HDR tonemapping
-   // color = color / (color + vec3(1.0));
-    // gamma correct
-  //  color = pow(color, vec3(1.0/2.2)); 
-
-   // outColor = vec4(color, 1.0);
-
-
-    //float lightIntensity = AMBIENT + max(dot(fragNormal, Directional_Light), 0);
-
-    //outColor = texture(texSampler, fragUV) * lightIntensity;
-}
-
-float NDF_GGX(vec3 N, vec3 H, float roughness)
-{
-    float roughness2 = roughness * roughness;
-    float NdotH = max(dot(N,H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-
-    float nom = roughness2;
-    float denom = (NdotH2 * (roughness2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-    return nom / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
-    return nom / denom;
-}
-
-float SpecularG_SmithGGXCorrelated(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-vec3 Schlick(float u, vec3 f0)
-{
-    float f = pow(1.0 - u, 5.0);
-    vec3 result = f + f0 * (1.0 - f);
-    return result;
-}
-
-float Lambertian()
-{
-    return 1.0 / PI;
 }
 
 float D_GGX(float NoH, float a)
 {
     float a2 = a * a;
     float f = (NoH * a2 - NoH) * NoH + 1.0;
-    return a2/ (PI * f * f);
+    return a2/ (PI * f * f); // DGGX(h,a) = a2/ PI((n*h)pow2 (a2-1)+1)pow2
 }
 
 vec3 F_Schlick(float u, vec3 f0)
 {
-return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0);
+return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0); // Fresnel Schlick(v,h,f0,f90=1.0) = f0 + (f90 - f0)(1-v*h)power of 5
 }
 
 float V_SmithGGXCorrelated(float NoV, float NoL, float a)
@@ -215,7 +119,7 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float a)
     float a2 = a * a;
     float ggxl = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
     float ggxv = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
-return 0.5 / (ggxv + ggxl);
+return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
 }
 
 float Fd_Lamber()

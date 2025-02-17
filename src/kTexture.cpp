@@ -15,7 +15,17 @@ namespace karhu
         , m_SwapChain(swapchain)
 	{
 	}
-	void kTexture::createTexture(std::string filepath)
+
+    kTexture::~kTexture()
+    {
+        //printf("texture destructor called!!");
+       /* vkDestroySampler(m_Device.m_Device, m_TextureVars.m_Sampler, nullptr);
+        vkDestroyImageView(m_Device.m_Device, m_TextureVars.m_TextureView, nullptr);
+        vkDestroyImage(m_Device.m_Device, m_TextureVars.m_texture, nullptr);
+        vkFreeMemory(m_Device.m_Device, m_TextureVars.m_Memory, nullptr);*/
+    }
+
+	void kTexture::createTexture(std::string filepath, VkFormat format)
 	{
 		int width, height, nrChannels;
 		stbi_uc* pixels = stbi_load(filepath.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
@@ -38,18 +48,18 @@ namespace karhu
 		stbi_image_free(pixels);
 
 		kImage kImage{ .m_Device = m_Device };
-		kImage.createImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory);
+		kImage.createImage(width, height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory);
 
-		transitionImagelayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		transitionImagelayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		copyBufferToImage(staging, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
-		transitionImagelayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImagelayout(format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		vkDestroyBuffer(m_Device.m_Device, staging, nullptr);
 		vkFreeMemory(m_Device.m_Device, stagingMemory, nullptr);
 
-        textureImageView();
+        textureImageView(format);
         createSampler();
 	}
 	void kTexture::transitionImagelayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
@@ -92,7 +102,7 @@ namespace karhu
 
         vkCmdPipelineBarrier(
             commandBuffer,
-            0 /* TODO */, 0 /* TODO */,
+            sourceStage , destinationStage ,
             0,
             0, nullptr,
             0, nullptr,
@@ -134,9 +144,9 @@ namespace karhu
 
         m_SwapChain.endSingleCommand(commandBuffer);
 	}
-	void kTexture::textureImageView()
+	void kTexture::textureImageView(VkFormat format)
 	{
-        m_TextureVars.m_TextureView = m_SwapChain.createImageView(m_TextureVars.m_texture, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_TextureVars.m_TextureView = m_SwapChain.createImageView(m_TextureVars.m_texture, format, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 	void kTexture::createSampler()
 	{

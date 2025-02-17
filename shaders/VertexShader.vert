@@ -18,18 +18,14 @@ layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec2 fragUV;
 layout(location = 3) out vec4 fragWorldPosition;
 
-const vec3 Directional_Light = normalize(vec3(1.0,3.0,-1.0));
-
-
 void main()
 {
-    gl_Position = m_Ubo.proj * m_Ubo.view * m_Ubo.model *  vec4(inPosition, 1.0);
+    fragWorldPosition =  m_Ubo.model * vec4(inPosition, 1.0);
+    gl_Position = m_Ubo.proj * m_Ubo.view * fragWorldPosition;
 
     //normalworldspace
     vec3 nws = normalize(mat3(m_Ubo.model) * inNormal);
-
-    float lightIntensity = max(dot(nws, Directional_Light), 0);
-    fragWorldPosition =  m_Ubo.model * vec4(inPosition, 1.0);
+    
     fragColors = inColor;
     fragNormal = nws;
     fragUV = inUV;

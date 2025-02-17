@@ -11,6 +11,7 @@ namespace karhu
 	{
 	public:
 		kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain);
+		~kTexture();
 
 		struct
 		{
@@ -20,10 +21,10 @@ namespace karhu
 			VkSampler m_Sampler;
 		} m_TextureVars;
 
-		void createTexture(std::string filepath);
+		void createTexture(std::string filepath, VkFormat format);
 		void transitionImagelayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void copyBufferToImage(VkBuffer buffer, uint32_t width, uint32_t height);
-		void textureImageView();
+		void textureImageView(VkFormat format);
 		void createSampler();
 	private:
 		Vulkan_Device& m_Device;
