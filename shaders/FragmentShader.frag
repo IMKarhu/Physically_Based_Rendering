@@ -18,6 +18,7 @@ layout( push_constant ) uniform cameraConstants
     int offset;
     vec3 lightPosition;
     vec4 lightColor;
+    vec4 albedoNormalMetalRoughness;
 } camera;
 
 const float PI = 3.1415926535897932384626433832795;
@@ -52,9 +53,13 @@ void main()
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
 
     vec3 albedo = texture(texSampler, fragUV).rgb;
-    float metallic = texture(metallicMap, fragUV).b;
-    float roughness = texture(metallicMap, fragUV).g;
-    float ao = texture(roughnessMap, fragUV).r;
+    float metallic = texture(metallicMap, fragUV).r + camera.albedoNormalMetalRoughness.z;
+    float roughness = texture(roughnessMap, fragUV).r + camera.albedoNormalMetalRoughness.w;
+    if(roughness > 1.0)
+    {
+        roughness = 1.0;
+    }
+    float ao = texture(aoMap, fragUV).r;
     //normal = normalize(normal * 2.0 - 1.0);
     
     //baseRefelectivity
@@ -64,13 +69,13 @@ void main()
     //refletance equation
     vec3 Lo = vec3(0.0);
 
-    for( int i = 0; i < 1; i++)
-    {
+//    for( int i = 0; i < 1; i++)
+//    {
         //per light radiance, if we had more than one, we should calculate this for all the lights
         vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
         vec3 H = normalize(V + L);
-        float dist = length(normalize(camera.lightPosition) - fragWorldPosition.xyz);
-        float attenuation = 1.0 / (dist * dist);
+        float dist = length(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+        float attenuation = 1.0 / (dist *  dist);
         vec3 radiance = camera.lightColor.xyz * attenuation;
                         
         //BRDF
@@ -89,13 +94,13 @@ void main()
         vec3 kD = vec3(1.0) - F;
         kD *= 1.0 - metallic;
         Lo += (kD * albedo / PI + SpecularBRDF) * radiance * NoL;
-    }
-    vec3 ambient = vec3(0.03) * albedo * vec3(1.0, 1.0, 1.0);// * ao;
+//    }
+    vec3 ambient = vec3(0.03) * albedo * ao;
 
     vec3 color = ambient + Lo;
 
     //hdr tonemapping
-    //color = color / (color + vec3(1.0));
+    color = color / (color + vec3(1.0));
     //gamma correction
     //color = pow(color, vec3(1.0/2.2));
 

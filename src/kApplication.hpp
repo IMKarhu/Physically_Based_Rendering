@@ -16,6 +16,8 @@ namespace karhu
     public:
         Application();
         ~Application();
+
+        
         void run();
         void update(float deltaTime);
         void renderEntities(kCamera& camera, uint32_t currentFrameIndex, uint32_t index);

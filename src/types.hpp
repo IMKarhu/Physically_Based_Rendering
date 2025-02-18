@@ -64,5 +64,6 @@ namespace karhu
         int offset;
         alignas(16) glm::vec3 lightPosition;
         glm::vec4 lighColor;
+        glm::vec4 albedoNormalMetalRoughness;
     };
 }

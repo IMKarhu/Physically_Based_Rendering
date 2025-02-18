@@ -2,7 +2,7 @@
 #include "kEntity.hpp"
 #include "kCamera.hpp"
 
-
+#include <glm/gtc/type_ptr.hpp>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
@@ -78,14 +78,16 @@ namespace karhu
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
 
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);*/
+
         entity.getModel()->bind(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
 
         vkCmdBindDescriptorSets(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipelineLayout(), 0, 1, &entity.m_DescriptorSet, 0, nullptr);
 
         pushConstants cameraConstants{};
         cameraConstants.cameraPosition = position;
-        cameraConstants.lightPosition = lightPos;
+        cameraConstants.lightPosition = vars.m_LightPosition;
         cameraConstants.lighColor = lightColor;
+        cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, vars.m_Metalness, vars.m_Roughness);
         vkCmdPushConstants(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], m_GraphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &cameraConstants);
 
         //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
@@ -93,7 +95,9 @@ namespace karhu
         //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
         //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+
         entity.getModel()->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
+        
 
 
         /*ImGui_ImplVulkan_NewFrame();
@@ -153,7 +157,7 @@ namespace karhu
 
     void kRenderer::endRecordCommandBuffer(uint32_t currentFrameIndex)
     {
-        /*ImGui::EndFrame();*/
+        ImGui::EndFrame();
         vkCmdEndRenderPass(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
 
         VK_CHECK(vkEndCommandBuffer(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]));
@@ -283,6 +287,24 @@ namespace karhu
         ImGui::NewFrame();
 
         ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
+    }
+
+    void kRenderer::renderImguiLayer(uint32_t currentFrameIndex)
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+
+       // ImGui::ShowDemoWindow();
+        ImGui::Begin("Controls");
+        ImGui::SliderFloat("Metallic", &vars.m_Metalness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness", &vars.m_Roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat3("lightPosition", glm::value_ptr(vars.m_LightPosition), 0.0f, 10.0f);
+        ImGui::End();
 
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);

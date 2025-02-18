@@ -22,7 +22,7 @@ namespace karhu
         
         
 
-        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
+        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/sphere.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
@@ -33,11 +33,11 @@ namespace karhu
 
         m_Entities.push_back(std::move(entity));
 
-        auto DirectionalLight = kEntity::createEntity();
+        /*auto DirectionalLight = kEntity::createEntity();
         DirectionalLight.setModel(model);
         DirectionalLight.setPosition({ 1.0f, 3.0f, 1.0f });
 
-        m_Entities.push_back(std::move(DirectionalLight));
+        m_Entities.push_back(std::move(DirectionalLight));*/
 
        /* auto entity2 = kEntity::createEntity();
         entity2.setModel(model);
@@ -45,7 +45,7 @@ namespace karhu
         entity2.setRotation({ 0.0f,0.0f,0.0f });
 
         m_Entities.push_back(std::move(entity2));*/
-        kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        /*kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         albedo.createTexture("../textures/Default_Albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
         kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         normal.createTexture("../textures/Default_Normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
@@ -54,19 +54,19 @@ namespace karhu
         kTexture ao{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         ao.createTexture("../textures/Default_AO.jpg", VK_FORMAT_R8G8B8A8_UNORM);
         kTexture emissive{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        emissive.createTexture("../textures/Default_emissive.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+        emissive.createTexture("../textures/Default_emissive.jpg", VK_FORMAT_R8G8B8A8_SRGB);*/
 
         //VK_FORMAT_R8G8B8A8_SRGB
-        /*kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        albedo.createTexture("../textures/rustediron2_basecolor.png");
+        kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+        albedo.createTexture("../textures/sloppy-mortar-stone-wall_albedo.png", VK_FORMAT_R8G8B8A8_SRGB);
         kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        normal.createTexture("../textures/rustediron2_normal.png");
+        normal.createTexture("../textures/sloppy-mortar-stone-wall_normal-ogl.png", VK_FORMAT_R8G8B8A8_UNORM);
         kTexture metallicRoughness{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        metallicRoughness.createTexture("../textures/rustediron2_metallic.png");
+        metallicRoughness.createTexture("../textures/sloppy-mortar-stone-wall_metallic.png", VK_FORMAT_R8G8B8A8_UNORM);
         kTexture ao{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        ao.createTexture("../textures/rustediron2_roughness.png");
+        ao.createTexture("../textures/sloppy-mortar-stone-wall_roughness.png", VK_FORMAT_R8G8B8A8_UNORM);
         kTexture emissive{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        emissive.createTexture("../textures/Default_emissive.jpg");*/
+        emissive.createTexture("../textures/sloppy-mortar-stone-wall_ao.png", VK_FORMAT_R8G8B8A8_SRGB);
 
         for (int i = 0; i < m_Entities.size(); i++)
         {
@@ -99,7 +99,7 @@ namespace karhu
             currentTime = startTime;
 
             m_Camera.update(dt);
-            keyboard.update(m_Renderer.getWindow(), dt, m_Camera, m_Renderer.getWindowWidth(), m_Renderer.getWindowHeight());
+            keyboard.update(m_Renderer.getWindow(), dt, m_Camera, m_Renderer.getSwapChain().m_SwapChainExtent.width, m_Renderer.getSwapChain().m_SwapChainExtent.height);
             m_Camera.setView(cameraEntity.getPosition(), cameraEntity.getRotation(), glm::vec3(0.0f, 1.0f, 0.0f));
             //m_Camera.setyxzView(cameraEntity.getPosition(), cameraEntity.getRotation());
             m_Camera.setPerspective(glm::radians(45.0f), m_Renderer.getSwapChain().m_SwapChainExtent.width / (float)m_Renderer.getSwapChain().m_SwapChainExtent.height, 0.1f, 100.0f);
@@ -120,8 +120,9 @@ namespace karhu
         //m_Renderer.startImguiLayer(index);
         for (auto& entity : m_Entities)
         {
-            m_Renderer.recordCommandBuffer(entity, m_CurrentFrame, index, camera.m_CameraVars.m_Position, m_Entities[1].getPosition(), glm::vec4(1.0f,1.0f,1.0f,1.0f));
+            m_Renderer.recordCommandBuffer(entity, m_CurrentFrame, index, camera.m_CameraVars.m_Position, glm::vec3(1.0f, 3.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
         }
+        m_Renderer.renderImguiLayer(currentFrameIndex);
         m_Renderer.endRecordCommandBuffer(currentFrameIndex);
     }
 } // namespace karhu

@@ -36,6 +36,7 @@ namespace karhu
 		void beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void startImguiLayer(uint32_t currentFrameIndex);
+		void renderImguiLayer(uint32_t currentFrameIndex);
 		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
@@ -92,5 +93,11 @@ namespace karhu
 		VkImage m_DepthImage;
 		VkDeviceMemory m_DepthImageMemory;
 		VkImageView m_DepthImageView;
+
+		struct {
+			float m_Metalness = 0.0f;
+			float m_Roughness = 0.0f;
+			glm::vec3 m_LightPosition = glm::vec3(1.0f, 3.0f, 1.0f);
+		}vars;
 	};
 }
