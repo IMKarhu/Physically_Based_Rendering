@@ -18,10 +18,10 @@ namespace karhu
         vkDestroyRenderPass(m_Device.m_Device, m_RenderPass, nullptr);
 	}
 
-	void kGraphicsPipeline::createPipeline(GraphicsPipelineStruct pipelineStruct)
+	void kGraphicsPipeline::createPipeline(GraphicsPipelineStruct pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath)
 	{
-        auto vertexCode = readFile("../shaders/vertexShader.spv");
-        auto fragmentCode = readFile("../shaders/fragmentShader.spv");
+        auto vertexCode = readFile(vertfilePath);
+        auto fragmentCode = readFile(fragfilePath);
 
         VkShaderModule vertexShaderModule = createShaderModule(vertexCode);
         VkShaderModule fragmentShaderModule = createShaderModule(fragmentCode);
@@ -219,6 +219,11 @@ namespace karhu
 
         VK_CHECK(vkCreateRenderPass(m_Device.m_Device, &renderPassInfo, nullptr, &m_RenderPass));
 	}
+
+    void kGraphicsPipeline::bind(VkCommandBuffer commandBuffer)
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+    }
 
     std::vector<char> kGraphicsPipeline::readFile(const std::string& fileName)
     {

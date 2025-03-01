@@ -65,7 +65,7 @@ namespace karhu
 		void draw(VkCommandBuffer commandBuffer);
 		void loadModel(std::string filepath);
 		void processScene(const aiScene* scene);
-		void processNode(aiMesh* mesh);
+		void processNode(aiMesh* mesh, const aiScene* scene);
 
 		std::vector<uint32_t>& getIndices() { return m_Indices; }
 		void createVertexBuffer(VkCommandPool commandPool);

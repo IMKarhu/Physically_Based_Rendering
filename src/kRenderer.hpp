@@ -33,13 +33,13 @@ namespace karhu
 		void createSyncObjects();
 		void createUniformBuffers(std::vector<kEntity>& entities);
 		void updateUBOs(std::vector<kEntity>& entities, kCamera& camera);
-		void beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
+		VkCommandBuffer beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
-		void startImguiLayer(uint32_t currentFrameIndex);
-		void renderImguiLayer(uint32_t currentFrameIndex);
+		void renderImguiLayer(uint32_t currentFrameIndex, kEntity& entity);
 		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
+		kGraphicsPipeline& getGraphicsPipeLine() { return m_GraphicsPipeline; }
 		kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
 		VkCommandPool getCommandPool() const { return m_VkSwapChain.m_CommandPool; }
 		bool getWindowShouldclose() { return m_Window->shouldClose(); }

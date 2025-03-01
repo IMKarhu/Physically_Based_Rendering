@@ -33,8 +33,9 @@ namespace karhu {
 		kGraphicsPipeline(kGraphicsPipeline&&) = delete;
 		kGraphicsPipeline& operator=(kGraphicsPipeline&&) = delete;
 
-		void createPipeline(GraphicsPipelineStruct pipelineStruct);
+		void createPipeline(GraphicsPipelineStruct pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath);
 		void createRenderpass(VkFormat& swapchainImageFormat, VkFormat depthFormat);
+		void bind(VkCommandBuffer commandBuffer);
 
 		VkRenderPass getRenderPass() { return m_RenderPass; }
 		VkPipeline getPipeline() { return m_GraphicsPipeline; }

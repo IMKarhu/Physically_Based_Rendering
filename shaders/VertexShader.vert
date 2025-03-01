@@ -23,10 +23,8 @@ void main()
     fragWorldPosition =  m_Ubo.model * vec4(inPosition, 1.0);
     gl_Position = m_Ubo.proj * m_Ubo.view * fragWorldPosition;
 
-    //normalworldspace
-    vec3 nws = normalize(mat3(m_Ubo.model) * inNormal);
     
     fragColors = inColor;
-    fragNormal = nws;
+    fragNormal = mat3(m_Ubo.model) * inNormal; // normals in world space
     fragUV = inUV;
 }

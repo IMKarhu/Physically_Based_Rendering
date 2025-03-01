@@ -71,11 +71,11 @@ namespace karhu
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			processNode(mesh);
+			processNode(mesh, scene);
 		}
 	}
 
-	void kModel::processNode(aiMesh* mesh)
+	void kModel::processNode(aiMesh* mesh, const aiScene *scene)
 	{
 		for (int i = 0; i < mesh->mNumVertices; i++)
 		{
@@ -95,6 +95,9 @@ namespace karhu
 			vert.color = { 1.0f, 1.0f, 0.0f };
 
 			m_Vertices.push_back(vert);
+
+			aiString baseColor, metallic, roughness;
+			
 		}
 
 		for (int i = 0; i < mesh->mNumFaces; i++)
@@ -104,6 +107,13 @@ namespace karhu
 			{
 				m_Indices.push_back(face.mIndices[j]);
 			}
+		}
+		if (mesh->mMaterialIndex >= 0)
+		{
+			aiString baseColor, metallic, roughness;
+			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+			baseColor = material->GetName();
+			printf(baseColor.C_Str());
 		}
 	}
 

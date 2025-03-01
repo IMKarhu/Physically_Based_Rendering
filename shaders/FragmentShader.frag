@@ -8,9 +8,9 @@ layout(location = 3) in vec4 fragWorldPosition;
 
 layout(binding = 1) uniform sampler2D texSampler; //albedo
 layout(binding = 2) uniform sampler2D normalMap; //normal
-layout(binding = 3) uniform sampler2D metallicMap; //metallic and roughness
-layout(binding = 4) uniform sampler2D roughnessMap; //ao
-layout(binding = 5) uniform sampler2D aoMap; //emissive
+layout(binding = 3) uniform sampler2D metallicMap; //metallic and roughness in damagehelmet model
+layout(binding = 4) uniform sampler2D roughnessMap; //ao in damagehelmet model
+layout(binding = 5) uniform sampler2D aoMap; //emissive in damagehelmet model
 
 layout( push_constant ) uniform cameraConstants
 {
@@ -22,6 +22,7 @@ layout( push_constant ) uniform cameraConstants
 } camera;
 
 const float PI = 3.1415926535897932384626433832795;
+const float EPSILON = 0.00001;
 
 vec3 getNormalFromMap()
 {
@@ -34,7 +35,7 @@ vec3 getNormalFromMap()
 
     vec3 N   = normalize(fragNormal);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
-    vec3 B  = -normalize(cross(N, T));
+    vec3 B  = normalize(cross(T, N));
     mat3 TBN = mat3(T, B, N);
 
     return normalize(TBN * tangentNormal);
@@ -43,61 +44,69 @@ vec3 getNormalFromMap()
 float D_GGX(float NoH, float a);
 vec3 F_Schlick(float u, vec3 f0);
 float V_SmithGGXCorrelated(float NoV, float NoL, float a);
-float Fd_Lamber();
+float Fd_Lambert();
 
 void main()
 {
     vec3 normal = getNormalFromMap();
-    //vec3 normal = texture(normalMap, fragUV).rgb;
-
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
-
     vec3 albedo = texture(texSampler, fragUV).rgb;
-    float metallic = texture(metallicMap, fragUV).r + camera.albedoNormalMetalRoughness.z;
-    float roughness = texture(roughnessMap, fragUV).r + camera.albedoNormalMetalRoughness.w;
+    float metallic = texture(metallicMap, fragUV).b + camera.albedoNormalMetalRoughness.z;
+    float roughness = texture(metallicMap, fragUV).g + camera.albedoNormalMetalRoughness.w;
+//    float metallic = texture(metallicMap, fragUV).r + camera.albedoNormalMetalRoughness.z;
+//    float roughness = texture(roughnessMap, fragUV).r + camera.albedoNormalMetalRoughness.w;
     if(roughness > 1.0)
     {
         roughness = 1.0;
     }
     float ao = texture(aoMap, fragUV).r;
-    //normal = normalize(normal * 2.0 - 1.0);
     
     //baseRefelectivity
     vec3 f0 = vec3(0.04);
+    // Fresnel reflectance at normal incidence.
     f0 = mix(f0, albedo, metallic);
     
     //refletance equation
     vec3 Lo = vec3(0.0);
 
-//    for( int i = 0; i < 1; i++)
-//    {
-        //per light radiance, if we had more than one, we should calculate this for all the lights
-        vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
-        vec3 H = normalize(V + L);
-        float dist = length(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
-        float attenuation = 1.0 / (dist *  dist);
-        vec3 radiance = camera.lightColor.xyz * attenuation;
-                        
-        //BRDF
-        float NoV = max(dot(normal, V), 0.000001);
-        float NoL = max(dot(normal, L), 0.000001);
-        float HoV = max(dot(H, V), 0.0);
-        float NoH = max(dot(normal, H), 0.0);
-                
-        float D = D_GGX(NoH, roughness); // value between 0 and 1
-        float G = V_SmithGGXCorrelated(NoV, NoL, roughness); // value between 0 and 1
-        vec3 F = F_Schlick(HoV, f0); //RGB values also between 0 and 1
-                
-        vec3 SpecularBRDF = D * G * F;
-        
-        //energy conservation, diffuse and specular light can't be above 1.0 (unles surface emits light)
-        vec3 kD = vec3(1.0) - F;
-        kD *= 1.0 - metallic;
-        Lo += (kD * albedo / PI + SpecularBRDF) * radiance * NoL;
-//    }
-    vec3 ambient = vec3(0.03) * albedo * ao;
+
+    //per light radiance, if we had more than one, we should calculate this for all the lights
+    vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+    vec3 H = normalize(V + L);
+    float dist = length(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+    float attenuation = 1.0 / (dist *  dist);
+    vec3 radiance = camera.lightColor.xyz * attenuation;
+                    
+    //BRDF
+    float NoV = max(dot(normal, V), 0.000001);
+    float NoL = max(dot(normal, L), 0.000001);
+    float HoV = max(dot(H, V), 0.0);
+    float NoH = max(dot(normal, H), 0.0);
+            
+    float D = D_GGX(NoH, roughness); //Normal distribution for specular BRDF.  value between 0 and 1
+    float G = V_SmithGGXCorrelated(NoV, NoL, roughness); //Geometric attenuation for specular BRDF. value between 0 and 1
+    vec3 F = F_Schlick(HoV, f0); //Fresnel term for direct lighting. RGB values also between 0 and 1
+            
+    vec3 SpecularBRDF = F * D * G;
+    
+    //energy conservation, diffuse and specular light can't be above 1.0 (unles surface emits light)
+    //Diffuse scattering.
+    //Happens because light is refracted multiple times by dielectric medium.
+    //metals reflect or absorb energy, diffuse is always zero.
+    vec3 kD = mix(vec3(1.0) - F, vec3(0.0), metallic);
+    //kD *= 1.0 - metallic;
+
+    //Lambertian
+    vec3 diffuseBRDF = kD * albedo;
+
+    Lo += (diffuseBRDF + SpecularBRDF) * radiance * NoL;
+
+
+    vec3 ambient = vec3(0.1) * albedo * vec3(1.0,1.0,1.0);//* ao;
 
     vec3 color = ambient + Lo;
+    color *= Fd_Lambert();
+    
 
     //hdr tonemapping
     color = color / (color + vec3(1.0));
@@ -127,7 +136,7 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float a)
 return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
 }
 
-float Fd_Lamber()
+float Fd_Lambert()
 {
 return 1.0 / PI;
 }
