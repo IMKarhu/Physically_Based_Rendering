@@ -1,12 +1,9 @@
 #include "kEntity.hpp"
+//#include "kBuffer.hpp"
 
 namespace karhu
 {
-	kEntity kEntity::createEntity()
-	{
-		static uint32_t id = 0;
-		return kEntity{ id++ };
-	}
+	
 	void kEntity::setModel(std::shared_ptr<kModel> model)
 	{
 		m_Model = model;
@@ -22,5 +19,16 @@ namespace karhu
 	void kEntity::setScale(glm::vec3 scale)
 	{
 		m_Scale = scale;
+	}
+	VkDescriptorBufferInfo kEntity::getBufferInfo(int index)
+	{
+		return m_EntityUbo[index]->bufferInfo();
+	}
+	void kEntity::updateBuffer(int index)
+	{
+		EntityData data{};
+		data.modelMatrix = getTransformMatrix();
+
+		m_EntityUbo[index]->memcopy(&data, sizeof(EntityData), 0);
 	}
 }

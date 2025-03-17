@@ -1,4 +1,5 @@
 #version 450
+#extension GL_KHR_vulkan_glsl: enable
 
 layout(location = 0) out vec4 outColor;
 layout(location = 0) in vec3 fragColor;
@@ -6,11 +7,11 @@ layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragUV;
 layout(location = 3) in vec4 fragWorldPosition;
 
-layout(binding = 1) uniform sampler2D texSampler; //albedo
-layout(binding = 2) uniform sampler2D normalMap; //normal
-layout(binding = 3) uniform sampler2D metallicMap; //metallic and roughness in damagehelmet model
-layout(binding = 4) uniform sampler2D roughnessMap; //ao in damagehelmet model
-layout(binding = 5) uniform sampler2D aoMap; //emissive in damagehelmet model
+layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
+layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
+layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and roughness in damagehelmet model
+layout(set = 1, binding = 4) uniform sampler2D roughnessMap; //ao in damagehelmet model
+layout(set = 1, binding = 5) uniform sampler2D aoMap; //emissive in damagehelmet model
 
 layout( push_constant ) uniform cameraConstants
 {
@@ -53,8 +54,8 @@ void main()
     vec3 albedo = texture(texSampler, fragUV).rgb;
     float metallic = texture(metallicMap, fragUV).b + camera.albedoNormalMetalRoughness.z;
     float roughness = texture(metallicMap, fragUV).g + camera.albedoNormalMetalRoughness.w;
-//    float metallic = texture(metallicMap, fragUV).r + camera.albedoNormalMetalRoughness.z;
-//    float roughness = texture(roughnessMap, fragUV).r + camera.albedoNormalMetalRoughness.w;
+    //float metallic = texture(metallicMap, fragUV).r + camera.albedoNormalMetalRoughness.z;
+    //float roughness = texture(roughnessMap, fragUV).r + camera.albedoNormalMetalRoughness.w;
     if(roughness > 1.0)
     {
         roughness = 1.0;

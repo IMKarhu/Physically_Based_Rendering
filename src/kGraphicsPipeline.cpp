@@ -18,7 +18,7 @@ namespace karhu
         vkDestroyRenderPass(m_Device.m_Device, m_RenderPass, nullptr);
 	}
 
-	void kGraphicsPipeline::createPipeline(GraphicsPipelineStruct pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath)
+	void kGraphicsPipeline::createPipeline(GraphicsPipelineStruct &pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath)
 	{
         auto vertexCode = readFile(vertfilePath);
         auto fragmentCode = readFile(fragfilePath);
@@ -124,19 +124,19 @@ namespace karhu
         pipelineStruct.colorBlending.blendConstants[2] = 0.0f; // Optional
         pipelineStruct.colorBlending.blendConstants[3] = 0.0f; // Optional
 
-        pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1; // nullptr if no descriptors used
-        //pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorLayout; // nullptr if no descriptors used SET IN APPLICATION.CPP
+        //pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        ////pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1; // nullptr if no descriptors used
+        ////pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorLayout; // nullptr if no descriptors used SET IN APPLICATION.CPP
 
-        VkPushConstantRange cameraPushConstant{};
-        cameraPushConstant.offset = 0;
-        cameraPushConstant.size = sizeof(pushConstants);
-        cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        //VkPushConstantRange cameraPushConstant{};
+        //cameraPushConstant.offset = 0;
+        //cameraPushConstant.size = sizeof(pushConstants);
+        //cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
-        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = &cameraPushConstant; // Optional
+        //pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
+        //pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = &cameraPushConstant; // Optional
 
-        VK_CHECK(vkCreatePipelineLayout(m_Device.m_Device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_PipelineLayout));
+        //VK_CHECK(vkCreatePipelineLayout(m_Device.m_Device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_PipelineLayout));
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -150,7 +150,7 @@ namespace karhu
         pipelineInfo.pDepthStencilState = &pipelineStruct.depthStencil;
         pipelineInfo.pColorBlendState = &pipelineStruct.colorBlending;
         pipelineInfo.pDynamicState = &pipelineStruct.dynamiccreateinfo;
-        pipelineInfo.layout = m_PipelineLayout;
+        pipelineInfo.layout = pipelineStruct.layout;
         pipelineInfo.renderPass = m_RenderPass;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional

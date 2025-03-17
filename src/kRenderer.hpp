@@ -27,20 +27,17 @@ namespace karhu
 		void operator=(const kRenderer&) = delete;
 
 		void createFrameBuffers();
-		void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index, glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor);
-		void beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
-		void endRecordCommandBuffer(uint32_t currentFrameIndex);
 		void createSyncObjects();
-		void createUniformBuffers(std::vector<kEntity>& entities);
-		void updateUBOs(std::vector<kEntity>& entities, kCamera& camera);
+		/*void createUniformBuffers(kBuffer& buffer);
+		void updateUBOs(kBuffer buffer, UniformBufferObject ubo);*/
 		VkCommandBuffer beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
-		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
-		void renderImguiLayer(uint32_t currentFrameIndex, kEntity& entity);
+		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer);
+		void renderImguiLayer(uint32_t currentFrameIndex);
 		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
 		kGraphicsPipeline& getGraphicsPipeLine() { return m_GraphicsPipeline; }
-		kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
+		//kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
 		VkCommandPool getCommandPool() const { return m_VkSwapChain.m_CommandPool; }
 		bool getWindowShouldclose() { return m_Window->shouldClose(); }
 		void windowPollEvents() { return m_Window->pollEvents(); }
@@ -68,8 +65,7 @@ namespace karhu
 		Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
 		Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
 		kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
-		kDescriptors m_DescriptorBuilder{ m_VkDevice };
-		//std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
+		//kDescriptors m_DescriptorBuilder{ m_VkDevice };
 
 		VkDescriptorSetLayout m_DescriptorLayout;
 		std::vector<VkFramebuffer> m_FrameBuffers;
@@ -88,7 +84,6 @@ namespace karhu
 
 		VkDescriptorPool m_DescriptorPool;
 		VkDescriptorPool m_ImguiPool;
-		std::vector<VkDescriptorSet> m_DescriptorSets;
 
 		VkImage m_DepthImage;
 		VkDeviceMemory m_DepthImageMemory;

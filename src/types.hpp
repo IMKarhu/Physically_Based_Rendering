@@ -1,14 +1,18 @@
 #pragma once
+//#include "kEntity.hpp"
 
 #include <vulkan/vulkan.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
+#include <unordered_map>
 
 
 namespace karhu
 {
+    class kEntity;
+
     struct Vertex
     {
         glm::vec3 pos;
@@ -53,9 +57,14 @@ namespace karhu
 
     struct UniformBufferObject
     {
-        glm::mat4 model;
         glm::mat4 view;
         glm::mat4 proj;
+       // glm::mat4 model;
+    };
+
+    struct ModelUBO
+    {
+        
     };
 
     struct pushConstants
@@ -66,4 +75,14 @@ namespace karhu
         glm::vec4 lighColor;
         glm::vec4 albedoNormalMetalRoughness;
     };
+
+    struct DescriptorBinding
+    {
+        uint32_t binding;
+        VkDescriptorType type;
+        uint32_t descriptorCount;
+        VkShaderStageFlags flags;
+    };
+
+    
 }

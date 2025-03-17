@@ -10,7 +10,7 @@ namespace karhu
 	class kTexture
 	{
 	public:
-		kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain);
+		kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain, std::string filepath, VkFormat format);
 		~kTexture();
 
 		struct
@@ -26,6 +26,7 @@ namespace karhu
 		void copyBufferToImage(VkBuffer buffer, uint32_t width, uint32_t height);
 		void textureImageView(VkFormat format);
 		void createSampler();
+		VkDescriptorImageInfo getImageinfo();
 	private:
 		Vulkan_Device& m_Device;
 		Vulkan_SwapChain& m_SwapChain;

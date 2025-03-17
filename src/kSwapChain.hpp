@@ -34,7 +34,7 @@ namespace karhu
 		VkExtent2D m_SwapChainExtent;
 
 		std::vector<VkImageView> m_SwapChainImageViews;
-		const int m_MaxFramesInFlight = 2;
+		static const int m_MaxFramesInFlight = 2;
 		VkCommandPool m_CommandPool;
 		std::vector<VkCommandBuffer> m_CommandBuffers;
 	private:

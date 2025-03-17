@@ -98,10 +98,21 @@ namespace karhu
             std::vector<VkExtensionProperties> availableExtensions(deviceExtensionCount);
             vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, availableExtensions.data());
 
+            std::cout << "Available extensions..." << std::endl;
+            for (auto& extension : availableExtensions)
+            {
+                std::cout << extension.extensionName << std::endl;
+            }
+
             std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
             for (const auto& extension : availableExtensions)
             {
                 requiredExtensions.erase(extension.extensionName);
+            }
+
+            for (auto ext : requiredExtensions)
+            {
+                std::cout << ext.c_str() << std::endl;
             }
             return requiredExtensions.empty();
         }

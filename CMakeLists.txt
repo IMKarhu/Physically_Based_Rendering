@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.24)
 
 project(Vulkan_renderer)
 
@@ -22,6 +22,7 @@ add_executable(PBR ${CPP_SOURCE_FILES})
 target_link_libraries(PBR PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator PUBLIC assimp Vulkan::Vulkan)
 
 message(CFLAGS=${COMPILE_FLAGS})
+message(STATUS "Using C++ standard: ${CMAKE_CXX_STANDARD}")
 
 
 #file(GLOB_RECURSE TRIANGLE_FILES "src/triangle/*.hpp" "src/triangle/*.cpp")

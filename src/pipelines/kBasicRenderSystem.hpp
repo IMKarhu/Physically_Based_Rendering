@@ -1,13 +1,18 @@
 #pragma once
 #include "vulkan/vulkan.h"
 #include "glm/glm.hpp"
+#include "../frame.hpp"
+#include "../types.hpp"
+
+#include <vector>
 
 namespace karhu
 {
-	class Vulkan_Device;
-	class Vulkan_SwapChain;
+	struct Vulkan_Device;
+	struct Vulkan_SwapChain;
 	class kGraphicsPipeline;
 	class kEntity;
+	class LveDescriptorSetLayout;
 
 	class kBasicRenderSystem
 	{
@@ -18,10 +23,9 @@ namespace karhu
 		kBasicRenderSystem(const kBasicRenderSystem&) = delete;
 		kBasicRenderSystem &operator = (const kBasicRenderSystem&) = delete;
 
-		void createGraphicsPipeline(VkDescriptorSetLayout SetLayout);
-		/*void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index, glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor);*/
-		/*frameindex, dt, commandbuffer, camera, descriptor set, entities*/
-		void renderEntities(std::vector<kEntity> entities, uint32_t currentFrameIndex, uint32_t index, glm::vec3 camerapos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 lightPos, glm::vec4 lightcolor, VkCommandBuffer commandBuffer);
+		void createGraphicsPipeline(VkDescriptorSetLayout layout);
+		
+		void renderEntities(glm::vec3 camerapos, glm::vec3 lightPos, glm::vec4 lightcolor, Frame& frameInfo);
 	private:
 
 		Vulkan_Device& m_Device;
@@ -33,5 +37,8 @@ namespace karhu
 			float m_Roughness = 0.0f;
 			glm::vec3 m_LightPosition = glm::vec3(1.0f, 3.0f, 1.0f);
 		}vars;
+
+		VkPipelineLayout m_BasicPipeLineLayout;
+		std::unique_ptr<LveDescriptorSetLayout> m_Basiclayout;
 	};
 }

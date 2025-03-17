@@ -55,6 +55,10 @@ namespace karhu
 			throw std::runtime_error("Failed to find suitable GPU!\n");
 		}
 
+		VkPhysicalDeviceProperties properties{};
+		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+		std::cout << "Physical Device: " << properties.deviceName << std::endl;
+
 	}
 
 	void Vulkan_Device::createLogicalDevice()
@@ -81,6 +85,8 @@ namespace karhu
 		VkPhysicalDeviceSynchronization2Features sync2Features{};
 		sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
 		sync2Features.synchronization2 = VK_TRUE;
+
+		
 
 		VkDeviceCreateInfo deviceinfo{};
 		deviceinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

@@ -26,7 +26,7 @@ namespace karhu
 			VkDeviceMemory m_IndexBufferMemory;
 		}m_IndexBuffer;
 
-		struct {
+		/*struct {
 			VkImage m_texture;
 			VkDeviceMemory m_Memory;
 			VkImageView m_TextureView;
@@ -59,7 +59,7 @@ namespace karhu
 			VkDeviceMemory m_Memory;
 			VkImageView m_TextureView;
 			VkSampler m_Sampler;
-		} m_AoTexture;
+		} m_AoTexture;*/
 
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);

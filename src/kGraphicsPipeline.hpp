@@ -6,6 +6,10 @@
 namespace karhu {
 	struct GraphicsPipelineStruct
 	{
+		GraphicsPipelineStruct() = default;
+		GraphicsPipelineStruct(const GraphicsPipelineStruct&) = delete;
+		GraphicsPipelineStruct operator=(const GraphicsPipelineStruct&) = delete;
+
 		VkViewport viewport{};
 		float viewportWidth;
 		float viewportheight;
@@ -20,6 +24,7 @@ namespace karhu {
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		VkPipelineLayout layout;
 	};
 
 	class kGraphicsPipeline
@@ -33,7 +38,7 @@ namespace karhu {
 		kGraphicsPipeline(kGraphicsPipeline&&) = delete;
 		kGraphicsPipeline& operator=(kGraphicsPipeline&&) = delete;
 
-		void createPipeline(GraphicsPipelineStruct pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath);
+		void createPipeline(GraphicsPipelineStruct &pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath);
 		void createRenderpass(VkFormat& swapchainImageFormat, VkFormat depthFormat);
 		void bind(VkCommandBuffer commandBuffer);
 
