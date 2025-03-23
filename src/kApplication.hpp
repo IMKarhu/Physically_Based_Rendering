@@ -19,30 +19,24 @@ namespace karhu
 
         
         void run();
-        void update(float deltaTime);
-        void renderEntities(kCamera& camera, uint32_t currentFrameIndex, uint32_t index);
+        void update(float deltaTime, std::vector<std::unique_ptr<kBuffer>>& buffers);
     private:
         kRenderer m_Renderer{};
+        kDescriptors m_GlobalDescriptorBuilder{ m_Renderer.getDevice() };
+        kDescriptors m_ObjDescriptorBuilder{ m_Renderer.getDevice() };
         //std::unique_ptr<kModel> m_Model;
         std::vector<kEntity> m_Entities;
 
         float m_DeltaTime = 0.0f;
         uint32_t m_CurrentFrame = 0;
-        
-        const std::vector<Vertex> m_Vertices = {
-            {{-0.5f,-0.5f, 0.0f},{1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f},{0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f},{0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f},{1.0f, 1.0f, 1.0f}},
 
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
-        };
-        const std::vector<uint32_t> m_Indices = {
-            0,1,2,2,3,0,
-            4,5,6,6,7,4
-        };
+        std::vector<VkDescriptorSetLayoutBinding> m_GlobalBindings;
+        VkDescriptorSetLayout m_GlobalLayout;
+        VkDescriptorPool m_GlobalPool;
+        VkDescriptorSet m_GlobalSet;
+
+        VkDescriptorPool m_ObjPool;
+        VkDescriptorSetLayout m_ObjLayout;
+        std::vector<VkDescriptorSetLayoutBinding> m_ObjBindings;
     };
 } // namespace karhu

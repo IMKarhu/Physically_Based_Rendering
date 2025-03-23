@@ -125,16 +125,26 @@ namespace karhu
         pipelineStruct.colorBlending.blendConstants[3] = 0.0f; // Optional
 
         pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1; // nullptr if no descriptors used
+        
         //pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorLayout; // nullptr if no descriptors used SET IN APPLICATION.CPP
 
+        VkPushConstantRange objPushConstant{};
+        objPushConstant.offset = 0;
+        objPushConstant.size = sizeof(ObjPushConstant);
+        objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
         VkPushConstantRange cameraPushConstant{};
-        cameraPushConstant.offset = 0;
+        cameraPushConstant.offset = 64;
         cameraPushConstant.size = sizeof(pushConstants);
         cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
-        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = &cameraPushConstant; // Optional
+        std::vector<VkPushConstantRange> pushConstantRanges{
+            objPushConstant,
+            cameraPushConstant
+        };
+
+        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
+        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
 
         VK_CHECK(vkCreatePipelineLayout(m_Device.m_Device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_PipelineLayout));
 
