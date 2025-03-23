@@ -61,7 +61,7 @@ namespace karhu
         entity2.setRotation({ 0.0f,0.0f,0.0f });
 
         m_Entities.push_back(std::move(entity2));*/
-        kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
+       /* kTexture albedo{m_Renderer.getDevice(), m_Renderer.getSwapChain()};
         albedo.createTexture("../textures/Default_Albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
         kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         normal.createTexture("../textures/Default_Normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
@@ -193,20 +193,5 @@ namespace karhu
             m_Renderer.endFrame(m_CurrentFrame, imageIndex, commandBuffer);
         }
         vkDeviceWaitIdle(m_Renderer.getDevice().m_Device);
-    }
-    void Application::renderEntities(kCamera& camera, uint32_t currentFrameIndex, uint32_t index)
-    {
-        //m_Renderer.beginRecordCommandBuffer(currentFrameIndex, index);
-
-        /* CREATE RENDER SYSTEMS
-           RENDER ENTITIES
-        */
-
-        /*for (auto& entity : m_Entities)
-        {
-            m_Renderer.recordCommandBuffer(entity, m_CurrentFrame, index, camera.m_CameraVars.m_Position, glm::vec3(1.0f, 3.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-        }*/
-        
-        /*m_Renderer.endRecordCommandBuffer(currentFrameIndex);*/
     }
 } // namespace karhu

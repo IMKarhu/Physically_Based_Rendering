@@ -7,19 +7,11 @@ layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragUV;
 layout(location = 3) in vec4 fragWorldPosition;
 
-<<<<<<< HEAD
-layout(binding = 1) uniform sampler2D texSampler; //albedo
-layout(binding = 2) uniform sampler2D normalMap; //normal
-layout(binding = 3) uniform sampler2D metallicMap; //metallic and roughness in damagehelmet model
-layout(binding = 4) uniform sampler2D roughnessMap; //ao in damagehelmet model
-layout(binding = 5) uniform sampler2D aoMap; //emissive in damagehelmet model
-=======
 layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
 layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
 layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and roughness
 layout(set = 1, binding = 4) uniform sampler2D roughnessMap; //ao
 layout(set = 1, binding = 5) uniform sampler2D aoMap; //emissive
->>>>>>> stuff
 
 layout( push_constant, std140) uniform cameraConstants
 {

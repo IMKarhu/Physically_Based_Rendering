@@ -36,6 +36,6 @@ void main()
     vec3 nws = normalize(mat3(obj.model) * inNormal);
     
     fragColors = inColor;
-    fragNormal = mat3(m_Ubo.model) * inNormal; // normals in world space
+    fragNormal = mat3(obj.model) * inNormal; // normals in world space
     fragUV = inUV;
 }
