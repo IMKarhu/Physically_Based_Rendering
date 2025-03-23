@@ -10,10 +10,11 @@
 
 namespace karhu
 {
-	kTexture::kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain)
+	kTexture::kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain, std::string filepath, VkFormat format)
 		: m_Device(device)
         , m_SwapChain(swapchain)
 	{
+        createTexture(filepath, format);
 	}
 
     kTexture::~kTexture()
@@ -176,4 +177,12 @@ namespace karhu
             throw std::runtime_error("failed to create texture sampler!");
         }
 	}
+    VkDescriptorImageInfo kTexture::getImageInfo()
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_TextureVars.m_TextureView;
+        imageInfo.sampler = m_TextureVars.m_Sampler;
+        return imageInfo;
+    }
 }

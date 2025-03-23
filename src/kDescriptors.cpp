@@ -14,9 +14,10 @@ namespace karhu
         vkDestroyDescriptorSetLayout(m_Device.m_Device, m_DescriptorLayout, nullptr);
     }
 
-    void kDescriptors::createDescriptorSetLayout()
+    VkDescriptorSetLayout kDescriptors::createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings)
     {
-        VkDescriptorSetLayoutBinding binding{};
+        VkDescriptorSetLayout layout{};
+        /*VkDescriptorSetLayoutBinding binding{};
         binding = Helpers::fillLayoutBindingStruct(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
 
         VkDescriptorSetLayoutBinding samplerBinding{};
@@ -32,130 +33,54 @@ namespace karhu
         roughnessSamplerBinding = Helpers::fillLayoutBindingStruct(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         VkDescriptorSetLayoutBinding aoSamplerBinding{};
-        aoSamplerBinding = Helpers::fillLayoutBindingStruct(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        aoSamplerBinding = Helpers::fillLayoutBindingStruct(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);*/
 
-        std::array<VkDescriptorSetLayoutBinding, 6> bindings = { binding, samplerBinding, normalSamplerBinding, metallicSamplerBinding, roughnessSamplerBinding, aoSamplerBinding };
+        /*std::array<VkDescriptorSetLayoutBinding, 6> bindings = { binding, samplerBinding, normalSamplerBinding, metallicSamplerBinding, roughnessSamplerBinding, aoSamplerBinding };*/
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo = Helpers::fillDescriptorSetLayoutCreateInfo();
         createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         createInfo.pBindings = bindings.data();
 
-        VK_CHECK(vkCreateDescriptorSetLayout(m_Device.m_Device, &createInfo, nullptr, &m_DescriptorLayout));
+        VK_CHECK(vkCreateDescriptorSetLayout(m_Device.m_Device, &createInfo, nullptr, &layout));
+
+        return layout;
     }
 
-    void kDescriptors::createDescriptorPool(uint32_t entityCount)
+    void kDescriptors::bind(std::vector< VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags)
     {
-        std::array<VkDescriptorPoolSize, 2> poolSize{};
-        poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize[0].descriptorCount = entityCount; //count of objects?
-        poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize[1].descriptorCount = entityCount;
+        VkDescriptorSetLayoutBinding bind{};
+        bind = Helpers::fillLayoutBindingStruct(binding, type, descriptorCount, flags);
 
+        bindings.push_back(bind);
+    }
+
+    VkDescriptorPool kDescriptors::createDescriptorPool(uint32_t maxSets)
+    {
+        VkDescriptorPool pool;
         VkDescriptorPoolCreateInfo poolcreateInfo{};
         poolcreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolcreateInfo.poolSizeCount = static_cast<uint32_t>(poolSize.size());
-        poolcreateInfo.pPoolSizes = poolSize.data();
-        poolcreateInfo.maxSets = entityCount; //count of objects?
+        poolcreateInfo.poolSizeCount = static_cast<uint32_t>(m_PoolSizes.size());
+        poolcreateInfo.pPoolSizes = m_PoolSizes.data();
+        poolcreateInfo.maxSets = maxSets;
 
-        VK_CHECK(vkCreateDescriptorPool(m_Device.m_Device, &poolcreateInfo, nullptr, &m_DescriptorPool));
+        VK_CHECK(vkCreateDescriptorPool(m_Device.m_Device, &poolcreateInfo, nullptr, &pool));
+
+        return pool;
     }
 
-    void kDescriptors::createDescriptorSets(std::vector<kEntity>& entities)
+    void kDescriptors::createDescriptorSets(std::vector<kEntity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool)
     {
         
         /* loop through every object and create a descriptor set*/
         for (auto& entity : entities)
         {
-            VkDescriptorSetAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = m_DescriptorPool;
-            allocInfo.descriptorSetCount = 1;
-            allocInfo.pSetLayouts = &m_DescriptorLayout;
-            printf("hello3\n");
-            VK_CHECK(vkAllocateDescriptorSets(m_Device.m_Device, &allocInfo, &entity.m_DescriptorSet));
-
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = entity.m_UniformBuffer.m_Buffer;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = entity.getModel()->m_Textures[0].m_TextureVars.m_TextureView;
-            imageInfo.sampler = entity.getModel()->m_Textures[0].m_TextureVars.m_Sampler;
-
-            VkDescriptorImageInfo NormalImageInfo{};
-            NormalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            NormalImageInfo.imageView = entity.getModel()->m_Textures[1].m_TextureVars.m_TextureView;
-            NormalImageInfo.sampler = entity.getModel()->m_Textures[1].m_TextureVars.m_Sampler;
-
-            VkDescriptorImageInfo MetallicImageInfo{};
-            MetallicImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            MetallicImageInfo.imageView = entity.getModel()->m_Textures[2].m_TextureVars.m_TextureView;
-            MetallicImageInfo.sampler = entity.getModel()->m_Textures[2].m_TextureVars.m_Sampler;
-
-            VkDescriptorImageInfo RoughnessImageInfo{};
-            RoughnessImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            RoughnessImageInfo.imageView = entity.getModel()->m_Textures[3].m_TextureVars.m_TextureView;
-            RoughnessImageInfo.sampler = entity.getModel()->m_Textures[3].m_TextureVars.m_Sampler;
-
-            VkDescriptorImageInfo AoImageInfo{};
-            AoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            AoImageInfo.imageView = entity.getModel()->m_Textures[4].m_TextureVars.m_TextureView;
-            AoImageInfo.sampler = entity.getModel()->m_Textures[4].m_TextureVars.m_Sampler;
-
-            std::array<VkWriteDescriptorSet, 6> descriptorWrite{};
-            descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite[0].dstSet = entity.m_DescriptorSet;
-            descriptorWrite[0].dstBinding = 0;
-            descriptorWrite[0].dstArrayElement = 0;
-            descriptorWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite[0].descriptorCount = 1;
-            descriptorWrite[0].pBufferInfo = &bufferInfo;
-
-            descriptorWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite[1].dstSet = entity.m_DescriptorSet;
-            descriptorWrite[1].dstBinding = 1;
-            descriptorWrite[1].dstArrayElement = 0;
-            descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite[1].descriptorCount = 1;
-            descriptorWrite[1].pImageInfo = &imageInfo;
-
-            descriptorWrite[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite[2].dstSet = entity.m_DescriptorSet;
-            descriptorWrite[2].dstBinding = 2;
-            descriptorWrite[2].dstArrayElement = 0;
-            descriptorWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite[2].descriptorCount = 1;
-            descriptorWrite[2].pImageInfo = &NormalImageInfo;
-
-            descriptorWrite[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite[3].dstSet = entity.m_DescriptorSet;
-            descriptorWrite[3].dstBinding = 3;
-            descriptorWrite[3].dstArrayElement = 0;
-            descriptorWrite[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite[3].descriptorCount = 1;
-            descriptorWrite[3].pImageInfo = &MetallicImageInfo;
-
-            descriptorWrite[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite[4].dstSet = entity.m_DescriptorSet;
-            descriptorWrite[4].dstBinding = 4;
-            descriptorWrite[4].dstArrayElement = 0;
-            descriptorWrite[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite[4].descriptorCount = 1;
-            descriptorWrite[4].pImageInfo = &RoughnessImageInfo;
-
-            descriptorWrite[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite[5].dstSet = entity.m_DescriptorSet;
-            descriptorWrite[5].dstBinding = 5;
-            descriptorWrite[5].dstArrayElement = 0;
-            descriptorWrite[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite[5].descriptorCount = 1;
-            descriptorWrite[5].pImageInfo = &AoImageInfo;
-
-
-            vkUpdateDescriptorSets(m_Device.m_Device, static_cast<uint32_t>(descriptorWrite.size()), descriptorWrite.data(), 0, nullptr);
+            vkUpdateDescriptorSets(m_Device.m_Device, static_cast<uint32_t>(m_Writes[entity.getId()].size()), m_Writes[entity.getId()].data(), 0, nullptr);
         }
+    }
+
+    void kDescriptors::createDescriptorSets(VkDescriptorSetLayout layout, VkDescriptorPool pool)
+    {
+        vkUpdateDescriptorSets(m_Device.m_Device, static_cast<uint32_t>(m_Writes[0].size()), m_Writes[0].data(), 0, nullptr);
     }
 
     void kDescriptors::cleanUp(VkDevice device)
@@ -163,5 +88,74 @@ namespace karhu
 
     }
 
+    void kDescriptors::addPoolElement(VkDescriptorType type, uint32_t count)
+    {
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = type;
+        poolSize.descriptorCount = count;
+
+        m_PoolSizes.push_back(poolSize);
+    }
+
+    void kDescriptors::writeImg(VkDescriptorSet& set, uint32_t binding, VkDescriptorImageInfo info, uint32_t bindingID)
+    {
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = set;
+        descriptorWrite.dstBinding = binding;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &info;
+
+        m_WritesData.push_back(descriptorWrite);
+        /*if (m_WritesData.size() == 6)
+        {
+            m_Writes.emplace(bindingID, m_WritesData);
+            m_WritesData.clear();
+        }*/
+    }
+
+    void kDescriptors::writeBuffer(VkDescriptorSet& set, uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo info, uint32_t bindingID)
+    {
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = set;
+        descriptorWrite.dstBinding = binding;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = type;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &info;
+
+        m_WritesData.push_back(descriptorWrite);
+        //m_Writes.emplace(bindingID, m_WritesData);
+    }
+
+    void kDescriptors::fillWritesMap(uint32_t bindingID)
+    {
+        m_Writes.emplace(bindingID, m_WritesData);
+        if (m_WritesData.size() == 6)
+        {
+            m_WritesData.clear();
+        }
+    }
+
+    void kDescriptors::allocateDescriptor(VkDescriptorSet& set, VkDescriptorSetLayout layout, VkDescriptorPool pool)
+    {
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = pool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &layout;
+        printf("hello3\n");
+        VK_CHECK(vkAllocateDescriptorSets(m_Device.m_Device, &allocInfo, &set));
+    }
+
+
+    DescriptorBuilder::DescriptorBuilder(VkDescriptorPool& pool, VkDescriptorSetLayout& layout)
+        : m_Pool(pool)
+        , m_layout(layout)
+    {
+    }
 
 }

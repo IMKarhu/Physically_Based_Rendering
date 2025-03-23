@@ -3,6 +3,8 @@
 #include "utils/vkUtils.hpp"
 #include "types.hpp"
 
+#include <unordered_map>
+
 
 namespace karhu
 {
@@ -17,10 +19,17 @@ namespace karhu
         kDescriptors(const kDescriptors&) = delete;
         void operator=(const kDescriptors&) = delete;
 
-        void createDescriptorSetLayout();
-        void createDescriptorPool(uint32_t entityCount);
-        void createDescriptorSets(std::vector<kEntity>& entities);
+        VkDescriptorSetLayout createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings);
+        void bind(std::vector<VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags);
+        VkDescriptorPool createDescriptorPool(uint32_t maxSets);
+        void createDescriptorSets(std::vector<kEntity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool);
+        void createDescriptorSets(VkDescriptorSetLayout layout, VkDescriptorPool pool);
         void cleanUp(VkDevice device);
+        void addPoolElement(VkDescriptorType type, uint32_t count);
+        void writeImg(VkDescriptorSet& set, uint32_t binding, VkDescriptorImageInfo info, uint32_t bindingID);
+        void writeBuffer(VkDescriptorSet& set, uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo info, uint32_t bindingID);
+        void fillWritesMap(uint32_t bindingID);
+        void allocateDescriptor(VkDescriptorSet& set, VkDescriptorSetLayout layout, VkDescriptorPool pool);
 
         const VkDescriptorSetLayout& getDescriptorLayout() const { return m_DescriptorLayout; }
 
@@ -28,5 +37,22 @@ namespace karhu
         Vulkan_Device& m_Device;
         VkDescriptorSetLayout m_DescriptorLayout;
         VkDescriptorPool m_DescriptorPool;
+        std::vector<VkDescriptorPoolSize> m_PoolSizes;
+        std::vector<VkWriteDescriptorSet>m_WritesData;
+        std::unordered_map<uint32_t, std::vector<VkWriteDescriptorSet>> m_Writes;
+    };
+
+    class DescriptorBuilder
+    {
+    public:
+        DescriptorBuilder(VkDescriptorPool& pool, VkDescriptorSetLayout& layout);
+
+        DescriptorBuilder &writeImg(VkDescriptorSet& set, uint32_t binding, VkDescriptorImageInfo info);
+        DescriptorBuilder& writeBuffer(VkDescriptorSet& set, uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo info);
+    private:
+        VkDescriptorPool &m_Pool;
+        VkDescriptorSetLayout& m_layout;
+        //std::vector<VkWriteDescriptorSet>m_Writes;
+        std::unordered_map<uint32_t, std::vector<VkWriteDescriptorSet>> m_Writes;
     };
 }

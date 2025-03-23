@@ -53,9 +53,18 @@ namespace karhu
 
     struct UniformBufferObject
     {
-        glm::mat4 model;
         glm::mat4 view;
         glm::mat4 proj;
+    };
+
+    struct ObjBuffer
+    {
+        glm::mat4 model;
+    };
+
+    struct ObjPushConstant
+    {
+        glm::mat4 model;
     };
 
     struct pushConstants

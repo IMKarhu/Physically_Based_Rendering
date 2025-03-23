@@ -20,6 +20,8 @@ namespace karhu
 		static kEntity createEntity();
 		static kEntity createLight();
 
+		void updateBuffer();
+
 		glm::mat4 getTransformMatrix() { auto transform = glm::translate(glm::mat4(1.0f), m_Position);
 										 transform = glm::rotate(transform, m_Rotation.x, { 1.0f, 0.0f, 0.0f });
 										 transform = glm::rotate(transform, m_Rotation.y, { 0.0f, 1.0f, 0.0f });
@@ -35,9 +37,10 @@ namespace karhu
 		glm::vec3& getRotation() { return m_Rotation; }
 		void setScale(glm::vec3 scale);
 		glm::vec3& getScale() { return m_Scale; }
+		uint32_t getId() { return m_Id; }
 
-		kBuffer m_UniformBuffer;
 		VkDescriptorSet m_DescriptorSet{ VK_NULL_HANDLE };
+		std::unique_ptr<kBuffer> m_Buffer;
 	private:
 		kEntity(uint32_t id) : m_Id(id){}
 		uint32_t m_Id;

@@ -4,6 +4,7 @@
 #include "kSwapChain.hpp"
 #include "kGraphicsPipeline.hpp"
 #include "kDescriptors.hpp"
+#include "frame.hpp"
 
 
 #include <memory>
@@ -16,6 +17,7 @@ namespace karhu
 	//class kModel;
 	class kEntity;
 	class kCamera;
+	struct kBuffer;
 
 	class kRenderer
 	{
@@ -27,28 +29,30 @@ namespace karhu
 		void operator=(const kRenderer&) = delete;
 
 		void createFrameBuffers();
-		void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index, glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor);
-		void beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
-		void endRecordCommandBuffer(uint32_t currentFrameIndex);
+		void recordCommandBuffer(glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor, Frame& frameInfo);
+		VkCommandBuffer beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
+		void endRecordCommandBuffer(VkCommandBuffer commandBuffer);
 		void createSyncObjects();
-		void createUniformBuffers(std::vector<kEntity>& entities);
-		void updateUBOs(std::vector<kEntity>& entities, kCamera& camera);
+		void createUniformBuffers(kBuffer& buffer);
+		void updateUBOs(std::vector<std::unique_ptr<kBuffer>>& buffers, kCamera& camera);
+		void updateObjBuffers(std::vector<kBuffer>& buffers, kEntity& entity);
 		VkCommandBuffer beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
-		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
-		void renderImguiLayer(uint32_t currentFrameIndex, kEntity& entity);
+		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer);
+		void startImguiLayer(uint32_t currentFrameIndex);
+		void renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo);
 		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
-		kGraphicsPipeline& getGraphicsPipeLine() { return m_GraphicsPipeline; }
-		kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
+		//kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
 		VkCommandPool getCommandPool() const { return m_VkSwapChain.m_CommandPool; }
 		bool getWindowShouldclose() { return m_Window->shouldClose(); }
 		void windowPollEvents() { return m_Window->pollEvents(); }
 		GLFWwindow* getWindow() { return m_Window->getWindow(); }
 		const int getWindowWidth() const { return m_Window->getWidth(); }
 		const int getWindowHeight() const { return m_Window->getheight(); }
+		void createGraphicsPipeline(std::vector<VkDescriptorSetLayout> layouts);
 	private:
-		void createGraphicsPipeline();
+		
 		void createDepthResources(); //refactor somewhere else image class?
 		VkFormat findDepthFormat(); // refactor somewhere elseimage class?
 		bool hasStencilComponent(VkFormat format); //refactor somewhere else iamge class?
@@ -68,7 +72,7 @@ namespace karhu
 		Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
 		Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
 		kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
-		kDescriptors m_DescriptorBuilder{ m_VkDevice };
+		//kDescriptors m_DescriptorBuilder{ m_VkDevice };
 		//std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
 		VkDescriptorSetLayout m_DescriptorLayout;

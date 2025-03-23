@@ -7,6 +7,13 @@ namespace karhu
 		static uint32_t id = 0;
 		return kEntity{ id++ };
 	}
+	void kEntity::updateBuffer()
+	{
+		ObjBuffer objBuffer{};
+		objBuffer.model = getTransformMatrix();
+
+		memcpy(m_Buffer->m_BufferMapped, &objBuffer, sizeof(objBuffer));
+	}
 	void kEntity::setModel(std::shared_ptr<kModel> model)
 	{
 		m_Model = model;

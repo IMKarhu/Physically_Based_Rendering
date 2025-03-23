@@ -18,13 +18,13 @@ namespace karhu
         m_VkSwapChain.createImageViews();
         m_GraphicsPipeline.createRenderpass(m_VkSwapChain.m_SwapChainImageFormat, findDepthFormat());
 
-        m_DescriptorBuilder.createDescriptorSetLayout();
+        //m_DescriptorBuilder.createDescriptorSetLayout();
 
-        createGraphicsPipeline();
+        //createGraphicsPipeline();
         createDepthResources();
         createFrameBuffers();
 
-        m_DescriptorBuilder.createDescriptorPool(2);
+        //m_DescriptorBuilder.createDescriptorPool(2);
 
         createSyncObjects();
         initializeImGui();
@@ -71,55 +71,67 @@ namespace karhu
         }
     }
 
-    void kRenderer::recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index, glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor)
+    void kRenderer::recordCommandBuffer(glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor, Frame& frameInfo)
     {
-        /*VkBuffer vBuffers[] = {m_VertexBuffer};
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vBuffers, offsets);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_GraphicsPipeline.getPipelineLayout(),
+            0,
+            1,
+            &frameInfo.globalSet,
+            0,
+            nullptr);
 
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);*/
+        for (auto& entity : frameInfo.entities)
+        {
+            
 
-        entity.getModel()->bind(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
+            
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                m_GraphicsPipeline.getPipelineLayout(),
+                1,
+                1,
+                &entity.m_DescriptorSet,
+                0,
+                nullptr);
 
-        vkCmdBindDescriptorSets(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipelineLayout(), 0, 1, &entity.m_DescriptorSet, 0, nullptr);
+            ObjPushConstant objConstant{};
+            objConstant.model = entity.getTransformMatrix();
+            vkCmdPushConstants(frameInfo.commandBuffer,
+                m_GraphicsPipeline.getPipelineLayout(),
+                VK_SHADER_STAGE_VERTEX_BIT,
+                0,
+                sizeof(ObjPushConstant),
+                &objConstant);
 
-        pushConstants cameraConstants{};
-        cameraConstants.cameraPosition = position;
-        cameraConstants.lightPosition = vars.m_LightPosition;
-        cameraConstants.lighColor = lightColor;
-        cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, vars.m_Metalness, vars.m_Roughness);
-        vkCmdPushConstants(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], m_GraphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &cameraConstants);
-
-        //VertexCount = 3, we techincally have 3 vertices to draw, instanceCount = 1, used for instance rendering, we use one because we dont have any instances
-        //firstVertex = 0 offset into the vertex buffer, defines lowest value of gl_VertexIndex
-        //firstInstance = 0 offset of instance, defines lowest value of gl_VertexIndex.
-        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
-        //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
-
-        entity.getModel()->draw(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
-        
+            pushConstants cameraConstants{};
+            cameraConstants.cameraPosition = position;
+            cameraConstants.lightPosition = vars.m_LightPosition;
+            cameraConstants.lighColor = lightColor;
+            cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, vars.m_Metalness, vars.m_Roughness);
+            vkCmdPushConstants(frameInfo.commandBuffer,
+                m_GraphicsPipeline.getPipelineLayout(),
+                VK_SHADER_STAGE_FRAGMENT_BIT,
+                64,
+                sizeof(pushConstants),
+                &cameraConstants);
 
 
-        /*ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-
-        ImGui::NewFrame();
-
-        ImGui::ShowDemoWindow();
-
-        ImGui::Render();
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);*/
-        
+            entity.getModel()->bind(frameInfo.commandBuffer);
+            entity.getModel()->draw(frameInfo.commandBuffer);
+        }
     }
 
-    void kRenderer::beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index)
+    VkCommandBuffer kRenderer::beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index)
     {
+        VkCommandBuffer commandBuffer = m_VkSwapChain.m_CommandBuffers[currentFrameIndex];
         VkCommandBufferBeginInfo info{};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags = 0;
         info.pInheritanceInfo = nullptr;
 
-        VK_CHECK(vkBeginCommandBuffer(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], &info));
+        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &info));
 
         VkRenderPassBeginInfo renderpassInfo{};
         renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -134,9 +146,9 @@ namespace karhu
         renderpassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderpassInfo.pClearValues = clearValues.data();
 
-        vkCmdBeginRenderPass(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
 
         VkViewport viewPort{};
         viewPort.x = 0.0f;
@@ -146,21 +158,23 @@ namespace karhu
         viewPort.minDepth = 0.0f;
         viewPort.maxDepth = 1.0f;
 
-        vkCmdSetViewport(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], 0, 1, &viewPort);
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewPort);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
         scissor.extent = m_VkSwapChain.m_SwapChainExtent;
 
-        vkCmdSetScissor(m_VkSwapChain.m_CommandBuffers[currentFrameIndex], 0, 1, &scissor);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        return commandBuffer;
     }
 
-    void kRenderer::endRecordCommandBuffer(uint32_t currentFrameIndex)
+    void kRenderer::endRecordCommandBuffer(VkCommandBuffer commandBuffer)
     {
         ImGui::EndFrame();
-        vkCmdEndRenderPass(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
+        vkCmdEndRenderPass(commandBuffer);
 
-        VK_CHECK(vkEndCommandBuffer(m_VkSwapChain.m_CommandBuffers[currentFrameIndex]));
+        VK_CHECK(vkEndCommandBuffer(commandBuffer));
     }
 
     void kRenderer::createSyncObjects()
@@ -188,31 +202,38 @@ namespace karhu
 
     }
 
-    void kRenderer::createUniformBuffers(std::vector<kEntity>& entities)
+    void kRenderer::createUniformBuffers(kBuffer& buffer)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        for (auto& entity : entities)
-        {
-            entity.m_UniformBuffer.m_Device = m_VkDevice.m_Device;
             m_VkDevice.createBuffers(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                entity.m_UniformBuffer.m_Buffer,entity.m_UniformBuffer.m_BufferMemory);
-            vkMapMemory(m_VkDevice.m_Device, entity.m_UniformBuffer.m_BufferMemory, 0, bufferSize, 0, &entity.m_UniformBuffer.m_BufferMapped);
-        }
+                buffer.m_Buffer, buffer.m_BufferMemory);
+            vkMapMemory(m_VkDevice.m_Device, buffer.m_BufferMemory, 0, bufferSize, 0, &buffer.m_BufferMapped);
+
     }
 
-    void kRenderer::updateUBOs(std::vector<kEntity>& entities, kCamera& camera)
+    void kRenderer::updateUBOs(std::vector<std::unique_ptr<kBuffer>>& buffers, kCamera& camera)
     {
-        for (auto& entity : entities)
+        for (auto& buffer : buffers)
         {
             UniformBufferObject ubo{};
            
-            ubo.model = entity.getTransformMatrix();
             ubo.view = camera.getView();
             ubo.proj = camera.getProjection();
             ubo.proj[1][1] *= -1;
 
-            memcpy(entity.m_UniformBuffer.m_BufferMapped, &ubo, sizeof(ubo));
+            memcpy(buffer->m_BufferMapped, &ubo, sizeof(ubo));
+        }
+    }
+
+    void kRenderer::updateObjBuffers(std::vector<kBuffer>& buffers, kEntity& entity)
+    {
+        for (auto& buffer : buffers)
+        {
+            ObjBuffer objBuffer{};
+            objBuffer.model = entity.getTransformMatrix();
+
+            memcpy(buffer.m_BufferMapped, &objBuffer, sizeof(objBuffer));
         }
     }
 
@@ -225,7 +246,7 @@ namespace karhu
         if (res == VK_ERROR_OUT_OF_DATE_KHR)
         {
             reCreateSwapChain();
-            return;
+            return 0;
         }
         else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
         {
@@ -234,15 +255,16 @@ namespace karhu
 
         vkResetFences(m_VkDevice.m_Device, 1, &m_InFlightFences[m_currentFrameIndex]);
 
-        vkResetCommandBuffer(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex], 0);
+        VkCommandBuffer commandBuffer = m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex];
 
-        /*RECORD COMMANDBUFFER*/
+        vkResetCommandBuffer(commandBuffer, 0);
+
         VkCommandBufferBeginInfo info{};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags = 0;
         info.pInheritanceInfo = nullptr;
 
-        VK_CHECK(vkBeginCommandBuffer(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex], &info));
+        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &info));
 
         VkRenderPassBeginInfo renderpassInfo{};
         renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -252,13 +274,14 @@ namespace karhu
         renderpassInfo.renderArea.extent = m_VkSwapChain.m_SwapChainExtent;
 
         std::array<VkClearValue, 2> clearValues = {};
-        clearValues[0].color = { {0.01f ,0.01f ,0.01f ,1.0f} };
+        clearValues[0].color = { {0.0f ,0.0f ,0.0f ,1.0f} };
         clearValues[1].depthStencil = { 1.0f, 0 };
         renderpassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderpassInfo.pClearValues = clearValues.data();
 
-        vkCmdBeginRenderPass(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex], &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
 
         VkViewport viewPort{};
         viewPort.x = 0.0f;
@@ -268,27 +291,25 @@ namespace karhu
         viewPort.minDepth = 0.0f;
         viewPort.maxDepth = 1.0f;
 
-        vkCmdSetViewport(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex], 0, 1, &viewPort);
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewPort);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
         scissor.extent = m_VkSwapChain.m_SwapChainExtent;
 
-        vkCmdSetScissor(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex], 0, 1, &scissor);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        return m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex];
+        return commandBuffer;
     }
 
-    void kRenderer::endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex)
+    void kRenderer::endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer)
     {
-        /*END RECORDING COMMANDBUFFER*/
-        ImGui::EndFrame();
-        vkCmdEndRenderPass(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex]);
+       // ImGui::EndFrame();
+        vkCmdEndRenderPass(commandBuffer);
 
-       
-        VK_CHECK(vkEndCommandBuffer(m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex]));
+        VK_CHECK(vkEndCommandBuffer(commandBuffer));
 
-        /*END FRAME*/
+
         VkSubmitInfo submitinfo{};
         submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -335,27 +356,44 @@ namespace karhu
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
-        auto rotation = entity.getRotation();
-       // ImGui::ShowDemoWindow();
-        ImGui::Begin("Controls");
-        ImGui::SliderFloat("Metalness", &vars.m_Metalness, 0.0f, 1.0f);
-        ImGui::SliderFloat("Roughness", &vars.m_Roughness, 0.0f, 1.0f);
-        ImGui::SliderFloat3("lightPosition", glm::value_ptr(vars.m_LightPosition), -10.0f, 10.0f);
-        ImGui::SliderFloat3("Model", glm::value_ptr(rotation), 0.0f, 100.0f);
-        entity.setRotation(rotation);
-        ImGui::End();
+
+        ImGui::ShowDemoWindow();
 
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_VkSwapChain.m_CommandBuffers[currentFrameIndex]);
     }
 
-    void kRenderer::createGraphicsPipeline()
+    void kRenderer::renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo)
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        auto entPos = frameInfo.entities[1].getPosition();
+        ImGui::NewFrame();
+
+       // ImGui::ShowDemoWindow();
+        ImGui::Begin("Controls");
+        ImGui::SliderFloat("Metalness", &vars.m_Metalness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness", &vars.m_Roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat3("lightPosition", glm::value_ptr(vars.m_LightPosition), -50.0f, 50.0f);
+
+        ImGui::SliderFloat3("objPosition", glm::value_ptr(entPos), -5.0f, 200.0f);
+        ImGui::End();
+
+        frameInfo.entities[1].setPosition(entPos);
+
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    }
+
+    void kRenderer::createGraphicsPipeline(std::vector<VkDescriptorSetLayout> layouts)
     {
         GraphicsPipelineStruct pipelineStruct{};
         pipelineStruct.viewportWidth = m_VkSwapChain.m_SwapChainExtent.width;
         pipelineStruct.viewportheight = m_VkSwapChain.m_SwapChainExtent.height;
         pipelineStruct.scissor.extent = m_VkSwapChain.m_SwapChainExtent;
-        pipelineStruct.pipelineLayoutInfo.pSetLayouts = &m_DescriptorBuilder.getDescriptorLayout();
+        pipelineStruct.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+        pipelineStruct.pipelineLayoutInfo.pSetLayouts = layouts.data();
 
         m_GraphicsPipeline.createPipeline(pipelineStruct, "../shaders/vertexShader.spv", "../shaders/fragmentShader.spv");
     }
