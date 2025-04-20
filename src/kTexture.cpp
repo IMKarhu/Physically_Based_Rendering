@@ -28,8 +28,10 @@ namespace karhu
 
 	void kTexture::createTexture(std::string filepath, VkFormat format)
 	{
+        std::string path1 = "../textures/";
+        std::string path = path1 + filepath;
 		int width, height, nrChannels;
-		stbi_uc* pixels = stbi_load(filepath.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = width * height * 4;
 
 		if (!pixels)

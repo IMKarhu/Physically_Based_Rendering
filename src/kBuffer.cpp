@@ -7,11 +7,12 @@ namespace karhu
 		:m_Device(device)
 	{
 	}
-	void kBuffer::destroy()
+	kBuffer::~kBuffer()
 	{
 		vkDestroyBuffer(m_Device.m_Device, m_Buffer, nullptr);
 		vkFreeMemory(m_Device.m_Device, m_BufferMemory, nullptr);
 	}
+	
 	void kBuffer::createBuffer(VkDeviceSize size)
 	{
 			m_Device.createBuffers(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,

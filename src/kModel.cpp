@@ -2,11 +2,13 @@
 #include <assimp/Importer.hpp>
 
 #include <assimp/postprocess.h>
+#include <assimp/pbrmaterial.h>
 
 namespace karhu
 {
-	kModel::kModel(Vulkan_Device& device, std::string filepath, VkCommandPool commandPool)
+	kModel::kModel(Vulkan_Device& device, Vulkan_SwapChain& swapChain, std::string filepath, VkCommandPool commandPool)
 		:m_Device(device)
+		,m_SwapChain(swapChain)
 	{
 		loadModel(filepath);
 		std::cout << "size of vertices: " << m_Vertices.size() << std::endl;
@@ -110,10 +112,31 @@ namespace karhu
 		}
 		if (mesh->mMaterialIndex >= 0)
 		{
-			aiString baseColor, metallic, roughness;
+			aiString baseColor, metallicRoughness, normalmap, ao;
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			baseColor = material->GetName();
-			printf(baseColor.C_Str());
+			aiTextureType type = aiTextureType_NORMALS;
+			auto i = material->GetTextureCount(type);
+			printf("count of normal textures: %f", i);
+			material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE, &baseColor);
+			material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &metallicRoughness);
+			material->GetTexture(aiTextureType_NORMALS, 0, &normalmap);
+			material->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 3, &ao);
+			float normalScale = 1.0f;
+			//material->Get(AI_MATKEY_GLTF_NORMALS_SCALE)
+			//material->GetTexture(AI_MATKEY_TEXTURE_NORMALS, &normal)
+			printf("helo\n");
+			printf("BaseColor: %s \n", baseColor.C_Str());
+			printf("metallicRoughness: %s \n", metallicRoughness.C_Str());
+			printf("normal: %s \n", normalmap.C_Str());
+			printf("ambient occlusion: %s \n", ao.C_Str());
+			kTexture base{ m_Device, m_SwapChain, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB};
+			kTexture normal{ m_Device, m_SwapChain, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
+			kTexture mr{ m_Device, m_SwapChain, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
+			//kTexture amoc{ m_Device, m_SwapChain, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
+
+			m_Textures.push_back(base);
+			m_Textures.push_back(normal);
+			m_Textures.push_back(mr);
 		}
 	}
 

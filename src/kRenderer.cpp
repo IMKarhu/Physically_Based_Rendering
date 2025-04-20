@@ -350,7 +350,7 @@ namespace karhu
         m_currentFrameIndex = (m_currentFrameIndex + 1) % m_VkSwapChain.m_MaxFramesInFlight;
     }
 
-    void kRenderer::renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo)
+    void kRenderer::renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo, float dt)
     {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();

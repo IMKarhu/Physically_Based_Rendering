@@ -1,5 +1,6 @@
 #pragma once
 #include "kDevice.hpp"
+#include "kSwapChain.hpp"
 #include "types.hpp"
 #include "kTexture.hpp"
 
@@ -11,7 +12,7 @@ namespace karhu
 	class kModel
 	{
 	public:
-		kModel(Vulkan_Device& device, std::string filepath, VkCommandPool commandPool);
+		kModel(Vulkan_Device& device, Vulkan_SwapChain& swapChain, std::string filepath, VkCommandPool commandPool);
 		~kModel();
 
 		kModel(const kModel&) = delete;
@@ -26,41 +27,6 @@ namespace karhu
 			VkBuffer m_IndexBuffer;
 			VkDeviceMemory m_IndexBufferMemory;
 		}m_IndexBuffer;
-
-		struct {
-			VkImage m_texture;
-			VkDeviceMemory m_Memory;
-			VkImageView m_TextureView;
-			VkSampler m_Sampler;
-		} m_Texture;
-
-		struct {
-			VkImage m_texture;
-			VkDeviceMemory m_Memory;
-			VkImageView m_TextureView;
-			VkSampler m_Sampler;
-		} m_NormalTexture;
-
-		struct {
-			VkImage m_texture;
-			VkDeviceMemory m_Memory;
-			VkImageView m_TextureView;
-			VkSampler m_Sampler;
-		} m_MetallicTexture;
-
-		struct {
-			VkImage m_texture;
-			VkDeviceMemory m_Memory;
-			VkImageView m_TextureView;
-			VkSampler m_Sampler;
-		} m_RoughnessTexture;
-
-		struct {
-			VkImage m_texture;
-			VkDeviceMemory m_Memory;
-			VkImageView m_TextureView;
-			VkSampler m_Sampler;
-		} m_AoTexture;
 
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);
@@ -78,5 +44,6 @@ namespace karhu
 		std::vector<Vertex> m_Vertices;
 		std::vector<uint32_t> m_Indices;
 		Vulkan_Device& m_Device;
+		Vulkan_SwapChain& m_SwapChain;
 	};
 }

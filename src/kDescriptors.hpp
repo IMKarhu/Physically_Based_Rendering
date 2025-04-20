@@ -31,28 +31,10 @@ namespace karhu
         void fillWritesMap(uint32_t bindingID);
         void allocateDescriptor(VkDescriptorSet& set, VkDescriptorSetLayout layout, VkDescriptorPool pool);
 
-        const VkDescriptorSetLayout& getDescriptorLayout() const { return m_DescriptorLayout; }
-
     private:
         Vulkan_Device& m_Device;
-        VkDescriptorSetLayout m_DescriptorLayout;
-        VkDescriptorPool m_DescriptorPool;
         std::vector<VkDescriptorPoolSize> m_PoolSizes;
         std::vector<VkWriteDescriptorSet>m_WritesData;
-        std::unordered_map<uint32_t, std::vector<VkWriteDescriptorSet>> m_Writes;
-    };
-
-    class DescriptorBuilder
-    {
-    public:
-        DescriptorBuilder(VkDescriptorPool& pool, VkDescriptorSetLayout& layout);
-
-        DescriptorBuilder &writeImg(VkDescriptorSet& set, uint32_t binding, VkDescriptorImageInfo info);
-        DescriptorBuilder& writeBuffer(VkDescriptorSet& set, uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo info);
-    private:
-        VkDescriptorPool &m_Pool;
-        VkDescriptorSetLayout& m_layout;
-        //std::vector<VkWriteDescriptorSet>m_Writes;
         std::unordered_map<uint32_t, std::vector<VkWriteDescriptorSet>> m_Writes;
     };
 }

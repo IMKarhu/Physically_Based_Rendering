@@ -8,6 +8,7 @@ namespace karhu
 	struct kBuffer
 	{
 		kBuffer(Vulkan_Device& device);
+		~kBuffer();
 
 		kBuffer(const kBuffer&) = delete;
 		void operator=(const kBuffer&) = delete;
@@ -16,7 +17,6 @@ namespace karhu
 		VkBuffer m_Buffer;
 		VkDeviceMemory m_BufferMemory;
 		void* m_BufferMapped;
-		void destroy();
 		void createBuffer(VkDeviceSize size);
 		VkDescriptorBufferInfo getBufferInfo(VkDeviceSize size);
 

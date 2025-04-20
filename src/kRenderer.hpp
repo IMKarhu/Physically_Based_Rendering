@@ -39,7 +39,7 @@ namespace karhu
 		VkCommandBuffer beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer);
 		void startImguiLayer(uint32_t currentFrameIndex);
-		void renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo);
+		void renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo, float dt);
 		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }

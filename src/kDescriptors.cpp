@@ -10,8 +10,6 @@ namespace karhu
 
     kDescriptors::~kDescriptors()
     {
-        vkDestroyDescriptorPool(m_Device.m_Device, m_DescriptorPool, nullptr);
-        vkDestroyDescriptorSetLayout(m_Device.m_Device, m_DescriptorLayout, nullptr);
     }
 
     VkDescriptorSetLayout kDescriptors::createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings)
@@ -150,12 +148,4 @@ namespace karhu
         printf("hello3\n");
         VK_CHECK(vkAllocateDescriptorSets(m_Device.m_Device, &allocInfo, &set));
     }
-
-
-    DescriptorBuilder::DescriptorBuilder(VkDescriptorPool& pool, VkDescriptorSetLayout& layout)
-        : m_Pool(pool)
-        , m_layout(layout)
-    {
-    }
-
 }

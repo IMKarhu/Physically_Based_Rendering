@@ -21,17 +21,19 @@ namespace karhu
     {
         /*for (auto& entity : m_Entities)
         {
-            entity.m_UniformBuffer.destroy();
-        }*/
+            vkFreeDescriptorSets(m_Renderer.getDevice().m_Device, m_ObjPool, 1, &entity.m_DescriptorSet);
+        }
+        vkFreeDescriptorSets(m_Renderer.getDevice().m_Device, m_GlobalPool, 2, &m_GlobalSet);*/
+        vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_GlobalPool, nullptr);
+        vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_ObjPool, nullptr);
+        vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_GlobalLayout, nullptr);
+        vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_ObjLayout, nullptr);
     }
 
     void Application::run()
     {
-        
-        
-
-        auto model = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/sphere.gltf", m_Renderer.getCommandPool());
-        auto model2 = std::make_shared<kModel>(m_Renderer.getDevice(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
+        auto model = std::make_shared<kModel>(m_Renderer.getDevice(),m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
+        //auto model2 = std::make_shared<kModel>(m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
@@ -40,14 +42,21 @@ namespace karhu
         entity.setRotation({ 90.0f,0.0f,0.0f });
 
         auto entity2 = kEntity::createEntity();
-        entity2.setModel(model2);
+        entity2.setModel(model);
         entity2.setPosition({ 5.0f,0.0f,-5.0f });
         entity2.setScale({ 1.0f,1.0f,1.0f });
         entity2.setRotation({ 90.0f,0.0f,0.0f });
 
+        /*auto entity3 = kEntity::createEntity();
+        entity3.setModel(model2);
+        entity3.setPosition({ -5.0f,0.0f,-5.0f });
+        entity3.setScale({ 1.0f,1.0f,1.0f });
+        entity3.setRotation({ 90.0f,0.0f,0.0f });*/
+
 
         m_Entities.push_back(std::move(entity));
         m_Entities.push_back(std::move(entity2));
+        //m_Entities.push_back(std::move(entity3));
 
         /*auto DirectionalLight = kEntity::createEntity();
         DirectionalLight.setModel(model);
@@ -55,38 +64,7 @@ namespace karhu
 
         m_Entities.push_back(std::move(DirectionalLight));*/
 
-       /* auto entity2 = kEntity::createEntity();
-        entity2.setModel(model);
-        entity2.setPosition({ 1.0f,1.0f,.5f });
-        entity2.setRotation({ 0.0f,0.0f,0.0f });
 
-        m_Entities.push_back(std::move(entity2));*/
-       /* kTexture albedo{m_Renderer.getDevice(), m_Renderer.getSwapChain()};
-        albedo.createTexture("../textures/Default_Albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-        kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        normal.createTexture("../textures/Default_Normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
-        kTexture metallicRoughness{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        metallicRoughness.createTexture("../textures/Default_MetalRoughness.jpg", VK_FORMAT_R8G8B8A8_UNORM);
-        kTexture ao{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        ao.createTexture("../textures/Default_AO.jpg", VK_FORMAT_R8G8B8A8_UNORM);
-        kTexture emissive{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        emissive.createTexture("../textures/Default_emissive.jpg", VK_FORMAT_R8G8B8A8_SRGB);*/
-
-        //VK_FORMAT_R8G8B8A8_SRGB
-        kTexture albedo{ m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../textures/sloppy-mortar-stone-wall_albedo.png", VK_FORMAT_R8G8B8A8_SRGB };
-        kTexture normal{ m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../textures/sloppy-mortar-stone-wall_normal-ogl.png", VK_FORMAT_R8G8B8A8_UNORM };
-        kTexture metallicRoughness{ m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../textures/sloppy-mortar-stone-wall_metallic.png", VK_FORMAT_R8G8B8A8_UNORM };
-        kTexture ao{ m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../textures/sloppy-mortar-stone-wall_roughness.png", VK_FORMAT_R8G8B8A8_UNORM };
-        kTexture emissive{ m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../textures/sloppy-mortar-stone-wall_ao.png", VK_FORMAT_R8G8B8A8_SRGB };
-
-        for (int i = 0; i < m_Entities.size(); i++)
-        {
-            m_Entities[i].getModel()->m_Textures.push_back(albedo);
-            m_Entities[i].getModel()->m_Textures.push_back(normal);
-            m_Entities[i].getModel()->m_Textures.push_back(metallicRoughness);
-            m_Entities[i].getModel()->m_Textures.push_back(ao);
-            m_Entities[i].getModel()->m_Textures.push_back(emissive);
-        }
 
         m_GlobalDescriptorBuilder.bind(m_GlobalBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
         m_GlobalLayout = m_GlobalDescriptorBuilder.createDescriptorSetLayout(m_GlobalBindings);
@@ -135,8 +113,8 @@ namespace karhu
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 1, infos[i][0], id);
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 2, infos[i][1], id);
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 3, infos[i][2], id);
-            m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 4, infos[i][3], id);
-            m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 5, infos[i][4], id);
+            //m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 4, infos[i][3], id);
+            //m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 5, infos[i][4], id);
             m_ObjDescriptorBuilder.fillWritesMap(m_Entities[i].getId());
             
         }
@@ -183,7 +161,7 @@ namespace karhu
             };
             m_Renderer.recordCommandBuffer(m_Camera.m_CameraVars.m_Position, glm::vec3(1.0f, 3.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
 
-            m_Renderer.renderImguiLayer(commandBuffer, frameInfo);
+            m_Renderer.renderImguiLayer(commandBuffer, frameInfo, dt);
             m_Renderer.updateUBOs(buffers, m_Camera);
             for (auto& entity : m_Entities)
             {
