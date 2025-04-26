@@ -161,7 +161,7 @@ namespace karhu
         pipelineInfo.pColorBlendState = &pipelineStruct.colorBlending;
         pipelineInfo.pDynamicState = &pipelineStruct.dynamiccreateinfo;
         pipelineInfo.layout = m_PipelineLayout;
-        pipelineInfo.renderPass = m_RenderPass;
+        pipelineInfo.renderPass = pipelineStruct.renderPass;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional

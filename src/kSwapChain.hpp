@@ -25,6 +25,7 @@ namespace karhu
 		void createImageViews();
 		void createCommandBuffers();
 		void createCommandPool();
+		void createRenderPass(VkFormat depthFormat);
 		VkCommandBuffer RecordSingleCommand();
 		void endSingleCommand(VkCommandBuffer commandBuffer);
 
@@ -37,6 +38,7 @@ namespace karhu
 		const int m_MaxFramesInFlight = 2;
 		VkCommandPool m_CommandPool;
 		std::vector<VkCommandBuffer> m_CommandBuffers;
+		VkRenderPass m_RenderPass;
 	private:
 		GLFWwindow* m_Window;
 		Vulkan_Device& m_Device;

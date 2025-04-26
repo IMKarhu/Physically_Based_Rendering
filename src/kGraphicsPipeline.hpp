@@ -20,6 +20,7 @@ namespace karhu {
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		VkRenderPass renderPass;
 	};
 
 	class kGraphicsPipeline

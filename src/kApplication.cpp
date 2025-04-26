@@ -124,7 +124,8 @@ namespace karhu
 
         std::vector<VkDescriptorSetLayout> layouts{ m_GlobalLayout, m_ObjLayout };
 
-        m_Renderer.createGraphicsPipeline(layouts);
+        //m_Renderer.createGraphicsPipeline(layouts);
+        m_EntityPipeline.createGraphicsPipeline(layouts);
 
         update(m_DeltaTime, uboBuffers);
     }
@@ -159,7 +160,8 @@ namespace karhu
                 m_GlobalSet,
                 m_Entities
             };
-            m_Renderer.recordCommandBuffer(m_Camera.m_CameraVars.m_Position, glm::vec3(1.0f, 3.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
+            m_EntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
+            //m_Renderer.recordCommandBuffer(m_Camera.m_CameraVars.m_Position, glm::vec3(1.0f, 3.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
 
             m_Renderer.renderImguiLayer(commandBuffer, frameInfo, dt);
             m_Renderer.updateUBOs(buffers, m_Camera);

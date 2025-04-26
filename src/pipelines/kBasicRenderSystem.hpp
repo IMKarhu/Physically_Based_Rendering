@@ -1,4 +1,5 @@
 #pragma once
+#include "../frame.hpp"
 #include "vulkan/vulkan.h"
 #include "glm/glm.hpp"
 #include <vector>
@@ -13,21 +14,19 @@ namespace karhu
 	class kBasicRenderSystem
 	{
 	public:
-		kBasicRenderSystem(Vulkan_Device& device, Vulkan_SwapChain& swapchain, kGraphicsPipeline& graphicspipeline);
+		kBasicRenderSystem(Vulkan_Device& device, Vulkan_SwapChain& swapchain);
 		~kBasicRenderSystem();
 
 		kBasicRenderSystem(const kBasicRenderSystem&) = delete;
 		kBasicRenderSystem &operator = (const kBasicRenderSystem&) = delete;
 
-		void createGraphicsPipeline(VkDescriptorSetLayout SetLayout);
-		/*void recordCommandBuffer(kEntity& entity, uint32_t currentFrameIndex, uint32_t index, glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor);*/
-		/*frameindex, dt, commandbuffer, camera, descriptor set, entities*/
-		void renderEntities(std::vector<kEntity> entities, uint32_t currentFrameIndex, uint32_t index, glm::vec3 camerapos, glm::vec3 lightPos, glm::vec4 lightcolor, VkCommandBuffer commandBuffer);
+		void createGraphicsPipeline(std::vector<VkDescriptorSetLayout>);
+		void renderEntities(glm::vec3 cameraPos, glm::vec4 lightColor, Frame& frameInfo);
 	private:
 
 		Vulkan_Device& m_Device;
 		Vulkan_SwapChain& m_SwapChain;
-		kGraphicsPipeline& m_GraphicsPipeline;
+		std::unique_ptr<kGraphicsPipeline> m_EntityPipeline;
 
 		struct {
 			float m_Metalness = 0.0f;

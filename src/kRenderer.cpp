@@ -16,7 +16,8 @@ namespace karhu
     {
         m_VkSwapChain.createSwapChain(m_Window->getSurface(), m_Window->getWindow());
         m_VkSwapChain.createImageViews();
-        m_GraphicsPipeline.createRenderpass(m_VkSwapChain.m_SwapChainImageFormat, findDepthFormat());
+        //m_GraphicsPipeline.createRenderpass(m_VkSwapChain.m_SwapChainImageFormat, findDepthFormat());
+        m_VkSwapChain.createRenderPass(findDepthFormat());
 
         //m_DescriptorBuilder.createDescriptorSetLayout();
 
@@ -60,7 +61,7 @@ namespace karhu
 
             VkFramebufferCreateInfo createinfo{};
             createinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            createinfo.renderPass = m_GraphicsPipeline.getRenderPass();
+            createinfo.renderPass = m_VkSwapChain.m_RenderPass;
             createinfo.attachmentCount = static_cast<uint32_t>(attachments.size());
             createinfo.pAttachments = attachments.data();
             createinfo.width = m_VkSwapChain.m_SwapChainExtent.width;
@@ -73,6 +74,7 @@ namespace karhu
 
     void kRenderer::recordCommandBuffer(glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor, Frame& frameInfo)
     {
+        vkCmdBindPipeline(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_GraphicsPipeline.getPipelineLayout(),
@@ -135,7 +137,7 @@ namespace karhu
 
         VkRenderPassBeginInfo renderpassInfo{};
         renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderpassInfo.renderPass = m_GraphicsPipeline.getRenderPass();
+        renderpassInfo.renderPass = m_VkSwapChain.m_RenderPass;
         renderpassInfo.framebuffer = m_FrameBuffers[index];
         renderpassInfo.renderArea.offset = { 0,0 };
         renderpassInfo.renderArea.extent = m_VkSwapChain.m_SwapChainExtent;
@@ -268,7 +270,7 @@ namespace karhu
 
         VkRenderPassBeginInfo renderpassInfo{};
         renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderpassInfo.renderPass = m_GraphicsPipeline.getRenderPass();
+        renderpassInfo.renderPass = m_VkSwapChain.m_RenderPass;
         renderpassInfo.framebuffer = m_FrameBuffers[imageIndex];
         renderpassInfo.renderArea.offset = { 0,0 };
         renderpassInfo.renderArea.extent = m_VkSwapChain.m_SwapChainExtent;
@@ -281,7 +283,7 @@ namespace karhu
 
         vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
+        //vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
 
         VkViewport viewPort{};
         viewPort.x = 0.0f;
@@ -536,7 +538,7 @@ namespace karhu
         initInfo.MinImageCount = 3;
         initInfo.ImageCount = 3;
         initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        initInfo.RenderPass = m_GraphicsPipeline.getRenderPass();
+        initInfo.RenderPass = m_VkSwapChain.m_RenderPass;
 
         ImGui_ImplVulkan_Init(&initInfo);
 

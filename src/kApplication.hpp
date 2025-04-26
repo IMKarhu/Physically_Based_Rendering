@@ -2,6 +2,7 @@
 #include "kRenderer.hpp"
 #include "keyboardMovement.hpp"
 #include "kEntity.hpp"
+#include "pipelines/kBasicRenderSystem.hpp"
 
 #include <memory>
 #include <fstream>
@@ -24,6 +25,7 @@ namespace karhu
         kRenderer m_Renderer{};
         kDescriptors m_GlobalDescriptorBuilder{ m_Renderer.getDevice() };
         kDescriptors m_ObjDescriptorBuilder{ m_Renderer.getDevice() };
+        kBasicRenderSystem m_EntityPipeline{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         //std::unique_ptr<kModel> m_Model;
         std::vector<kEntity> m_Entities;
 
