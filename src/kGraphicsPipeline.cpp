@@ -15,7 +15,6 @@ namespace karhu
 	{
         vkDestroyPipeline(m_Device.m_Device, m_GraphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_Device.m_Device, m_PipelineLayout, nullptr);
-        vkDestroyRenderPass(m_Device.m_Device, m_RenderPass, nullptr);
 	}
 
 	void kGraphicsPipeline::createPipeline(GraphicsPipelineStruct pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath)
