@@ -14,7 +14,6 @@
 
 namespace karhu
 {
-	//class kModel;
 	class kEntity;
 	class kCamera;
 	struct kBuffer;
@@ -30,27 +29,21 @@ namespace karhu
 
 		void createFrameBuffers();
 		void recordCommandBuffer(glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor, Frame& frameInfo);
-		VkCommandBuffer beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index);
-		void endRecordCommandBuffer(VkCommandBuffer commandBuffer);
 		void createSyncObjects();
 		void createUniformBuffers(kBuffer& buffer);
 		void updateUBOs(std::vector<std::unique_ptr<kBuffer>>& buffers, kCamera& camera);
 		void updateObjBuffers(std::vector<kBuffer>& buffers, kEntity& entity);
 		VkCommandBuffer beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer);
-		void startImguiLayer(uint32_t currentFrameIndex);
 		void renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo, float dt);
-		void endImGuiLayer();
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
-		//kDescriptors& getDescriptor() { return m_DescriptorBuilder; }
 		VkCommandPool getCommandPool() const { return m_VkSwapChain.m_CommandPool; }
 		bool getWindowShouldclose() { return m_Window->shouldClose(); }
 		void windowPollEvents() { return m_Window->pollEvents(); }
 		GLFWwindow* getWindow() { return m_Window->getWindow(); }
 		const int getWindowWidth() const { return m_Window->getWidth(); }
 		const int getWindowHeight() const { return m_Window->getheight(); }
-		void createGraphicsPipeline(std::vector<VkDescriptorSetLayout> layouts);
 	private:
 		
 		void createDepthResources(); //refactor somewhere else image class?
@@ -72,8 +65,6 @@ namespace karhu
 		Vulkan_Device m_VkDevice{ m_Window->getInstance(), m_Window->getSurface() };
 		Vulkan_SwapChain m_VkSwapChain{ m_VkDevice };
 		kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
-		//kDescriptors m_DescriptorBuilder{ m_VkDevice };
-		//std::shared_ptr<kDescriptors> m_Descriptor; /*= std::make_shared<kDescriptors>();*/
 
 		VkDescriptorSetLayout m_DescriptorLayout;
 		std::vector<VkFramebuffer> m_FrameBuffers;

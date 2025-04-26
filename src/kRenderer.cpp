@@ -16,16 +16,10 @@ namespace karhu
     {
         m_VkSwapChain.createSwapChain(m_Window->getSurface(), m_Window->getWindow());
         m_VkSwapChain.createImageViews();
-        //m_GraphicsPipeline.createRenderpass(m_VkSwapChain.m_SwapChainImageFormat, findDepthFormat());
         m_VkSwapChain.createRenderPass(findDepthFormat());
 
-        //m_DescriptorBuilder.createDescriptorSetLayout();
-
-        //createGraphicsPipeline();
         createDepthResources();
         createFrameBuffers();
-
-        //m_DescriptorBuilder.createDescriptorPool(2);
 
         createSyncObjects();
         initializeImGui();
@@ -125,60 +119,6 @@ namespace karhu
         }
     }
 
-    VkCommandBuffer kRenderer::beginRecordCommandBuffer(uint32_t currentFrameIndex, uint32_t index)
-    {
-        VkCommandBuffer commandBuffer = m_VkSwapChain.m_CommandBuffers[currentFrameIndex];
-        VkCommandBufferBeginInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        info.flags = 0;
-        info.pInheritanceInfo = nullptr;
-
-        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &info));
-
-        VkRenderPassBeginInfo renderpassInfo{};
-        renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderpassInfo.renderPass = m_VkSwapChain.m_RenderPass;
-        renderpassInfo.framebuffer = m_FrameBuffers[index];
-        renderpassInfo.renderArea.offset = { 0,0 };
-        renderpassInfo.renderArea.extent = m_VkSwapChain.m_SwapChainExtent;
-
-        std::array<VkClearValue, 2> clearValues = {};
-        clearValues[0].color = { {0.01f ,0.01f ,0.01f ,1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
-        renderpassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderpassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
-
-        VkViewport viewPort{};
-        viewPort.x = 0.0f;
-        viewPort.y = 0.0f;
-        viewPort.width = static_cast<float>(m_VkSwapChain.m_SwapChainExtent.width);
-        viewPort.height = static_cast<float>(m_VkSwapChain.m_SwapChainExtent.height);
-        viewPort.minDepth = 0.0f;
-        viewPort.maxDepth = 1.0f;
-
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewPort);
-
-        VkRect2D scissor{};
-        scissor.offset = { 0, 0 };
-        scissor.extent = m_VkSwapChain.m_SwapChainExtent;
-
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        return commandBuffer;
-    }
-
-    void kRenderer::endRecordCommandBuffer(VkCommandBuffer commandBuffer)
-    {
-        ImGui::EndFrame();
-        vkCmdEndRenderPass(commandBuffer);
-
-        VK_CHECK(vkEndCommandBuffer(commandBuffer));
-    }
-
     void kRenderer::createSyncObjects()
     {
         m_Semaphores.availableSemaphores.resize(m_VkSwapChain.m_MaxFramesInFlight);
@@ -243,7 +183,6 @@ namespace karhu
     {
         vkWaitForFences(m_VkDevice.m_Device, 1, &m_InFlightFences[m_currentFrameIndex], VK_TRUE, UINT64_MAX);
 
-        //uint32_t imageIndex;
         VkResult res = vkAcquireNextImageKHR(m_VkDevice.m_Device, m_VkSwapChain.m_SwapChain, UINT64_MAX, m_Semaphores.availableSemaphores[m_currentFrameIndex], VK_NULL_HANDLE, &imageIndex);
         if (res == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -283,8 +222,6 @@ namespace karhu
 
         vkCmdBeginRenderPass(commandBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        //vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline.getPipeline());
-
         VkViewport viewPort{};
         viewPort.x = 0.0f;
         viewPort.y = 0.0f;
@@ -306,7 +243,6 @@ namespace karhu
 
     void kRenderer::endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer)
     {
-       // ImGui::EndFrame();
         vkCmdEndRenderPass(commandBuffer);
 
         VK_CHECK(vkEndCommandBuffer(commandBuffer));
@@ -373,18 +309,6 @@ namespace karhu
 
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-    }
-
-    void kRenderer::createGraphicsPipeline(std::vector<VkDescriptorSetLayout> layouts)
-    {
-        GraphicsPipelineStruct pipelineStruct{};
-        pipelineStruct.viewportWidth = m_VkSwapChain.m_SwapChainExtent.width;
-        pipelineStruct.viewportheight = m_VkSwapChain.m_SwapChainExtent.height;
-        pipelineStruct.scissor.extent = m_VkSwapChain.m_SwapChainExtent;
-        pipelineStruct.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
-        pipelineStruct.pipelineLayoutInfo.pSetLayouts = layouts.data();
-
-        m_GraphicsPipeline.createPipeline(pipelineStruct, "../shaders/vertexShader.spv", "../shaders/fragmentShader.spv");
     }
 
     void kRenderer::createDepthResources()

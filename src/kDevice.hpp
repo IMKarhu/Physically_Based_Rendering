@@ -21,7 +21,6 @@ namespace karhu
 
 	struct Vulkan_Device
 	{
-		//Vulkan_Device() = default;
 		Vulkan_Device(const VkInstance& instance, const VkSurfaceKHR& surface);
 		~Vulkan_Device();
 

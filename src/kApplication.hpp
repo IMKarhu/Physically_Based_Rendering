@@ -26,7 +26,6 @@ namespace karhu
         kDescriptors m_GlobalDescriptorBuilder{ m_Renderer.getDevice() };
         kDescriptors m_ObjDescriptorBuilder{ m_Renderer.getDevice() };
         kBasicRenderSystem m_EntityPipeline{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
-        //std::unique_ptr<kModel> m_Model;
         std::vector<kEntity> m_Entities;
 
         float m_DeltaTime = 0.0f;

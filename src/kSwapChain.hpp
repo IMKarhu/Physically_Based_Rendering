@@ -7,7 +7,6 @@ namespace karhu
 {
 	struct Vulkan_SwapChain
 	{
-		//Vulkan_SwapChain() = default;
 		Vulkan_SwapChain(Vulkan_Device& device);
 		~Vulkan_SwapChain();
 

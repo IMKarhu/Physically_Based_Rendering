@@ -22,8 +22,3 @@ add_executable(PBR ${CPP_SOURCE_FILES})
 target_link_libraries(PBR PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator PUBLIC assimp Vulkan::Vulkan)
 
 message(CFLAGS=${COMPILE_FLAGS})
-
-
-#file(GLOB_RECURSE TRIANGLE_FILES "src/triangle/*.hpp" "src/triangle/*.cpp")
-#-add_executable(Triangle ${TRIANGLE_FILES})
-#target_link_libraries(Triangle PUBLIC glm PUBLIC glfw PUBLIC VulkanMemoryAllocator Vulkan::Vulkan)

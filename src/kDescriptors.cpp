@@ -15,25 +15,6 @@ namespace karhu
     VkDescriptorSetLayout kDescriptors::createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings)
     {
         VkDescriptorSetLayout layout{};
-        /*VkDescriptorSetLayoutBinding binding{};
-        binding = Helpers::fillLayoutBindingStruct(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-
-        VkDescriptorSetLayoutBinding samplerBinding{};
-        samplerBinding = Helpers::fillLayoutBindingStruct(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        VkDescriptorSetLayoutBinding normalSamplerBinding{};
-        normalSamplerBinding = Helpers::fillLayoutBindingStruct(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        VkDescriptorSetLayoutBinding metallicSamplerBinding{};
-        metallicSamplerBinding = Helpers::fillLayoutBindingStruct(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        VkDescriptorSetLayoutBinding roughnessSamplerBinding{};
-        roughnessSamplerBinding = Helpers::fillLayoutBindingStruct(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        VkDescriptorSetLayoutBinding aoSamplerBinding{};
-        aoSamplerBinding = Helpers::fillLayoutBindingStruct(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);*/
-
-        /*std::array<VkDescriptorSetLayoutBinding, 6> bindings = { binding, samplerBinding, normalSamplerBinding, metallicSamplerBinding, roughnessSamplerBinding, aoSamplerBinding };*/
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo = Helpers::fillDescriptorSetLayoutCreateInfo();
         createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -107,11 +88,7 @@ namespace karhu
         descriptorWrite.pImageInfo = &info;
 
         m_WritesData.push_back(descriptorWrite);
-        /*if (m_WritesData.size() == 6)
-        {
-            m_Writes.emplace(bindingID, m_WritesData);
-            m_WritesData.clear();
-        }*/
+
     }
 
     void kDescriptors::writeBuffer(VkDescriptorSet& set, uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo info, uint32_t bindingID)
@@ -126,7 +103,6 @@ namespace karhu
         descriptorWrite.pBufferInfo = &info;
 
         m_WritesData.push_back(descriptorWrite);
-        //m_Writes.emplace(bindingID, m_WritesData);
     }
 
     void kDescriptors::fillWritesMap(uint32_t bindingID)

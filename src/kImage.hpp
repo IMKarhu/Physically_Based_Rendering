@@ -7,7 +7,6 @@ namespace karhu
 	struct kImage
 	{
 		Vulkan_Device& m_Device;
-		//VkDevice& m_Device;
 
 		void createImage(uint32_t width,
 			uint32_t height,

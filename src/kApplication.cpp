@@ -9,7 +9,6 @@ namespace karhu
     {
         //Global UBO
         m_GlobalDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
-        //m_GlobalDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
         m_GlobalPool = m_GlobalDescriptorBuilder.createDescriptorPool(2);
 
         m_ObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
@@ -19,11 +18,6 @@ namespace karhu
 
     Application::~Application()
     {
-        /*for (auto& entity : m_Entities)
-        {
-            vkFreeDescriptorSets(m_Renderer.getDevice().m_Device, m_ObjPool, 1, &entity.m_DescriptorSet);
-        }
-        vkFreeDescriptorSets(m_Renderer.getDevice().m_Device, m_GlobalPool, 2, &m_GlobalSet);*/
         vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_GlobalPool, nullptr);
         vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_ObjPool, nullptr);
         vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_GlobalLayout, nullptr);
@@ -33,7 +27,6 @@ namespace karhu
     void Application::run()
     {
         auto model = std::make_shared<kModel>(m_Renderer.getDevice(),m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
-        //auto model2 = std::make_shared<kModel>(m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
@@ -47,22 +40,10 @@ namespace karhu
         entity2.setScale({ 1.0f,1.0f,1.0f });
         entity2.setRotation({ 90.0f,0.0f,0.0f });
 
-        /*auto entity3 = kEntity::createEntity();
-        entity3.setModel(model2);
-        entity3.setPosition({ -5.0f,0.0f,-5.0f });
-        entity3.setScale({ 1.0f,1.0f,1.0f });
-        entity3.setRotation({ 90.0f,0.0f,0.0f });*/
-
 
         m_Entities.push_back(std::move(entity));
         m_Entities.push_back(std::move(entity2));
-        //m_Entities.push_back(std::move(entity3));
 
-        /*auto DirectionalLight = kEntity::createEntity();
-        DirectionalLight.setModel(model);
-        DirectionalLight.setPosition({ 1.0f, 3.0f, 1.0f });
-
-        m_Entities.push_back(std::move(DirectionalLight));*/
 
 
 
@@ -89,9 +70,6 @@ namespace karhu
         m_ObjDescriptorBuilder.bind(m_ObjBindings, 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_ObjLayout = m_ObjDescriptorBuilder.createDescriptorSetLayout(m_ObjBindings);
 
-        //std::vector<kBuffer> objBuffers(2);
-        //m_Renderer.createUniformBuffers(objBuffers);
-
         std::vector<std::vector<VkDescriptorImageInfo>> infos;
         infos.resize(m_Entities.size());
         for (size_t i = 0; i < m_Entities.size(); i++)
@@ -113,8 +91,6 @@ namespace karhu
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 1, infos[i][0], id);
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 2, infos[i][1], id);
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 3, infos[i][2], id);
-            //m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 4, infos[i][3], id);
-            //m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 5, infos[i][4], id);
             m_ObjDescriptorBuilder.fillWritesMap(m_Entities[i].getId());
             
         }
@@ -124,7 +100,6 @@ namespace karhu
 
         std::vector<VkDescriptorSetLayout> layouts{ m_GlobalLayout, m_ObjLayout };
 
-        //m_Renderer.createGraphicsPipeline(layouts);
         m_EntityPipeline.createGraphicsPipeline(layouts);
 
         update(m_DeltaTime, uboBuffers);
@@ -161,7 +136,6 @@ namespace karhu
                 m_Entities
             };
             m_EntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
-            //m_Renderer.recordCommandBuffer(m_Camera.m_CameraVars.m_Position, glm::vec3(1.0f, 3.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
 
             m_Renderer.renderImguiLayer(commandBuffer, frameInfo, dt);
             m_Renderer.updateUBOs(buffers, m_Camera);

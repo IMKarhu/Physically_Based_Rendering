@@ -145,11 +145,9 @@ namespace karhu
 		VkMemoryAllocateInfo allocinfo{};
 		allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocinfo.allocationSize = memRequirements.size;
-		/*VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT*/
 		allocinfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
 		VK_CHECK(vkAllocateMemory(m_Device, &allocinfo, nullptr, &bufferMemory));
-		//  printf("Hello\n");
 		VK_CHECK(vkBindBufferMemory(m_Device, buffer, bufferMemory, 0));
 	}
 

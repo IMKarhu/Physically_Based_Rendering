@@ -19,11 +19,6 @@ namespace karhu
 
     kTexture::~kTexture()
     {
-        //printf("texture destructor called!!");
-       /* vkDestroySampler(m_Device.m_Device, m_TextureVars.m_Sampler, nullptr);
-        vkDestroyImageView(m_Device.m_Device, m_TextureVars.m_TextureView, nullptr);
-        vkDestroyImage(m_Device.m_Device, m_TextureVars.m_texture, nullptr);
-        vkFreeMemory(m_Device.m_Device, m_TextureVars.m_Memory, nullptr);*/
     }
 
 	void kTexture::createTexture(std::string filepath, VkFormat format)
@@ -69,7 +64,6 @@ namespace karhu
 	{
         VkCommandBuffer commandBuffer = m_SwapChain.RecordSingleCommand();
 
-        //tähän väliin tavaraa
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
@@ -116,8 +110,6 @@ namespace karhu
 	void kTexture::copyBufferToImage(VkBuffer buffer, uint32_t width, uint32_t height)
 	{
         VkCommandBuffer commandBuffer = m_SwapChain.RecordSingleCommand();
-
-        //soemthing here
 
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
