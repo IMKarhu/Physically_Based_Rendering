@@ -13,5 +13,6 @@ namespace karhu
 		VkCommandBuffer commandBuffer;
 		VkDescriptorSet globalSet;
 		std::vector<kEntity>& entities;
+		std::vector<kEntity>& unrealEntities;
 	};
 }

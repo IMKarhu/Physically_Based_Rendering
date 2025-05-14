@@ -11,7 +11,7 @@ layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
 layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
 layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and roughness
 layout(set = 1, binding = 4) uniform sampler2D aoMap; //ao
-layout(set = 1, binding = 5) uniform sampler2D emissive; //emissive
+layout(set = 1, binding = 5) uniform sampler2D emissiveMap; //emissive
 
 layout( push_constant, std140) uniform cameraConstants
 {
@@ -43,13 +43,13 @@ vec3 getNormalFromMap()
 }
 
 float D_GGX(float NoH, float a);
-vec3 F_Schlick(float u, vec3 f0);
-float V_SmithGGXCorrelated(float NoV, float NoL, float a);
+float G_Smith(float NoV, float NoL, float a);
+vec3 F_Schlick(vec3 f0, float HoV);
 float Fd_Lambert();
 
 void main()
 {
-    vec3 normal = getNormalFromMap();
+ vec3 normal = getNormalFromMap();
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
     vec3 albedo = texture(texSampler, fragUV).rgb;
     float metallic = texture(metallicMap, fragUV).b + camera.albedoNormalMetalRoughness.z;
@@ -60,7 +60,8 @@ void main()
     {
         roughness = 1.0;
     }
-    float ao = texture(aoMap, fragUV).r;
+    vec3 ao = texture(aoMap, fragUV).rrr;
+    float emissive = texture(emissiveMap, fragUV).r;
     
     //baseRefelectivity
     vec3 f0 = vec3(0.04);
@@ -77,19 +78,19 @@ void main()
     float dist = length(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
     float attenuation = 1.0 / (dist *  dist);
     vec3 radiance = camera.lightColor.xyz * attenuation;
-                    
-    //BRDF
+
+     //BRDF
     float NoV = max(dot(normal, V), 0.000001);
     float NoL = max(dot(normal, L), 0.000001);
     float HoV = max(dot(H, V), 0.0);
     float NoH = max(dot(normal, H), 0.0);
-            
-    float D = D_GGX(NoH, roughness); //Normal distribution for specular BRDF.  value between 0 and 1
-    float G = V_SmithGGXCorrelated(NoV, NoL, roughness); //Geometric attenuation for specular BRDF. value between 0 and 1
-    vec3 F = F_Schlick(HoV, f0); //Fresnel term for direct lighting. RGB values also between 0 and 1
-            
-    vec3 SpecularBRDF = F * G * D;
-    
+
+    float D = D_GGX(NoH, roughness);
+    float G = G_Smith(NoV, NoL, roughness);
+    vec3 F = F_Schlick(f0, HoV);
+
+    vec3 specularBRDF = (F * G * D) / (4 * (NoL * NoV));
+
     //energy conservation, diffuse and specular light can't be above 1.0 (unles surface emits light)
     //Diffuse scattering.
     //Happens because light is refracted multiple times by dielectric medium.
@@ -100,7 +101,7 @@ void main()
     //Lambertian
     vec3 diffuseBRDF = kD * albedo;
 
-    Lo += (diffuseBRDF + SpecularBRDF) * radiance * NoL;
+    Lo += (diffuseBRDF + specularBRDF) * radiance * NoL;
 
 
     vec3 ambient = vec3(0.1) * albedo * ao;
@@ -120,21 +121,21 @@ void main()
 float D_GGX(float NoH, float a)
 {
     float a2 = a * a;
-    float f = (NoH * a2 - NoH) * NoH + 1.0;
-    return a2/ (PI * f * f); // DGGX(h,a) = a2/ PI((n*h)pow2 (a2-1)+1)pow2
+    float NoH2 = NoH * NoH;
+    return a2 / (PI * pow((NoH2 * (a2 - 1)) + 1, 2));
 }
 
-vec3 F_Schlick(float u, vec3 f0)
+float G_Smith(float NoV, float NoL, float a)
 {
-return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0); // Fresnel Schlick(v,h,f0,f90=1.0) = f0 + (f90 - f0)(1-v*h)power of 5
+    float k = pow(a + 1, 2) / 8 ;
+    float G1 = NoV / (NoV * (1 - k) + k);
+    float G2 = NoL / (NoL * (1 - k) + k);
+    return G1 * G2;
 }
 
-float V_SmithGGXCorrelated(float NoV, float NoL, float a)
+vec3 F_Schlick(vec3 f0, float HoV)
 {
-    float a2 = a * a;
-    float ggxl = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
-    float ggxv = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
-return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
+    return f0 + (vec3(1.0) - f0) * pow(2, ((-5.55473 * HoV) - 6.98316) * HoV);
 }
 
 float Fd_Lambert()

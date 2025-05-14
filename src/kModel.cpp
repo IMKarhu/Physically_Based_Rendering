@@ -70,6 +70,10 @@ namespace karhu
 	void kModel::processScene(const aiScene* scene)
 	{
 		aiNode* node = scene->mRootNode;
+		auto numMeshes = node->mNumMeshes;
+		auto numMaterials = scene->mNumMaterials;
+		printf("number of meshes: %d\n", numMeshes);
+		printf("number of materials: %d\n", numMaterials);
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -97,9 +101,6 @@ namespace karhu
 			vert.color = { 1.0f, 1.0f, 0.0f };
 
 			m_Vertices.push_back(vert);
-
-			aiString baseColor, metallic, roughness;
-			
 		}
 
 		for (int i = 0; i < mesh->mNumFaces; i++)
@@ -110,17 +111,40 @@ namespace karhu
 				m_Indices.push_back(face.mIndices[j]);
 			}
 		}
+		for (unsigned int i = 0; i < scene->mNumMaterials; i++)
+		{
+			const aiMaterial* material = scene->mMaterials[i];
+
+			aiString Matname = material->GetName();
+			printf("name of material: %s\n", Matname.C_Str());
+
+			auto numProps = material->mNumProperties;
+			printf("number of properties: %d\n", numProps);
+			for (auto j = 0; j < material->mNumProperties; j++)
+			{
+				aiMaterialProperty* prop = material->mProperties[j];
+				aiString key = prop->mKey;
+				auto sema = prop->mSemantic;
+				printf("key %s\n", key);
+				printf("semantic %d\n", sema);
+			}
+		}
 		if (mesh->mMaterialIndex >= 0)
 		{
-			aiString baseColor, metallicRoughness, normalmap, ao;
+			aiString baseColor, metallicRoughness, normalmap, ao, emissive;
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 			aiTextureType type = aiTextureType_NORMALS;
+			aiTextureType type2 = aiTextureType_AMBIENT_OCCLUSION;
 			auto i = material->GetTextureCount(type);
+			auto j = material->GetTextureCount(type2);
 			printf("count of normal textures: %f", i);
+			printf("count of ao textures: %f", j);
 			material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE, &baseColor);
 			material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &metallicRoughness);
 			material->GetTexture(aiTextureType_NORMALS, 0, &normalmap);
-			material->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 3, &ao);
+			material->GetTexture(aiTextureType_LIGHTMAP, 0, &ao);
+			material->GetTexture(aiTextureType_EMISSIVE, 0, &emissive);
+			//material->GetTexture(AI_MATKEY_COLOR_AMBIENT, &ao);
 			float normalScale = 1.0f;
 			//material->Get(AI_MATKEY_GLTF_NORMALS_SCALE)
 			//material->GetTexture(AI_MATKEY_TEXTURE_NORMALS, &normal)
@@ -132,11 +156,14 @@ namespace karhu
 			kTexture base{ m_Device, m_SwapChain, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB};
 			kTexture normal{ m_Device, m_SwapChain, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
 			kTexture mr{ m_Device, m_SwapChain, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
-			//kTexture amoc{ m_Device, m_SwapChain, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
+			kTexture amoc{ m_Device, m_SwapChain, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
+			kTexture em{ m_Device, m_SwapChain, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
 
 			m_Textures.push_back(base);
 			m_Textures.push_back(normal);
 			m_Textures.push_back(mr);
+			m_Textures.push_back(amoc);
+			m_Textures.push_back(em);
 		}
 	}
 

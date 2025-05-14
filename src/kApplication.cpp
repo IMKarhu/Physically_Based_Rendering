@@ -14,6 +14,10 @@ namespace karhu
         m_ObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
         m_ObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_ObjPool = m_ObjDescriptorBuilder.createDescriptorPool(1000);
+
+        m_UnrealObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
+        m_UnrealObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
+        m_UnrealObjPool = m_UnrealObjDescriptorBuilder.createDescriptorPool(1000);
     }
 
     Application::~Application()
@@ -27,6 +31,7 @@ namespace karhu
     void Application::run()
     {
         auto model = std::make_shared<kModel>(m_Renderer.getDevice(),m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
+        auto model2 = std::make_shared<kModel>(m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
@@ -44,7 +49,20 @@ namespace karhu
         m_Entities.push_back(std::move(entity));
         m_Entities.push_back(std::move(entity2));
 
+        auto unrealEntity = kEntity::createEntity();
+        unrealEntity.setModel(model);
+        unrealEntity.setPosition({ -5.0f,0.0f,-5.0f });
+        unrealEntity.setScale({ 1.0f,1.0f,1.0f });
+        unrealEntity.setRotation({ 90.0f,0.0f,0.0f });
 
+        auto unrealEntity2 = kEntity::createEntity();
+        unrealEntity2.setModel(model);
+        unrealEntity2.setPosition({ -10.0f,0.0f,-5.0f });
+        unrealEntity2.setScale({ 1.0f,1.0f,1.0f });
+        unrealEntity2.setRotation({ 90.0f,0.0f,0.0f });
+
+        m_UnrealEntities.push_back(std::move(unrealEntity));
+        m_UnrealEntities.push_back(std::move(unrealEntity2));
 
 
         m_GlobalDescriptorBuilder.bind(m_GlobalBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
@@ -61,6 +79,7 @@ namespace karhu
         m_GlobalDescriptorBuilder.writeBuffer(m_GlobalSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboBuffers[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
         m_GlobalDescriptorBuilder.fillWritesMap(0);
 
+        /*Disney*/
         //obj descriptors
         m_ObjDescriptorBuilder.bind(m_ObjBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
         m_ObjDescriptorBuilder.bind(m_ObjBindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -91,16 +110,57 @@ namespace karhu
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 1, infos[i][0], id);
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 2, infos[i][1], id);
             m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 3, infos[i][2], id);
+            m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 4, infos[i][3], id);
+            m_ObjDescriptorBuilder.writeImg(m_Entities[i].m_DescriptorSet, 5, infos[i][4], id);
             m_ObjDescriptorBuilder.fillWritesMap(m_Entities[i].getId());
             
         }
 
+        /*Unreal*/
+        m_UnrealObjDescriptorBuilder.bind(m_UnrealObjBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_UnrealObjDescriptorBuilder.bind(m_UnrealObjBindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_UnrealObjDescriptorBuilder.bind(m_UnrealObjBindings, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_UnrealObjDescriptorBuilder.bind(m_UnrealObjBindings, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_UnrealObjDescriptorBuilder.bind(m_UnrealObjBindings, 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_UnrealObjDescriptorBuilder.bind(m_UnrealObjBindings, 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_UnrealObjLayout = m_UnrealObjDescriptorBuilder.createDescriptorSetLayout(m_UnrealObjBindings);
+
+        std::vector<std::vector<VkDescriptorImageInfo>> unrealinfos;
+        unrealinfos.resize(m_UnrealEntities.size());
+        for (size_t i = 0; i < m_UnrealEntities.size(); i++)
+        {
+            for (size_t j = 0; j < m_UnrealEntities[i].getModel()->m_Textures.size(); j++)
+            {
+                unrealinfos[i].push_back(m_UnrealEntities[i].getModel()->m_Textures[j].getImageInfo());
+            }
+            m_UnrealEntities[i].m_Buffer = std::make_unique<kBuffer>(m_Renderer.getDevice());
+            m_UnrealEntities[i].m_Buffer->createBuffer(sizeof(ObjBuffer));
+        }
+
+        for (size_t i = 0; i < m_UnrealEntities.size(); i++)
+        {
+            auto id = m_UnrealEntities[i].getId();
+            m_UnrealObjDescriptorBuilder.allocateDescriptor(m_UnrealEntities[i].m_DescriptorSet, m_UnrealObjLayout, m_UnrealObjPool);
+            m_UnrealObjDescriptorBuilder.writeBuffer(m_UnrealEntities[i].m_DescriptorSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_UnrealEntities[i].m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
+
+            m_UnrealObjDescriptorBuilder.writeImg(m_UnrealEntities[i].m_DescriptorSet, 1, unrealinfos[i][0], id);
+            m_UnrealObjDescriptorBuilder.writeImg(m_UnrealEntities[i].m_DescriptorSet, 2, unrealinfos[i][1], id);
+            m_UnrealObjDescriptorBuilder.writeImg(m_UnrealEntities[i].m_DescriptorSet, 3, unrealinfos[i][2], id);
+            m_UnrealObjDescriptorBuilder.writeImg(m_UnrealEntities[i].m_DescriptorSet, 4, unrealinfos[i][3], id);
+            m_UnrealObjDescriptorBuilder.writeImg(m_UnrealEntities[i].m_DescriptorSet, 5, unrealinfos[i][4], id);
+            m_UnrealObjDescriptorBuilder.fillWritesMap(m_UnrealEntities[i].getId());
+
+        }
+
         m_GlobalDescriptorBuilder.createDescriptorSets(m_GlobalLayout, m_GlobalPool);
         m_ObjDescriptorBuilder.createDescriptorSets(m_Entities, m_ObjLayout, m_ObjPool);
+        m_UnrealObjDescriptorBuilder.createDescriptorSets(m_UnrealEntities, m_UnrealObjLayout, m_UnrealObjPool);
 
         std::vector<VkDescriptorSetLayout> layouts{ m_GlobalLayout, m_ObjLayout };
+        std::vector<VkDescriptorSetLayout> unreallayouts{ m_GlobalLayout, m_UnrealObjLayout };
 
         m_EntityPipeline.createGraphicsPipeline(layouts);
+        m_UnrealEntityPipeline.createGraphicsPipeline(unreallayouts);
 
         update(m_DeltaTime, uboBuffers);
     }
@@ -133,9 +193,11 @@ namespace karhu
                 m_CurrentFrame,
                 commandBuffer,
                 m_GlobalSet,
-                m_Entities
+                m_Entities,
+                m_UnrealEntities
             };
             m_EntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
+            m_UnrealEntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
 
             m_Renderer.renderImguiLayer(commandBuffer, frameInfo, dt);
             m_Renderer.updateUBOs(buffers, m_Camera);
