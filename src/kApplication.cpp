@@ -18,6 +18,10 @@ namespace karhu
         m_UnrealObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
         m_UnrealObjDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_UnrealObjPool = m_UnrealObjDescriptorBuilder.createDescriptorPool(1000);
+
+        m_CubeMapDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
+        m_CubeMapDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
+        m_CubeMapPool = m_UnrealObjDescriptorBuilder.createDescriptorPool(1000);
     }
 
     Application::~Application()
@@ -32,10 +36,11 @@ namespace karhu
     {
         auto model = std::make_shared<kModel>(m_Renderer.getDevice(),m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
         auto model2 = std::make_shared<kModel>(m_Renderer.getDevice(), m_Renderer.getSwapChain(), "../models/DamagedHelmet.gltf", m_Renderer.getCommandPool());
+        auto cubeMap = std::make_shared<kModel>(m_Renderer.getDevice(), m_Renderer.getSwapChain(), m_CubeMapVerts, m_CubeMapIndices, m_Renderer.getCommandPool(), true);
 
         auto entity = kEntity::createEntity();
         entity.setModel(model);
-        entity.setPosition({ 0.0f,0.0f,-5.0f });
+        entity.setPosition({ 0.0f,0.0f,-50.0f });
         entity.setScale({ 1.0f,1.0f,1.0f });
         entity.setRotation({ 90.0f,0.0f,0.0f });
 
@@ -63,6 +68,13 @@ namespace karhu
 
         m_UnrealEntities.push_back(std::move(unrealEntity));
         m_UnrealEntities.push_back(std::move(unrealEntity2));
+
+        auto cubeMapEnt = kEntity::createEntity();
+        cubeMapEnt.setModel(cubeMap);
+        cubeMapEnt.setPosition({ 0.0f, 0.0f, -5.0f });
+        cubeMapEnt.setScale({ 10.0f, 10.0f, 10.0f });
+
+        m_CubemapEntities.push_back(std::move(cubeMapEnt));
 
 
         m_GlobalDescriptorBuilder.bind(m_GlobalBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
@@ -152,15 +164,46 @@ namespace karhu
 
         }
 
+        /* CubeMap */
+        m_CubeMapDescriptorBuilder.bind(m_CubeMapBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_CubeMapDescriptorBuilder.bind(m_CubeMapBindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_CubeMapLayout = m_CubeMapDescriptorBuilder.createDescriptorSetLayout(m_CubeMapBindings);
+
+        std::vector<std::vector<VkDescriptorImageInfo>> cubemapinfos;
+        cubemapinfos.resize(1);
+        for (size_t i = 0; i < m_CubemapEntities.size(); i++)
+        {
+            for (size_t j = 0; j < m_CubemapEntities[i].getModel()->m_Textures.size(); j++)
+            {
+                cubemapinfos[i].push_back(m_CubemapEntities[i].getModel()->m_Textures[j].getImageInfo());
+            }
+            //cubemapinfos[i].push_back(m_CubemapEntities[i].getModel()->m_Textures[i].getImageInfo());
+            m_CubemapEntities[i].m_Buffer = std::make_unique<kBuffer>(m_Renderer.getDevice());
+            m_CubemapEntities[i].m_Buffer->createBuffer(sizeof(ObjBuffer));
+        }
+
+        for (size_t i = 0; i < m_CubemapEntities.size(); i++)
+        {
+            auto id = m_CubemapEntities[i].getId();
+            m_CubeMapDescriptorBuilder.allocateDescriptor(m_CubemapEntities[i].m_DescriptorSet, m_CubeMapLayout, m_CubeMapPool);
+            m_CubeMapDescriptorBuilder.writeBuffer(m_CubemapEntities[i].m_DescriptorSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_CubemapEntities[i].m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
+
+            m_CubeMapDescriptorBuilder.writeImg(m_CubemapEntities[i].m_DescriptorSet, 1, cubemapinfos[i][0], id);
+            m_CubeMapDescriptorBuilder.fillWritesMap(m_CubemapEntities[i].getId());
+        }
+
         m_GlobalDescriptorBuilder.createDescriptorSets(m_GlobalLayout, m_GlobalPool);
         m_ObjDescriptorBuilder.createDescriptorSets(m_Entities, m_ObjLayout, m_ObjPool);
         m_UnrealObjDescriptorBuilder.createDescriptorSets(m_UnrealEntities, m_UnrealObjLayout, m_UnrealObjPool);
+        m_CubeMapDescriptorBuilder.createDescriptorSets(m_CubemapEntities, m_CubeMapLayout, m_CubeMapPool);
 
         std::vector<VkDescriptorSetLayout> layouts{ m_GlobalLayout, m_ObjLayout };
         std::vector<VkDescriptorSetLayout> unreallayouts{ m_GlobalLayout, m_UnrealObjLayout };
+        std::vector<VkDescriptorSetLayout> cubemaplayouts{ m_GlobalLayout, m_CubeMapLayout };
 
         m_EntityPipeline.createGraphicsPipeline(layouts);
         m_UnrealEntityPipeline.createGraphicsPipeline(unreallayouts);
+        m_CubeMapPipeline.createGraphicsPipeline(cubemaplayouts);
 
         update(m_DeltaTime, uboBuffers);
     }
@@ -194,8 +237,10 @@ namespace karhu
                 commandBuffer,
                 m_GlobalSet,
                 m_Entities,
-                m_UnrealEntities
+                m_UnrealEntities,
+                m_CubemapEntities
             };
+            m_CubeMapPipeline.renderCube(m_Camera.m_CameraVars.m_Position, frameInfo);
             m_EntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
             m_UnrealEntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
 

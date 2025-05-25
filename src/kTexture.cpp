@@ -10,11 +10,18 @@
 
 namespace karhu
 {
-	kTexture::kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain, std::string filepath, VkFormat format)
+	kTexture::kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain, std::string filepath, VkFormat format, bool hdr)
 		: m_Device(device)
         , m_SwapChain(swapchain)
 	{
-        createTexture(filepath, format);
+        if (!hdr)
+        {
+            createTexture(filepath, format);
+        }
+        else
+        {
+            createHDRTexture(filepath, format);
+        }
 	}
 
     kTexture::~kTexture()
@@ -60,6 +67,47 @@ namespace karhu
         textureImageView(format);
         createSampler();
 	}
+    void kTexture::createHDRTexture(std::string filepath, VkFormat format)
+    {
+        stbi_set_flip_vertically_on_load(true);
+        std::string path1 = "../textures/";
+        std::string path = path1 + filepath;
+        int width, height, nrComponents;
+        float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
+        VkDeviceSize imageSize = width * height * sizeof(float) * 3; //RGB float32
+        unsigned int hdrTexture;
+
+        if (!data)
+        {
+            std::cout << "failed to load HDR image" << std::endl;
+        }
+
+        VkBuffer staging;
+        VkDeviceMemory stagingMemory;
+        m_Device.createBuffers(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging, stagingMemory);
+
+        void* voidData;
+        vkMapMemory(m_Device.m_Device, stagingMemory, 0, imageSize, 0, &voidData);
+        memcpy(voidData, data, static_cast<size_t>(imageSize));
+        vkUnmapMemory(m_Device.m_Device, stagingMemory);
+
+        stbi_image_free(data);
+
+        kImage kImage{ .m_Device = m_Device };
+        kImage.createImage(width, height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory);
+
+        transitionImagelayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        copyBufferToImage(staging, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+
+        transitionImagelayout(format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        vkDestroyBuffer(m_Device.m_Device, staging, nullptr);
+        vkFreeMemory(m_Device.m_Device, stagingMemory, nullptr);
+
+        textureImageView(format);
+        createSampler();
+    }
 	void kTexture::transitionImagelayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
         VkCommandBuffer commandBuffer = m_SwapChain.RecordSingleCommand();

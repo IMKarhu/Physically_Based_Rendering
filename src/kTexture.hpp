@@ -10,7 +10,7 @@ namespace karhu
 	class kTexture
 	{
 	public:
-		kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain, std::string filepath, VkFormat format);
+		kTexture(Vulkan_Device& device, Vulkan_SwapChain& swapchain, std::string filepath, VkFormat format, bool hdr = false);
 		~kTexture();
 
 		struct
@@ -22,6 +22,7 @@ namespace karhu
 		} m_TextureVars;
 
 		void createTexture(std::string filepath, VkFormat format);
+		void createHDRTexture(std::string filepath, VkFormat format);
 		void transitionImagelayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void copyBufferToImage(VkBuffer buffer, uint32_t width, uint32_t height);
 		void textureImageView(VkFormat format);

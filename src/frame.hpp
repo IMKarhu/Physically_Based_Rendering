@@ -14,5 +14,6 @@ namespace karhu
 		VkDescriptorSet globalSet;
 		std::vector<kEntity>& entities;
 		std::vector<kEntity>& unrealEntities;
+		std::vector<kEntity>& cubemap;
 	};
 }

@@ -17,6 +17,19 @@ namespace karhu
 		createIndexBuffer(commandPool);
 	}
 
+	kModel::kModel(Vulkan_Device& device, Vulkan_SwapChain& swapChain, std::vector<Vertex> vertices, std::vector<uint32_t> indices, VkCommandPool commandPool, bool hdr)
+		:m_Device(device)
+		,m_SwapChain(swapChain)
+	{
+		createVertexBuffer(vertices, commandPool);
+		createIndexBuffer(indices, commandPool);
+		if (hdr)
+		{
+			kTexture tex{ m_Device, m_SwapChain, "monkstown_castle_4k.hdr", VK_FORMAT_R16G16B16A16_SFLOAT, true };
+			m_Textures.push_back(tex);
+		}
+	}
+
 	kModel::~kModel()
 	{
 		vkDestroyBuffer(m_Device.m_Device, m_IndexBuffer.m_IndexBuffer, nullptr);
@@ -190,6 +203,29 @@ namespace karhu
 		vkFreeMemory(m_Device.m_Device, stagingBufferMemory, nullptr);
 	}
 
+	void kModel::createVertexBuffer(std::vector<Vertex>& vertices, VkCommandPool commandPool)
+	{
+		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
+		memcpy(data, vertices.data(), (size_t)bufferSize);
+		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
+
+		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_VertexBuffer.m_VertexBuffer, m_VertexBuffer.m_VertexBufferMemory);
+
+		m_Device.copyBuffers(stagingBuffer, m_VertexBuffer.m_VertexBuffer, bufferSize, commandPool);
+
+		vkDestroyBuffer(m_Device.m_Device, stagingBuffer, nullptr);
+		vkFreeMemory(m_Device.m_Device, stagingBufferMemory, nullptr);
+	}
+
 	void kModel::createIndexBuffer(VkCommandPool commandPool)
 	{
 		VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
@@ -202,6 +238,28 @@ namespace karhu
 		void* data;
 		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
 		memcpy(data, m_Indices.data(), (size_t)bufferSize);
+		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
+
+		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_IndexBuffer.m_IndexBuffer, m_IndexBuffer.m_IndexBufferMemory);
+
+		m_Device.copyBuffers(stagingBuffer, m_IndexBuffer.m_IndexBuffer, bufferSize, commandPool);
+
+		vkDestroyBuffer(m_Device.m_Device, stagingBuffer, nullptr);
+		vkFreeMemory(m_Device.m_Device, stagingBufferMemory, nullptr);
+	}
+	void kModel::createIndexBuffer(std::vector<uint32_t>& indices, VkCommandPool commandPool)
+	{
+		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
+		memcpy(data, indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
 
 		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,

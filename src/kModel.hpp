@@ -13,6 +13,7 @@ namespace karhu
 	{
 	public:
 		kModel(Vulkan_Device& device, Vulkan_SwapChain& swapChain, std::string filepath, VkCommandPool commandPool);
+		kModel(Vulkan_Device& device, Vulkan_SwapChain& swapChain, std::vector<Vertex> vertices, std::vector<uint32_t> indices, VkCommandPool commandPool, bool hdr = false);
 		~kModel();
 
 		kModel(const kModel&) = delete;
@@ -36,7 +37,9 @@ namespace karhu
 
 		std::vector<uint32_t>& getIndices() { return m_Indices; }
 		void createVertexBuffer(VkCommandPool commandPool);
+		void createVertexBuffer(std::vector<Vertex>& vertices, VkCommandPool commandPool);
 		void createIndexBuffer(VkCommandPool commandPool);
+		void createIndexBuffer(std::vector<uint32_t>& indices, VkCommandPool commandPool);
 		std::vector<kTexture> m_Textures;
 	private:
 		
