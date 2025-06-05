@@ -17,6 +17,7 @@ namespace karhu
         m_VkSwapChain.createSwapChain(m_Window->getSurface(), m_Window->getWindow());
         m_VkSwapChain.createImageViews();
         m_VkSwapChain.createRenderPass(findDepthFormat());
+        m_VkSwapChain.createRenderPass(findDepthFormat(), Vulkan_SwapChain::renderPassType::CUBE);
 
         createDepthResources();
         createFrameBuffers();
@@ -43,7 +44,7 @@ namespace karhu
     }
     void kRenderer::createFrameBuffers()
     {
-        m_FrameBuffers.resize(m_VkSwapChain.m_SwapChainImageViews.size());
+        m_FrameBuffers[NORMAL].resize(m_VkSwapChain.m_SwapChainImageViews.size());
 
         for (size_t i = 0; i < m_VkSwapChain.m_SwapChainImageViews.size(); i++)
         {
@@ -55,15 +56,36 @@ namespace karhu
 
             VkFramebufferCreateInfo createinfo{};
             createinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            createinfo.renderPass = m_VkSwapChain.m_RenderPass;
+            createinfo.renderPass = m_VkSwapChain.m_RenderPass[Vulkan_SwapChain::renderPassType::NORMAL];
             createinfo.attachmentCount = static_cast<uint32_t>(attachments.size());
             createinfo.pAttachments = attachments.data();
             createinfo.width = m_VkSwapChain.m_SwapChainExtent.width;
             createinfo.height = m_VkSwapChain.m_SwapChainExtent.height;
             createinfo.layers = 1;
 
-            VK_CHECK(vkCreateFramebuffer(m_VkDevice.m_Device, &createinfo, nullptr, &m_FrameBuffers[i]));
+            VK_CHECK(vkCreateFramebuffer(m_VkDevice.m_Device, &createinfo, nullptr, &m_FrameBuffers[NORMAL][i]));
         }
+
+        /*m_FrameBuffers[CUBE].resize(6);
+
+        for (size_t i = 0; i < 6; i++)
+        {
+            std::array<VkImageView, 1> attachments = {
+               m_VkSwapChain.m_SwapChainImageViews[i],
+            };
+
+
+            VkFramebufferCreateInfo createinfo{};
+            createinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            createinfo.renderPass = m_VkSwapChain.m_RenderPass[Vulkan_SwapChain::renderPassType::CUBE];
+            createinfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+            createinfo.pAttachments = attachments.data();
+            createinfo.width = m_VkSwapChain.m_SwapChainExtent.width;
+            createinfo.height = m_VkSwapChain.m_SwapChainExtent.height;
+            createinfo.layers = 1;
+
+            VK_CHECK(vkCreateFramebuffer(m_VkDevice.m_Device, &createinfo, nullptr, &m_FrameBuffers[CUBE][i]));
+        }*/
     }
 
     void kRenderer::recordCommandBuffer(glm::vec3 position, glm::vec3 lightPos, glm::vec4 lightColor, Frame& frameInfo)
@@ -209,8 +231,8 @@ namespace karhu
 
         VkRenderPassBeginInfo renderpassInfo{};
         renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderpassInfo.renderPass = m_VkSwapChain.m_RenderPass;
-        renderpassInfo.framebuffer = m_FrameBuffers[imageIndex];
+        renderpassInfo.renderPass = m_VkSwapChain.m_RenderPass[Vulkan_SwapChain::renderPassType::NORMAL];
+        renderpassInfo.framebuffer = m_FrameBuffers[NORMAL][imageIndex];
         renderpassInfo.renderArea.offset = { 0,0 };
         renderpassInfo.renderArea.extent = m_VkSwapChain.m_SwapChainExtent;
 
@@ -237,6 +259,22 @@ namespace karhu
         scissor.extent = m_VkSwapChain.m_SwapChainExtent;
 
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        return commandBuffer;
+    }
+
+    VkCommandBuffer kRenderer::beginCubeFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex)
+    {
+        VkCommandBuffer commandBuffer;
+
+        vkResetCommandBuffer(commandBuffer, 0);
+
+        VkCommandBufferBeginInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        info.flags = 0;
+        info.pInheritanceInfo = nullptr;
+
+        VK_CHECK(vkBeginCommandBuffer(commandBuffer, &info));
 
         return commandBuffer;
     }
@@ -288,6 +326,30 @@ namespace karhu
         m_currentFrameIndex = (m_currentFrameIndex + 1) % m_VkSwapChain.m_MaxFramesInFlight;
     }
 
+    void kRenderer::endCubeFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer)
+    {
+        vkCmdEndRenderPass(commandBuffer);
+
+        VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
+
+        VkSubmitInfo submitinfo{};
+        submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = { m_Semaphores.availableSemaphores[m_currentFrameIndex] };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitinfo.waitSemaphoreCount = 1;
+        submitinfo.pWaitSemaphores = waitSemaphores;
+        submitinfo.pWaitDstStageMask = waitStages;
+        submitinfo.commandBufferCount = 1;
+        submitinfo.pCommandBuffers = &m_VkSwapChain.m_CommandBuffers[m_currentFrameIndex];
+        VkSemaphore signalSemaphores[] = { m_Semaphores.finishedSemaphores[m_currentFrameIndex] };
+        submitinfo.signalSemaphoreCount = 1;
+        submitinfo.pSignalSemaphores = signalSemaphores;
+
+        VK_CHECK(vkQueueSubmit(m_VkDevice.m_GraphicsQueue, 1, &submitinfo, m_InFlightFences[m_currentFrameIndex]));
+    }
+
     void kRenderer::renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo, float dt)
     {
         ImGui_ImplVulkan_NewFrame();
@@ -311,6 +373,11 @@ namespace karhu
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
     }
 
+    void kRenderer::setFrameBuffers(std::vector<VkFramebuffer> frameBuffers)
+    {
+        m_FrameBuffers[CUBE] = frameBuffers;
+    }
+
     void kRenderer::createDepthResources()
     {
         VkFormat depthFormat = findDepthFormat();
@@ -320,7 +387,7 @@ namespace karhu
             VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             m_DepthImage,
             m_DepthImageMemory);
-        m_DepthImageView = m_VkSwapChain.createImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_DepthImageView = m_VkSwapChain.createImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
     VkFormat kRenderer::findDepthFormat()
@@ -382,7 +449,7 @@ namespace karhu
         vkDestroyImageView(m_VkDevice.m_Device, m_DepthImageView, nullptr);
         vkDestroyImage(m_VkDevice.m_Device, m_DepthImage, nullptr);
         vkFreeMemory(m_VkDevice.m_Device, m_DepthImageMemory, nullptr);
-        for (auto framebuffer : m_FrameBuffers)
+        for (auto framebuffer : m_FrameBuffers[NORMAL])
         {
             vkDestroyFramebuffer(m_VkDevice.m_Device, framebuffer, nullptr);
         }
@@ -462,7 +529,7 @@ namespace karhu
         initInfo.MinImageCount = 3;
         initInfo.ImageCount = 3;
         initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        initInfo.RenderPass = m_VkSwapChain.m_RenderPass;
+        initInfo.RenderPass = m_VkSwapChain.m_RenderPass[Vulkan_SwapChain::renderPassType::NORMAL];
 
         ImGui_ImplVulkan_Init(&initInfo);
 

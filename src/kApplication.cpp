@@ -22,14 +22,21 @@ namespace karhu
         m_CubeMapDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
         m_CubeMapDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_CubeMapPool = m_UnrealObjDescriptorBuilder.createDescriptorPool(1000);
+
+        m_GlobalCubeDescriptorBuilder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
+        m_GlobalCubePool = m_GlobalCubeDescriptorBuilder.createDescriptorPool(2);
     }
 
     Application::~Application()
     {
         vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_GlobalPool, nullptr);
         vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_ObjPool, nullptr);
+        vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_UnrealObjPool, nullptr);
+        vkDestroyDescriptorPool(m_Renderer.getDevice().m_Device, m_CubeMapPool, nullptr);
         vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_GlobalLayout, nullptr);
         vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_ObjLayout, nullptr);
+        vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_UnrealObjLayout, nullptr);
+        vkDestroyDescriptorSetLayout(m_Renderer.getDevice().m_Device, m_GlobalCubeLayout, nullptr);
     }
 
     void Application::run()
@@ -71,7 +78,7 @@ namespace karhu
 
         auto cubeMapEnt = kEntity::createEntity();
         cubeMapEnt.setModel(cubeMap);
-        cubeMapEnt.setPosition({ 0.0f, 0.0f, -5.0f });
+        cubeMapEnt.setPosition({ 0.0f, 0.0f, 0.0f });
         cubeMapEnt.setScale({ 10.0f, 10.0f, 10.0f });
 
         m_CubemapEntities.push_back(std::move(cubeMapEnt));
@@ -80,16 +87,30 @@ namespace karhu
         m_GlobalDescriptorBuilder.bind(m_GlobalBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
         m_GlobalLayout = m_GlobalDescriptorBuilder.createDescriptorSetLayout(m_GlobalBindings);
 
+        m_GlobalCubeDescriptorBuilder.bind(m_GlobalCubeBindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_GlobalCubeLayout = m_GlobalCubeDescriptorBuilder.createDescriptorSetLayout(m_GlobalCubeBindings);
+
         std::vector<std::unique_ptr<kBuffer>> uboBuffers(2);
         for (size_t i = 0; i < uboBuffers.size(); i++)
         {
             uboBuffers[i] = std::make_unique<kBuffer>(m_Renderer.getDevice());
             m_Renderer.createUniformBuffers(*uboBuffers[i]);
         }
+
+        std::vector<std::unique_ptr<kBuffer>> cubeMapUboBuffers(2);
+        for (size_t i = 0; i < cubeMapUboBuffers.size(); i++)
+        {
+            cubeMapUboBuffers[i] = std::make_unique<kBuffer>(m_Renderer.getDevice());
+            m_Renderer.createUniformBuffers(*cubeMapUboBuffers[i]);
+        }
         
         m_GlobalDescriptorBuilder.allocateDescriptor(m_GlobalSet, m_GlobalLayout, m_GlobalPool);
         m_GlobalDescriptorBuilder.writeBuffer(m_GlobalSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboBuffers[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
         m_GlobalDescriptorBuilder.fillWritesMap(0);
+
+        m_GlobalCubeDescriptorBuilder.allocateDescriptor(m_GlobalCubeSet, m_GlobalCubeLayout, m_GlobalCubePool);
+        m_GlobalCubeDescriptorBuilder.writeBuffer(m_GlobalCubeSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, cubeMapUboBuffers[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
+        m_GlobalCubeDescriptorBuilder.fillWritesMap(0);
 
         /*Disney*/
         //obj descriptors
@@ -205,16 +226,19 @@ namespace karhu
         m_UnrealEntityPipeline.createGraphicsPipeline(unreallayouts);
         m_CubeMapPipeline.createGraphicsPipeline(cubemaplayouts);
 
-        update(m_DeltaTime, uboBuffers);
+        update(m_DeltaTime, uboBuffers, cubeMapUboBuffers);
     }
 
-    void Application::update(float deltaTime, std::vector<std::unique_ptr<kBuffer>>& buffers)
+    void Application::update(float deltaTime, std::vector<std::unique_ptr<kBuffer>>& buffers, std::vector<std::unique_ptr<kBuffer>>& cubeMapBuffers)
     {
         auto cameraEntity = kEntity::createEntity();
         cameraEntity.setPosition({ 0.0f, 0.0f, -20.0f });
         kCamera m_Camera{};
         keyboardMovement keyboard{};
         auto currentTime = std::chrono::high_resolution_clock::now();
+
+        std::vector<VkFramebuffer> frameBuffers = m_CubeMapPipeline.createFrameBuffersCube(m_Renderer.getFrameBuffers(kRenderer::CUBE), m_CubemapEntities[0].getModel()->m_Textures[0].m_TextureVars.m_texture);
+        m_Renderer.setFrameBuffers(frameBuffers);
         
         while (!m_Renderer.getWindowShouldclose())
         {
@@ -228,19 +252,69 @@ namespace karhu
             m_Camera.setView(cameraEntity.getPosition(), cameraEntity.getRotation(), glm::vec3(0.0f, 1.0f, 0.0f));
             m_Camera.setPerspective(glm::radians(45.0f), m_Renderer.getSwapChain().m_SwapChainExtent.width / (float)m_Renderer.getSwapChain().m_SwapChainExtent.height, 0.1f, 100.0f);
 
-            uint32_t imageIndex = 0;
-            auto commandBuffer = m_Renderer.beginFrame(m_CurrentFrame, imageIndex);
+            VkCommandBuffer commandBuffer;
 
             Frame frameInfo
             {
                 m_CurrentFrame,
                 commandBuffer,
                 m_GlobalSet,
+                m_GlobalCubeSet,
                 m_Entities,
                 m_UnrealEntities,
-                m_CubemapEntities
+                m_CubemapEntities,
+                cubeMapBuffers
             };
-            m_CubeMapPipeline.renderCube(m_Camera.m_CameraVars.m_Position, frameInfo);
+
+            //offscreen cube
+            for (size_t i = 0; i < 6; ++i)
+            {
+                VkCommandBuffer cubeBuffer = m_Renderer.beginCubeFrame(0, 1);
+
+                VkRenderPassBeginInfo renderpassInfo{};
+                renderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                renderpassInfo.renderPass = m_Renderer.getSwapChain().m_RenderPass[Vulkan_SwapChain::renderPassType::CUBE];
+                renderpassInfo.framebuffer = m_Renderer.getFrameBuffers(kRenderer::CUBE)[i];
+                renderpassInfo.renderArea.offset = { 0,0 };
+                renderpassInfo.renderArea.extent.width = 512;
+                renderpassInfo.renderArea.extent.height = 512;
+
+                VkClearValue clearValues = {};
+                clearValues.color = { {0.0f ,0.0f ,0.0f ,1.0f} };
+                renderpassInfo.clearValueCount = 1;
+                renderpassInfo.pClearValues = &clearValues;
+
+                vkCmdBeginRenderPass(cubeBuffer, &renderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+                VkViewport viewPort{};
+                viewPort.x = 0.0f;
+                viewPort.y = 0.0f;
+                viewPort.width = 512;
+                viewPort.height = 512;
+                viewPort.minDepth = 0.0f;
+                viewPort.maxDepth = 1.0f;
+
+                vkCmdSetViewport(cubeBuffer, 0, 1, &viewPort);
+
+                VkRect2D scissor{};
+                scissor.offset = { 0, 0 };
+                scissor.extent = { 512, 512 };
+
+                vkCmdSetScissor(cubeBuffer, 0, 1, &scissor);
+
+                m_CubeMapPipeline.renderCube(m_Camera.m_CameraVars.m_Position, frameInfo);
+
+                m_Renderer.endCubeFrame()
+            }
+            
+
+            uint32_t imageIndex = 0;
+            commandBuffer = m_Renderer.beginFrame(m_CurrentFrame, imageIndex);
+
+            frameInfo.commandBuffer = commandBuffer;
+
+            
+            //m_CubeMapPipeline.renderCube(m_Camera.m_CameraVars.m_Position, frameInfo);
             m_EntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
             m_UnrealEntityPipeline.renderEntities(m_Camera.m_CameraVars.m_Position, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), frameInfo);
 

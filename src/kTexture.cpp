@@ -53,7 +53,7 @@ namespace karhu
 		stbi_image_free(pixels);
 
 		kImage kImage{ .m_Device = m_Device };
-		kImage.createImage(width, height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory);
+		kImage.createImage(width, height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory, 1, 0);
 
 		transitionImagelayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -64,8 +64,8 @@ namespace karhu
 		vkDestroyBuffer(m_Device.m_Device, staging, nullptr);
 		vkFreeMemory(m_Device.m_Device, stagingMemory, nullptr);
 
-        textureImageView(format);
-        createSampler();
+        textureImageView(format, 1, false);
+        createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);
 	}
     void kTexture::createHDRTexture(std::string filepath, VkFormat format)
     {
@@ -94,19 +94,20 @@ namespace karhu
         stbi_image_free(data);
 
         kImage kImage{ .m_Device = m_Device };
-        kImage.createImage(width, height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory);
+        kImage.createImage(width, height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_TextureVars.m_texture, m_TextureVars.m_Memory, 6, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
 
         transitionImagelayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        copyBufferToImage(staging, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+        copyBufferToImageCube(staging, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
         transitionImagelayout(format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         vkDestroyBuffer(m_Device.m_Device, staging, nullptr);
         vkFreeMemory(m_Device.m_Device, stagingMemory, nullptr);
 
-        textureImageView(format);
-        createSampler();
+
+        textureImageView(format, 6, false);
+        createSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
     }
 	void kTexture::transitionImagelayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
@@ -187,19 +188,62 @@ namespace karhu
 
         m_SwapChain.endSingleCommand(commandBuffer);
 	}
-	void kTexture::textureImageView(VkFormat format)
+    void kTexture::copyBufferToImageCube(VkBuffer buffer, uint32_t width, uint32_t height)
+    {
+        VkCommandBuffer commandBuffer = m_SwapChain.RecordSingleCommand();
+        std::vector<VkBufferImageCopy> copyRegions;
+
+        for (size_t i = 0; i < 6; i++)
+        {
+            VkBufferImageCopy copyRegion{};
+            copyRegion.bufferOffset = 0;
+            copyRegion.bufferRowLength = 0;
+            copyRegion.bufferImageHeight = 0;
+
+            copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            copyRegion.imageSubresource.mipLevel = 0;
+            copyRegion.imageSubresource.baseArrayLayer = i;
+            copyRegion.imageSubresource.layerCount = 1;
+
+            copyRegion.imageOffset = { 0, 0, 0 };
+            copyRegion.imageExtent = {
+                width,
+                height,
+                1
+            };
+            copyRegions.push_back(copyRegion);
+        }
+
+        vkCmdCopyBufferToImage(
+            commandBuffer,
+            buffer,
+            m_TextureVars.m_texture,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            static_cast<uint32_t>(copyRegions.size()),
+            copyRegions.data()
+        );
+
+        m_SwapChain.endSingleCommand(commandBuffer);
+    }
+	void kTexture::textureImageView(VkFormat format, uint32_t layerCount, bool cubemap)
 	{
-        m_TextureVars.m_TextureView = m_SwapChain.createImageView(m_TextureVars.m_texture, format, VK_IMAGE_ASPECT_COLOR_BIT);
+        if (cubemap)
+        {
+            VkImageView view = m_SwapChain.createImageView(m_TextureVars.m_texture, format, VK_IMAGE_ASPECT_COLOR_BIT, layerCount);
+            m_TextureVars.m_ImageViews.push_back(view);
+            return;
+        }
+        m_TextureVars.m_TextureView = m_SwapChain.createImageView(m_TextureVars.m_texture, format, VK_IMAGE_ASPECT_COLOR_BIT, layerCount);
 	}
-	void kTexture::createSampler()
+	void kTexture::createSampler(VkSamplerAddressMode addressMode)
 	{
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VK_FILTER_LINEAR;
         samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeU = addressMode;
+        samplerInfo.addressModeV = addressMode;
+        samplerInfo.addressModeW = addressMode;
         samplerInfo.anisotropyEnable = VK_TRUE;
 
         VkPhysicalDeviceProperties properties{};

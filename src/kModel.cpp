@@ -21,11 +21,13 @@ namespace karhu
 		:m_Device(device)
 		,m_SwapChain(swapChain)
 	{
+		m_Vertices = vertices;
+		m_Indices = indices;
 		createVertexBuffer(vertices, commandPool);
 		createIndexBuffer(indices, commandPool);
 		if (hdr)
 		{
-			kTexture tex{ m_Device, m_SwapChain, "monkstown_castle_4k.hdr", VK_FORMAT_R16G16B16A16_SFLOAT, true };
+			kTexture tex{ m_Device, m_SwapChain, "monkstown_castle_4k.hdr", VK_FORMAT_R32G32B32_SFLOAT, true};
 			m_Textures.push_back(tex);
 		}
 	}
@@ -205,7 +207,7 @@ namespace karhu
 
 	void kModel::createVertexBuffer(std::vector<Vertex>& vertices, VkCommandPool commandPool)
 	{
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+		VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -214,7 +216,7 @@ namespace karhu
 
 		void* data;
 		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
-		memcpy(data, vertices.data(), (size_t)bufferSize);
+		memcpy(data, m_Vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
 
 		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -250,7 +252,7 @@ namespace karhu
 	}
 	void kModel::createIndexBuffer(std::vector<uint32_t>& indices, VkCommandPool commandPool)
 	{
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -259,7 +261,7 @@ namespace karhu
 
 		void* data;
 		VK_CHECK(vkMapMemory(m_Device.m_Device, stagingBufferMemory, 0, bufferSize, 0, &data));
-		memcpy(data, indices.data(), (size_t)bufferSize);
+		memcpy(data, m_Indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device.m_Device, stagingBufferMemory);
 
 		m_Device.createBuffers(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,

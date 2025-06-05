@@ -22,13 +22,14 @@ namespace karhu
 
         
         void run();
-        void update(float deltaTime, std::vector<std::unique_ptr<kBuffer>>& buffers);
+        void update(float deltaTime, std::vector<std::unique_ptr<kBuffer>>& buffers, std::vector<std::unique_ptr<kBuffer>>& cubeMapBuffers);
     private:
         kRenderer m_Renderer{};
         kDescriptors m_GlobalDescriptorBuilder{ m_Renderer.getDevice() };
         kDescriptors m_ObjDescriptorBuilder{ m_Renderer.getDevice() };
         kDescriptors m_UnrealObjDescriptorBuilder{ m_Renderer.getDevice() };
         kDescriptors m_CubeMapDescriptorBuilder{ m_Renderer.getDevice() };
+        kDescriptors m_GlobalCubeDescriptorBuilder{ m_Renderer.getDevice() };
         kBasicRenderSystem m_EntityPipeline{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         kUnrealRenderSystem m_UnrealEntityPipeline{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
         kCubeMap m_CubeMapPipeline{ m_Renderer.getDevice(), m_Renderer.getSwapChain() };
@@ -56,26 +57,22 @@ namespace karhu
         VkDescriptorSetLayout m_CubeMapLayout;
         std::vector<VkDescriptorSetLayoutBinding> m_CubeMapBindings;
 
+        std::vector<VkDescriptorSetLayoutBinding> m_GlobalCubeBindings;
+        VkDescriptorSetLayout m_GlobalCubeLayout;
+        VkDescriptorPool m_GlobalCubePool;
+        VkDescriptorSet m_GlobalCubeSet;
+
         const std::vector<Vertex> m_CubeMapVerts = {
-            { { -0.5f, -0.5f, -0.5f } }, // Vertex 0
-            { { -0.5f, -0.5f,  0.5f } }, // Vertex 1
-            { { 0.5f, -0.5f,  0.5f } }, // Vertex 2
-            { { 0.5f, -0.5f, -0.5f } }, // Vertex 3
-            { { -0.5f, 0.5f, -0.5f } }, // Vertex 4
-            { { -0.5f,  0.5f, 0.5f } }, // Vertex 5
-            { { 0.5f,  0.5f,  0.5f } }, // Vertex 6
-            { { 0.5f,  0.5f, -0.5f } }  // Vertex 7
+            { { -1.0f, -1.0f, -1.0f } }, // Vertex 0
+            { { -1.0f, -1.0f,  1.0f } }, // Vertex 1
+            { { 1.0f, -1.0f,  1.0f } }, // Vertex 2
+            { { 1.0f, -1.0f, -1.0f } }, // Vertex 3
+            { { -1.0f, 1.0f, -1.0f } }, // Vertex 4
+            { { -1.0f,  1.0f, 1.0f } }, // Vertex 5
+            { { 1.0f,  1.0f,  1.0f } }, // Vertex 6
+            { { 1.0f,  1.0f, -1.0f } }  // Vertex 7
         };
-/*
-        { .pos = { -0.5f, -0.5f, -0.5f } }, // Vertex 0
-        { .pos = {-0.5f, -0.5f,  0.5f} }, // Vertex 1
-        { .pos = { 0.5f, -0.5f,  0.5f} }, // Vertex 2
-        { .pos = { 0.5f, -0.5f, -0.5f} }, // Vertex 3
-        { .pos = {-0.5f,  0.5f, -0.5f} }, // Vertex 4
-        { .pos = {-0.5f,  0.5f,  0.5f} }, // Vertex 5
-        { .pos = { 0.5f,  0.5f,  0.5f} }, // Vertex 6
-        { .pos = { 0.5f,  0.5f, -0.5f} }  // Vertex 7
-        */
+
         const std::vector<uint32_t> m_CubeMapIndices = {
              0, 1, 2, 2, 3, 0, // Bottom face
              4, 5, 6, 6, 7, 4, // Top face

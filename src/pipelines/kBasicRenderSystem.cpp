@@ -23,7 +23,7 @@ namespace karhu
 		pipelineStruct.scissor.extent = m_SwapChain.m_SwapChainExtent;
 		pipelineStruct.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
 		pipelineStruct.pipelineLayoutInfo.pSetLayouts = layouts.data();
-		pipelineStruct.renderPass = m_SwapChain.m_RenderPass;
+		pipelineStruct.renderPass = m_SwapChain.m_RenderPass[Vulkan_SwapChain::renderPassType::NORMAL];
 
 		m_EntityPipeline = std::make_unique<kGraphicsPipeline>(m_Device);
 		m_EntityPipeline->createPipeline(pipelineStruct, "../shaders/vertexShader.spv", "../shaders/fragmentShader.spv");

@@ -2,6 +2,7 @@
 #include "utils/vkUtils.hpp"
 #include "kDevice.hpp"
 #include <vector>
+#include <unordered_map>
 
 namespace karhu
 {
@@ -9,6 +10,11 @@ namespace karhu
 	{
 		Vulkan_SwapChain(Vulkan_Device& device);
 		~Vulkan_SwapChain();
+
+		enum renderPassType {
+			NORMAL,
+			CUBE
+		};
 
 		Vulkan_SwapChain(const Vulkan_SwapChain&) = delete;
 		void operator=(const Vulkan_SwapChain&) = delete;
@@ -20,11 +26,11 @@ namespace karhu
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
 
 		void createSwapChain(VkSurfaceKHR surface, GLFWwindow* window);
-		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags); //refactor somewhere else, image class?
+		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t layerCount); //refactor somewhere else, image class?
 		void createImageViews();
 		void createCommandBuffers();
 		void createCommandPool();
-		void createRenderPass(VkFormat depthFormat);
+		void createRenderPass(VkFormat depthFormat, renderPassType type = NORMAL);
 		VkCommandBuffer RecordSingleCommand();
 		void endSingleCommand(VkCommandBuffer commandBuffer);
 
@@ -37,7 +43,7 @@ namespace karhu
 		const int m_MaxFramesInFlight = 2;
 		VkCommandPool m_CommandPool;
 		std::vector<VkCommandBuffer> m_CommandBuffers;
-		VkRenderPass m_RenderPass;
+		std::unordered_map<renderPassType, VkRenderPass> m_RenderPass;
 	private:
 		GLFWwindow* m_Window;
 		Vulkan_Device& m_Device;

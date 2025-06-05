@@ -14,5 +14,9 @@ layout(location = 0) out vec3 localPos;
 void main()
 {
     localPos = inPosition;
-    gl_Position = m_Ubo.proj * m_Ubo.view * vec4(localPos, 1.0);
+
+    mat4 rotView = mat4(mat3(m_Ubo.view)); // this removes translation from view matrice
+    vec4 position = m_Ubo.proj * rotView * vec4(localPos, 1.0);
+
+    gl_Position = position.xyww;
 }

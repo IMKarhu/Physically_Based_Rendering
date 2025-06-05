@@ -15,6 +15,8 @@ namespace karhu
 			VkImageUsageFlags usage,
 			VkMemoryPropertyFlags properties,
 			VkImage& image,
-			VkDeviceMemory& imageMemory);
+			VkDeviceMemory& imageMemory,
+			uint32_t arrayLevels, 
+			VkImageCreateFlags flags);
 	};
 }

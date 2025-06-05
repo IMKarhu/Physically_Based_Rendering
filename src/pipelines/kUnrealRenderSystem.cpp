@@ -23,7 +23,7 @@ namespace karhu
 		pipelineStruct.scissor.extent = m_SwapChain.m_SwapChainExtent;
 		pipelineStruct.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
 		pipelineStruct.pipelineLayoutInfo.pSetLayouts = layouts.data();
-		pipelineStruct.renderPass = m_SwapChain.m_RenderPass;
+		pipelineStruct.renderPass = m_SwapChain.m_RenderPass[Vulkan_SwapChain::renderPassType::NORMAL];
 
 		m_UnrealEntityPipeline = std::make_unique<kGraphicsPipeline>(m_Device);
 		m_UnrealEntityPipeline->createPipeline(pipelineStruct, "../shaders/unrealpbrvert.spv", "../shaders/unrealpbrfrag.spv");

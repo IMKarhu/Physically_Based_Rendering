@@ -5,7 +5,7 @@ layout(location = 0) in vec3 localPos;
 
 layout(location = 0) out vec4 fragColor;
 
-layout(set = 1, binding = 1) uniform sampler2D equirectangularMap;
+layout(set = 1, binding = 1) uniform samplerCube equirectangularMap;
 
 const vec2 invAtan = vec2(0.1591, 0.3183);
 vec2 SampleSphericalMap(vec3 v)
@@ -18,8 +18,10 @@ vec2 SampleSphericalMap(vec3 v)
 
 void main()
 {		
-    vec2 uv = SampleSphericalMap(normalize(localPos)); // make sure to normalize localPos
-    vec3 color = texture(equirectangularMap, uv).rgb;
+    vec3 color = texture(equirectangularMap, localPos).rgb;
+
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0/2.2));
     
     fragColor = vec4(color, 1.0);
 }

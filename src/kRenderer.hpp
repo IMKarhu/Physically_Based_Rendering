@@ -24,6 +24,11 @@ namespace karhu
 		kRenderer();
 		~kRenderer();
 
+		enum frameBufferStyle {
+			NORMAL,
+			CUBE
+		};
+
 		kRenderer(const kRenderer&) = delete;
 		void operator=(const kRenderer&) = delete;
 
@@ -34,7 +39,9 @@ namespace karhu
 		void updateUBOs(std::vector<std::unique_ptr<kBuffer>>& buffers, kCamera& camera);
 		void updateObjBuffers(std::vector<kBuffer>& buffers, kEntity& entity);
 		VkCommandBuffer beginFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
+		VkCommandBuffer beginCubeFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex);
 		void endFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer);
+		void endCubeFrame(uint32_t m_currentFrameIndex, uint32_t imageIndex, VkCommandBuffer commandBuffer);
 		void renderImguiLayer(VkCommandBuffer commandBuffer, Frame& frameInfo, float dt);
 		Vulkan_Device& getDevice() { return m_VkDevice; }
 		Vulkan_SwapChain& getSwapChain() { return m_VkSwapChain; }
@@ -44,6 +51,8 @@ namespace karhu
 		GLFWwindow* getWindow() { return m_Window->getWindow(); }
 		const int getWindowWidth() const { return m_Window->getWidth(); }
 		const int getWindowHeight() const { return m_Window->getheight(); }
+		void setFrameBuffers(std::vector<VkFramebuffer> frameBuffers);
+		std::vector<VkFramebuffer> getFrameBuffers(frameBufferStyle style) { return m_FrameBuffers[style]; }
 	private:
 		
 		void createDepthResources(); //refactor somewhere else image class?
@@ -67,7 +76,7 @@ namespace karhu
 		kGraphicsPipeline m_GraphicsPipeline{ m_VkDevice };
 
 		VkDescriptorSetLayout m_DescriptorLayout;
-		std::vector<VkFramebuffer> m_FrameBuffers;
+		std::unordered_map<frameBufferStyle, std::vector<VkFramebuffer>> m_FrameBuffers;
 		struct m_Semaphores
 		{
 			std::vector<VkSemaphore> availableSemaphores;
@@ -94,5 +103,7 @@ namespace karhu
 			float m_Roughness = 0.0f;
 			glm::vec3 m_LightPosition = glm::vec3(1.0f, 3.0f, 1.0f);
 		}vars;
+
+		
 	};
 }
