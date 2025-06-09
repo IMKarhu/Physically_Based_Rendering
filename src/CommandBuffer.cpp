@@ -54,6 +54,15 @@ namespace karhu
         VK_CHECK(vkAllocateCommandBuffers(m_device.lDevice(), &allocInfo, &commandBuffer));
     }
 
+    void CommandBuffer::beginCommand(uint32_t index)
+    {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        VK_CHECK(vkBeginCommandBuffer(m_commandBuffers[index], &beginInfo));
+    }
+
     void CommandBuffer::beginCommand(VkCommandBuffer& commandBuffer)
     {
         VkCommandBufferBeginInfo beginInfo{};
@@ -83,5 +92,15 @@ namespace karhu
         VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &submitInfo, VK_NULL_HANDLE));
         VK_CHECK(vkQueueWaitIdle(m_device.gQueue()));
         vkFreeCommandBuffers(m_device.lDevice(), m_commandPool, 1, &commandBuffer);
+    }
+
+    void CommandBuffer::resetCommandBuffer(uint32_t index)
+    {
+        vkResetCommandBuffer(m_commandBuffers[index], 0);
+    }
+
+    void CommandBuffer::endCommandBuffer(uint32_t index)
+    {
+        VK_CHECK(vkEndCommandBuffer(m_commandBuffers[index]));
     }
 } // karhu namespace

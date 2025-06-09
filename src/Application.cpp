@@ -3,6 +3,8 @@
 #include "Image.hpp"
 #include "FrameBuffer.hpp"
 
+#include <array>
+
 namespace karhu
 {
     Application::Application()
@@ -74,6 +76,8 @@ namespace karhu
                 false,
                 depthImage.getImageView());
 
+        createSyncObjects();
+
         // m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
         //         m_swapChain.getSwapChainExtent(),
         //         std::vector<VkDescriptorSetLayout> layouts,
@@ -84,6 +88,12 @@ namespace karhu
         for (auto frameBuffer : m_framebuffers)
         {
             vkDestroyFramebuffer(m_device.lDevice(), frameBuffer, nullptr);
+        }
+
+        for ( size_t i = 0; i < m_commandBuffer.getMaxFramesInFlight(); i++)
+        {
+            vkDestroySemaphore(m_device.lDevice(), m_semaphores.m_availableSemaphores[i], nullptr);
+            vkDestroySemaphore(m_device.lDevice(), m_semaphores.m_finishedSemaphores[i], nullptr);
         }
     }
 
@@ -97,16 +107,139 @@ namespace karhu
         while(!m_window->windowShouldClose())
         {
             m_window->pollEvents();
-            begin();
-            end();
+            uint32_t currentFrame = 0;
+            uint32_t imageIndex = 0;
+            begin(currentFrame, imageIndex);
+            end(currentFrame, imageIndex);
         }
     }
 
-    void Application::begin()
+    void Application::begin(uint32_t currentFrameIndex, uint32_t imageIndex)
     {
+        vkWaitForFences(m_device.lDevice(), 1, &m_inFlightFences[currentFrameIndex], VK_TRUE, UINT64_MAX);
+
+        VkResult res = vkAcquireNextImageKHR(m_device.lDevice(),
+                m_swapChain.getSwapchain(),
+                UINT64_MAX,
+                m_semaphores.m_availableSemaphores[currentFrameIndex],
+                VK_NULL_HANDLE,
+                &imageIndex);
+
+        if (res == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            /*reCreateSwapChain();*/
+            /*return 0;*/
+        }
+        else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("Failed to get swapchain image!\n");
+        }
+
+        vkResetFences(m_device.lDevice(), 1, &m_inFlightFences[currentFrameIndex]);
+
+        m_commandBuffer.resetCommandBuffer(currentFrameIndex);
+
+        m_commandBuffer.beginCommand(currentFrameIndex);
+
+        VkRenderPassBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        beginInfo.renderPass = m_renderPasses[0].getRenderPass();
+        beginInfo.framebuffer = m_framebuffers[imageIndex];
+        beginInfo.renderArea.offset = { 0,0 };
+        beginInfo.renderArea.extent = m_swapChain.getSwapChainExtent();
+
+        std::array<VkClearValue, 2> clearValues = {};
+        clearValues[0].color = { {0.0f ,0.0f ,0.0f ,1.0f} };
+        clearValues[1].depthStencil = { 1.0f, 0 };
+        beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        beginInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(m_commandBuffer.getCommandBuffer(currentFrameIndex), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        VkViewport viewPort{};
+        viewPort.x = 0.0f;
+        viewPort.y = 0.0f;
+        viewPort.width = static_cast<float>(m_swapChain.getSwapChainExtent().width);
+        viewPort.height = static_cast<float>(m_swapChain.getSwapChainExtent().height);
+        viewPort.minDepth = 0.0f;
+        viewPort.maxDepth = 1.0f;
+
+        vkCmdSetViewport(m_commandBuffer.getCommandBuffer(currentFrameIndex), 0, 1, &viewPort);
+
+        VkRect2D scissor{};
+        scissor.offset = { 0, 0 };
+        scissor.extent = m_swapChain.getSwapChainExtent();
+
+        vkCmdSetScissor(m_commandBuffer.getCommandBuffer(currentFrameIndex), 0, 1, &scissor);
     }
 
-    void Application::end()
+    void Application::end(uint32_t currentFrameIndex, uint32_t imageIndex)
     {
+        vkCmdEndRenderPass(m_commandBuffer.getCommandBuffer(currentFrameIndex));
+
+        m_commandBuffer.endCommandBuffer(currentFrameIndex);
+
+        VkSubmitInfo submitinfo{};
+        submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = { m_semaphores.m_availableSemaphores[currentFrameIndex] };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitinfo.waitSemaphoreCount = 1;
+        submitinfo.pWaitSemaphores = waitSemaphores;
+        submitinfo.pWaitDstStageMask = waitStages;
+        submitinfo.commandBufferCount = 1;
+        submitinfo.pCommandBuffers = &m_commandBuffer.getCommandBuffer(currentFrameIndex);
+        VkSemaphore signalSemaphores[] = { m_semaphores.m_finishedSemaphores[currentFrameIndex] };
+        submitinfo.signalSemaphoreCount = 1;
+        submitinfo.pSignalSemaphores = signalSemaphores;
+
+        VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &submitinfo, m_inFlightFences[currentFrameIndex]));
+
+        VkPresentInfoKHR presentinfo{};
+        presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentinfo.waitSemaphoreCount = 1;
+        presentinfo.pWaitSemaphores = signalSemaphores;
+        VkSwapchainKHR swapChains[] = { m_swapChain.getSwapchain() };
+        presentinfo.swapchainCount = 1;
+        presentinfo.pSwapchains = swapChains;
+        presentinfo.pImageIndices = &imageIndex;
+        presentinfo.pResults = nullptr;
+
+        VkResult res = vkQueuePresentKHR(m_device.pQueue(), &presentinfo);
+
+        /*if (res == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR || m_Window->getResize())*/
+        /*{*/
+        /*    m_Window->setResize(false);*/
+        /*    reCreateSwapChain();*/
+        /*}*/
+        /*else if (res != VK_SUCCESS)*/
+        /*{*/
+        /*    throw std::runtime_error("Failed to present swapchain image1\n");*/
+        /*}*/
+        currentFrameIndex = (currentFrameIndex + 1) % m_commandBuffer.getMaxFramesInFlight();
+    }
+
+    void Application::createSyncObjects()
+    {
+        m_semaphores.m_availableSemaphores.resize(m_commandBuffer.getMaxFramesInFlight());
+        m_semaphores.m_finishedSemaphores.resize(m_commandBuffer.getMaxFramesInFlight());
+        m_inFlightFences.resize(m_commandBuffer.getMaxFramesInFlight());
+
+        VkSemaphoreCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo FcreateInfo{};
+        FcreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        FcreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        for (size_t i = 0; i < m_commandBuffer.getMaxFramesInFlight(); i++)
+        {
+            if(vkCreateSemaphore(m_device.lDevice(), &createInfo, nullptr, &m_semaphores.m_availableSemaphores[i]) != VK_SUCCESS 
+                    || vkCreateSemaphore(m_device.lDevice(), &createInfo, nullptr, &m_semaphores.m_finishedSemaphores[i]) != VK_SUCCESS
+                    || vkCreateFence(m_device.lDevice(), &FcreateInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
+            {
+                throw std::runtime_error(" Failed to create Semaphores or fence!\n");
+            }
+        }
     }
 } // namespace karhu

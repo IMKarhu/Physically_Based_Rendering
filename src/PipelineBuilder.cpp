@@ -7,30 +7,7 @@
 
 namespace karhu
 {
-    // PipelineBuilder::PipelineBuilder(Device& device)
-    //     :m_device(device) {}
-    //
-    // PipelineBuilder::~PipelineBuilder() {}
-    //
-    // void PipelineBuilder::createPipeline(PipelineStruct pipelineStruct,
-    //                 const std::string& vertfilePath,
-    //                 const std::string& fragfilePath)
-    // {
-    // }
-    //
-    // void PipelineBuilder::bind(VkCommandBuffer commandBuffer)
-    // {
-    // }
-    //
-    // std::vector<char> PipelineBuilder::readFile(const std::string& fileName)
-    // {
-    // }
-    //
-    // VkShaderModule PipelineBuilder::createShaderModule(const std::vector<char>& code)
-    // {
-    // }
-    //
-    NormalPipelineBuilder::NormalPipelineBuilder()
+   NormalPipelineBuilder::NormalPipelineBuilder()
     {
         m_pipeline = std::make_unique<Pipeline>();
     }
@@ -228,8 +205,57 @@ namespace karhu
         return shaderModule;
     }
 
+    /*Cube pipeline builder */
 
+    CubePipelineBuilder::CubePipelineBuilder()
+    {
+        m_pipeline = std::make_unique<Pipeline>();
+    }
 
+    CubePipelineBuilder::~CubePipelineBuilder() {}
+
+    void CubePipelineBuilder::createPipeline(PipelineStruct pipelineStruct,
+            const std::string& vertfilePath,
+            const std::string& fragfilePath) const
+    {
+    }
+
+    void CubePipelineBuilder::bind(VkCommandBuffer commandBuffer) const
+    {
+    }
+
+    std::vector<char> CubePipelineBuilder::readFile(const std::string& fileName)
+    {
+        //read  from the end of thefile and as binary file.
+        std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open())
+        {
+            throw std::runtime_error("Failed to open file!\n");
+        }
+        size_t fileSize = (size_t)file.tellg();
+        std::vector<char> buffer(fileSize);
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+        file.close();
+        return buffer;
+
+    }
+
+    VkShaderModule CubePipelineBuilder::createShaderModule(const std::vector<char>& code) const
+    {
+        VkShaderModuleCreateInfo createinfo{};
+        createinfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createinfo.codeSize = code.size();
+        createinfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+        VkShaderModule shaderModule;
+        VK_CHECK(vkCreateShaderModule(m_pipeline->m_device, &createinfo, nullptr, &shaderModule));
+
+        return shaderModule;
+
+    }
 
 
 } // karhu naemspace

@@ -33,6 +33,7 @@ namespace karhu
             const VkFormat& getSwapChainImageFormat() const { return m_swapChainImageFormat; }
             const std::vector<VkImageView>& getSwapChainImageviews() const { return m_swapChainImageViews; }
             const VkExtent2D& getSwapChainExtent() const { return m_swapChainExtent; }
+            const VkSwapchainKHR getSwapchain() const { return m_swapChain; }
         private:
             VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
             std::vector<VkImage> m_swapChainImages;

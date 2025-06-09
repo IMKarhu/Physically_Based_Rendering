@@ -20,8 +20,10 @@ namespace karhu
 
             void run();
             void update();
-            void begin();
-            void end();
+            void begin(uint32_t currentFrameIndex, uint32_t imageIndex);
+            void end(uint32_t currentFrameIndex, uint32_t imageIndex);
+        private:
+            void createSyncObjects();
         private:
             std::unique_ptr<Window> m_window = std::make_unique<Window>("Vulkan", 1080, 720);
             Device m_device{ m_window->getInstance(), m_window->getSurface() };
@@ -32,5 +34,15 @@ namespace karhu
             std::vector<Image> m_images;
 
             std::vector<VkFramebuffer> m_framebuffers;
+
+            /*synchronization*/
+            struct Semaphoras
+            {
+                std::vector<VkSemaphore> m_availableSemaphores;
+                std::vector<VkSemaphore> m_finishedSemaphores;
+            }m_semaphores;
+            std::vector<VkFence> m_inFlightFences;
+            uint32_t m_currentImage = 0;
+            float m_deltaTime = 0.0f;
     };
 } // karhu namespace

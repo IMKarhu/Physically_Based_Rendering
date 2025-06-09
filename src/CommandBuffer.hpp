@@ -19,12 +19,18 @@ namespace karhu
             CommandBuffer(CommandBuffer&&) = delete;
             CommandBuffer& operator=(CommandBuffer&&) = delete;
 
+            const int getMaxFramesInFlight() const { return m_maxFramesInFlight; }
+            const VkCommandBuffer& getCommandBuffer(uint32_t index) const { return m_commandBuffers[index]; } 
+
             void createCommandBuffers();
             void createCommandPool();
             void allocCommandBuffer(VkCommandBuffer& commandBuffer);
+            void beginCommand(uint32_t index);
             void beginCommand(VkCommandBuffer& commandBuffer);
             VkCommandBuffer recordSingleCommand();
             void endSingleCommand(VkCommandBuffer commandBuffer);
+            void resetCommandBuffer(uint32_t index);
+            void endCommandBuffer(uint32_t index);
         private:
             VkCommandPool m_commandPool = VK_NULL_HANDLE;
             std::vector<VkCommandBuffer> m_commandBuffers;
