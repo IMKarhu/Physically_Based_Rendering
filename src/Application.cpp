@@ -97,6 +97,16 @@ namespace karhu
         while(!m_window->windowShouldClose())
         {
             m_window->pollEvents();
+            begin();
+            end();
         }
+    }
+
+    void Application::begin()
+    {
+    }
+
+    void Application::end()
+    {
     }
 } // namespace karhu
