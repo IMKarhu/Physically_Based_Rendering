@@ -74,7 +74,10 @@ namespace karhu
                 false,
                 depthImage.getImageView());
 
-
+        // m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
+        //         m_swapChain.getSwapChainExtent(),
+        //         std::vector<VkDescriptorSetLayout> layouts,
+        //         m_renderPasses[0].getRenderPass());
     }
     Application::~Application()
     {

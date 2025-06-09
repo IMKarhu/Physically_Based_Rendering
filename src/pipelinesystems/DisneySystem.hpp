@@ -1,0 +1,34 @@
+#pragma once
+
+#include "../PipelineBuilder.hpp"
+#include "../frame.hpp"
+#include "vulkan/vulkan.h"
+#include "glm/glm.hpp"
+#include <vector>
+
+namespace karhu
+{
+
+    class DisneySystem
+    {
+    public:
+        DisneySystem();
+        ~DisneySystem();
+        
+        DisneySystem(const DisneySystem&) = delete;
+        DisneySystem &operator = (const DisneySystem&) = delete;
+        
+        void createGraphicsPipeline(VkDevice device,
+                VkExtent2D extent,
+                std::vector<VkDescriptorSetLayout> layouts,
+                VkRenderPass renderPass);
+        void renderEntities(Frame& frameInfo);
+    private:
+        NormalPipelineBuilder m_pipelinebuilder;
+        struct {
+            float m_Metalness = 0.0f;
+            float m_Roughness = 0.0f;
+            glm::vec3 m_LightPosition = glm::vec3(1.0f, 3.0f, 1.0f);
+        }vars;
+    };
+}

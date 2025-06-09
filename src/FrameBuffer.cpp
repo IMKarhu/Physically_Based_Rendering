@@ -20,7 +20,6 @@
             attachments.push_back(imageViews[i]);
             if (isCube == false)
             {
-                printf("depth is null!\n");
                 attachments.push_back(depthView);
             }
             printf("size of attachments %zd \n", attachments.size());

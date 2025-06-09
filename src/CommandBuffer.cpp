@@ -71,5 +71,17 @@ namespace karhu
         return commandBuffer;
     }
 
-    void CommandBuffer::endSingleCommand(VkCommandBuffer commandBuffer) {}
+    void CommandBuffer::endSingleCommand(VkCommandBuffer commandBuffer)
+    {
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &submitInfo, VK_NULL_HANDLE));
+        VK_CHECK(vkQueueWaitIdle(m_device.gQueue()));
+        vkFreeCommandBuffers(m_device.lDevice(), m_commandPool, 1, &commandBuffer);
+    }
 } // karhu namespace

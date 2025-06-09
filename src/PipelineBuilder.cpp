@@ -1,24 +1,48 @@
-#include "kGraphicsPipeline.hpp"
-#include "utils/macros.hpp"
-#include "types.hpp"
-#include <fstream>
+#include "PipelineBuilder.hpp"
 
+#include "Device.hpp"
+#include "types.hpp"
+
+#include <fstream>
 
 namespace karhu
 {
-	kGraphicsPipeline::kGraphicsPipeline(Vulkan_Device& device)
-		:m_Device(device)
-	{
-	}
+    // PipelineBuilder::PipelineBuilder(Device& device)
+    //     :m_device(device) {}
+    //
+    // PipelineBuilder::~PipelineBuilder() {}
+    //
+    // void PipelineBuilder::createPipeline(PipelineStruct pipelineStruct,
+    //                 const std::string& vertfilePath,
+    //                 const std::string& fragfilePath)
+    // {
+    // }
+    //
+    // void PipelineBuilder::bind(VkCommandBuffer commandBuffer)
+    // {
+    // }
+    //
+    // std::vector<char> PipelineBuilder::readFile(const std::string& fileName)
+    // {
+    // }
+    //
+    // VkShaderModule PipelineBuilder::createShaderModule(const std::vector<char>& code)
+    // {
+    // }
+    //
+    NormalPipelineBuilder::NormalPipelineBuilder()
+    {
+        m_pipeline = std::make_unique<Pipeline>();
+    }
 
-	kGraphicsPipeline::~kGraphicsPipeline()
-	{
-        vkDestroyPipeline(m_Device.m_Device, m_GraphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(m_Device.m_Device, m_PipelineLayout, nullptr);
-	}
+    NormalPipelineBuilder::~NormalPipelineBuilder()
+    {
+    }
 
-	void kGraphicsPipeline::createPipeline(GraphicsPipelineStruct pipelineStruct, const std::string& vertfilePath, const std::string& fragfilePath)
-	{
+    void NormalPipelineBuilder::createPipeline(PipelineStruct pipelineStruct,
+                    const std::string& vertfilePath,
+                    const std::string& fragfilePath) const
+    {
         auto vertexCode = readFile(vertfilePath);
         auto fragmentCode = readFile(fragfilePath);
 
@@ -63,8 +87,8 @@ namespace karhu
 
 
         pipelineStruct.dynamiccreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        pipelineStruct.dynamiccreateinfo.dynamicStateCount = static_cast<uint32_t>(m_DynamicStates.size());
-        pipelineStruct.dynamiccreateinfo.pDynamicStates = m_DynamicStates.data();
+        pipelineStruct.dynamiccreateinfo.dynamicStateCount = static_cast<uint32_t>(m_pipeline->m_dynamicStates.size());
+        pipelineStruct.dynamiccreateinfo.pDynamicStates = m_pipeline->m_dynamicStates.data();
 
         pipelineStruct.viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         pipelineStruct.viewportState.viewportCount = 1;
@@ -142,7 +166,7 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
         pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
 
-        VK_CHECK(vkCreatePipelineLayout(m_Device.m_Device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_PipelineLayout));
+        VK_CHECK(vkCreatePipelineLayout(m_pipeline->m_device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_pipeline->m_pipelineLayout));
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -156,24 +180,24 @@ namespace karhu
         pipelineInfo.pDepthStencilState = &pipelineStruct.depthStencil;
         pipelineInfo.pColorBlendState = &pipelineStruct.colorBlending;
         pipelineInfo.pDynamicState = &pipelineStruct.dynamiccreateinfo;
-        pipelineInfo.layout = m_PipelineLayout;
+        pipelineInfo.layout = m_pipeline->m_pipelineLayout;
         pipelineInfo.renderPass = pipelineStruct.renderPass;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
-        VK_CHECK(vkCreateGraphicsPipelines(m_Device.m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline));
+        VK_CHECK(vkCreateGraphicsPipelines(m_pipeline->m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline->m_graphicsPipeline));
 
-        vkDestroyShaderModule(m_Device.m_Device, vertexShaderModule, nullptr);
-        vkDestroyShaderModule(m_Device.m_Device, fragmentShaderModule, nullptr);
-	}
-
-    void kGraphicsPipeline::bind(VkCommandBuffer commandBuffer)
-    {
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+        vkDestroyShaderModule(m_pipeline->m_device, vertexShaderModule, nullptr);
+        vkDestroyShaderModule(m_pipeline->m_device, fragmentShaderModule, nullptr);
     }
 
-    std::vector<char> kGraphicsPipeline::readFile(const std::string& fileName)
+    void NormalPipelineBuilder::bind(VkCommandBuffer commandBuffer) const
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->m_graphicsPipeline);
+    }
+
+    std::vector<char> NormalPipelineBuilder::readFile(const std::string& fileName)
     {
         //read  from the end of thefile and as binary file.
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
@@ -191,7 +215,7 @@ namespace karhu
         return buffer;
     }
 
-    VkShaderModule kGraphicsPipeline::createShaderModule(const std::vector<char>& code)
+    VkShaderModule NormalPipelineBuilder::createShaderModule(const std::vector<char>& code) const
     {
         VkShaderModuleCreateInfo createinfo{};
         createinfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -199,10 +223,13 @@ namespace karhu
         createinfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        VK_CHECK(vkCreateShaderModule(m_Device.m_Device, &createinfo, nullptr, &shaderModule));
+        VK_CHECK(vkCreateShaderModule(m_pipeline->m_device, &createinfo, nullptr, &shaderModule));
 
         return shaderModule;
     }
-}
 
 
+
+
+
+} // karhu naemspace

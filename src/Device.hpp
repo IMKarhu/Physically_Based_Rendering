@@ -31,6 +31,8 @@ namespace karhu
 
             const VkDevice& lDevice() const { return m_device; }
             const VkPhysicalDevice& pDevice() const { return m_physicalDevice; }
+            const VkQueue& gQueue() const { return m_graphicsQueue; }
+            const VkQueue& pQueue() const { return m_presentQueue; }
 
             void initDevice();
             void pickPhysicalDevice();
@@ -45,9 +47,13 @@ namespace karhu
         private:
             VkDebugUtilsMessengerEXT m_debugMessenger;
             void setupDebugMessenger();
-            VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-            const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-            void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+            VkResult createDebugUtilsMessengerEXT(VkInstance instance,
+                    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                    const VkAllocationCallbacks* pAllocator,
+                    VkDebugUtilsMessengerEXT* pDebugMessenger);
+            void destroyDebugUtilsMessengerEXT(VkInstance instance,
+                    VkDebugUtilsMessengerEXT debugMessenger,
+                    const VkAllocationCallbacks* pAllocator);
         private:
             VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
             VkDevice m_device = VK_NULL_HANDLE;

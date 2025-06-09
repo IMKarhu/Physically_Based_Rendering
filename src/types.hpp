@@ -57,10 +57,10 @@ namespace karhu
         glm::mat4 proj;
     };
 
-    struct ObjBuffer
-    {
-        glm::mat4 model;
-    };
+    // struct ObjBuffer
+    // {
+    //     glm::mat4 model;
+    // };
 
     struct ObjPushConstant
     {
