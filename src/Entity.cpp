@@ -14,7 +14,7 @@ namespace karhu
         
         memcpy(m_Buffer->m_BufferMapped, &objBuffer, sizeof(objBuffer));
     }
-    void Entity::setModel(std::shared_ptr<kModel> model)
+    void Entity::setModel(std::shared_ptr<Model> model)
     {
         m_Model = model;
     }

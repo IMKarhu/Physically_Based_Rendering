@@ -4,11 +4,13 @@
 
 namespace karhu
 {
-    class Device;
+    // class Device;
     class Image
     {
         public:
-            Image(Device& device,
+            Image();
+            Image(VkDevice device,
+                    VkPhysicalDevice physicalDevice,
                     uint32_t width,
                     uint32_t height,
                     VkFormat format,
@@ -18,22 +20,23 @@ namespace karhu
 
             ~Image();
 
-            Image(const Image&) = delete;
-            void operator=(const Image&) = delete;
-            Image(Image&&) = delete;
-            Image& operator=(Image&&) = delete;
+            // Image(const Image&) = delete;
+            // void operator=(const Image&) = delete;
+            // Image(Image&&) = delete;
+            // Image& operator=(Image&&) = delete;
 
             void createImageView(VkImage image,
                     VkFormat format,
                     VkImageAspectFlags flags,
                     uint32_t layerCount);
 
+            const VkImage& getImage() const { return m_image; }
             const VkImageView& getImageView() const { return m_imageView; }
         private:
             VkImage m_image;
             VkImageView m_imageView;
             VkDeviceMemory m_imageMemory;
 
-            Device& m_device;
+            VkDevice m_device;
     };
 } // karhu namespace

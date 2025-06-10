@@ -1,5 +1,5 @@
 #pragma once
-#include "kModel.hpp"
+#include "Model.hpp"
 #include "Buffer.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -27,8 +27,8 @@ namespace karhu
             transform = glm::rotate(transform, m_Rotation.z, { 0.0f, 0.0f, 1.0f });
             transform = glm::scale(transform, m_Scale);
             return transform; }
-        void setModel(std::shared_ptr<kModel> model);
-        std::shared_ptr<kModel> getModel() { return m_Model; }
+        void setModel(std::shared_ptr<Model> model);
+        std::shared_ptr<Model> getModel() { return m_Model; }
         
         void setPosition(glm::vec3 position);
         glm::vec3 getPosition() { return m_Position; }
@@ -44,11 +44,9 @@ namespace karhu
         Entity(uint32_t id) : m_Id(id){}
         uint32_t m_Id;
         uint32_t mLightId;
-        std::shared_ptr<kModel> m_Model{};
+        std::shared_ptr<Model> m_Model{};
         glm::vec3 m_Position{};
         glm::vec3 m_Scale{ 1.0f, 1.0f, 1.0f };
         glm::vec3 m_Rotation{};
-        
-    
     };
 }

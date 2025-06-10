@@ -31,6 +31,7 @@ namespace karhu
             SwapChain m_swapChain{ m_device, m_window };
             DisneySystem m_disneySystem;
             std::vector<RenderPass> m_renderPasses;
+            Image m_depthImage;
             std::vector<Image> m_images;
 
             std::vector<VkFramebuffer> m_framebuffers;

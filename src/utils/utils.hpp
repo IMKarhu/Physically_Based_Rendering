@@ -120,5 +120,22 @@ namespace karhu
             std::vector<VkSurfaceFormatKHR> formats;
             std::vector<VkPresentModeKHR> presentModes;
         };
+
+        inline uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t filter, VkMemoryPropertyFlags properties)
+        {
+            VkPhysicalDeviceMemoryProperties memProperties;
+            vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+            for (size_t i = 0; i < memProperties.memoryTypeCount; i++)
+            {
+                if ((filter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                {
+                    return i;
+                }
+            }
+            throw std::runtime_error("could not find memory type!\n");
+            return 0;
+        }
+
     } // utils namespace
 } // karhu namespace

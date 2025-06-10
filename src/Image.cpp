@@ -1,16 +1,19 @@
 #include "Image.hpp"
 
 #include "Device.hpp"
+#include "utils/utils.hpp"
 
 namespace karhu
 {
-    Image::Image(Device& device,
-                    uint32_t width,
-                    uint32_t height,
-                    VkFormat format,
-                    VkImageTiling tiling,
-                    VkImageUsageFlags usageFlags,
-                    VkMemoryPropertyFlags properties)
+    Image::Image() {}
+    Image::Image(VkDevice device,
+            VkPhysicalDevice physicalDevice,
+            uint32_t width,
+            uint32_t height,
+            VkFormat format,
+            VkImageTiling tiling,
+            VkImageUsageFlags usageFlags,
+            VkMemoryPropertyFlags properties)
         : m_device(device)
     {
         VkImageCreateInfo imageInfo{};
@@ -28,28 +31,31 @@ namespace karhu
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VK_CHECK(vkCreateImage(m_device.lDevice(), &imageInfo, nullptr, &m_image));
+        VK_CHECK(vkCreateImage(m_device, &imageInfo, nullptr, &m_image));
 
         VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_device.lDevice(), m_image, &memRequirements);
+        vkGetImageMemoryRequirements(m_device, m_image, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_device.findMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = utils::findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(m_device.lDevice(), &allocInfo, nullptr, &m_imageMemory) != VK_SUCCESS) {
+        if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_imageMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate image memory!");
         }
 
-        vkBindImageMemory(m_device.lDevice(), m_image, m_imageMemory, 0);
+        vkBindImageMemory(m_device, m_image, m_imageMemory, 0);
 
-        createImageView(m_image, format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+        // createImageView(m_image, format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
     Image::~Image()
     {
         printf("calling Image class destructor! \n");
+        vkDestroyImage(m_device, m_image, nullptr);
+        vkDestroyImageView(m_device, m_imageView, nullptr);
+        vkFreeMemory(m_device, m_imageMemory, nullptr);
     }
 
     void Image::createImageView(VkImage image,
@@ -68,7 +74,7 @@ namespace karhu
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = layerCount;
 
-        VK_CHECK(vkCreateImageView(m_device.lDevice(), &createInfo, nullptr, &m_imageView));
+        VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView));
     }
 
 } // karhu namespace

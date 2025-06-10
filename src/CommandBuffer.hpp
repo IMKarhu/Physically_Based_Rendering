@@ -20,7 +20,8 @@ namespace karhu
             CommandBuffer& operator=(CommandBuffer&&) = delete;
 
             const int getMaxFramesInFlight() const { return m_maxFramesInFlight; }
-            const VkCommandBuffer& getCommandBuffer(uint32_t index) const { return m_commandBuffers[index]; } 
+            const VkCommandBuffer& getCommandBuffer(uint32_t index) const { return m_commandBuffers[index]; }
+            const VkCommandPool& getCommandPool() const { return m_commandPool; }
 
             void createCommandBuffers();
             void createCommandPool();
