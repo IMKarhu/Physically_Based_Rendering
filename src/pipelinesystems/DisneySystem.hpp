@@ -11,6 +11,7 @@ namespace karhu
 {
     class Device;
     class Descriptors;
+    class Entity;
     class DisneySystem
     {
     public:
@@ -20,10 +21,10 @@ namespace karhu
         DisneySystem(const DisneySystem&) = delete;
         DisneySystem &operator = (const DisneySystem&) = delete;
         
-        void createDescriptors();
+        void createDescriptors(std::vector<Entity>& entities);
         void createGraphicsPipeline(VkDevice device,
                 VkExtent2D extent,
-                std::vector<VkDescriptorSetLayout> layouts,
+                VkDescriptorSetLayout layout,
                 VkRenderPass renderPass);
         void renderEntities(Frame& frameInfo);
     private:

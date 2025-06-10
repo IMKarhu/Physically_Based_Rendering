@@ -180,6 +180,15 @@ namespace karhu
             throw std::runtime_error("failed to create texture sampler!");
         }
     }
+    VkDescriptorImageInfo NTexture::getImageInfo()
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_image.getImageView();
+        imageInfo.sampler = m_sampler;
+        return imageInfo;
+    }
+
 
     // void Texture::createTexture(std::string filepath, VkFormat format)
     // {

@@ -2,6 +2,7 @@
 
 #include "../Device.hpp"
 #include "../Descriptors.hpp"
+#include "../Entity.hpp"
 
 namespace karhu
 {
@@ -14,7 +15,7 @@ namespace karhu
     {
     }
 
-    void DisneySystem::createDescriptors()
+    void DisneySystem::createDescriptors(std::vector<Entity>& entities)
     {
         m_descriptorBuilder = std::make_unique<Descriptors>(m_device);
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
@@ -30,38 +31,45 @@ namespace karhu
         m_layout = m_descriptorBuilder->createDescriptorSetLayout(m_bindings);
 
         std::vector<std::vector<VkDescriptorImageInfo>> infos;
-        infos.resize(m_Entities.size());
-        for (size_t i = 0; i < m_Entities.size(); i++)
+        infos.resize(entities.size());
+        for (size_t i = 0; i < entities.size(); i++)
         {
-            for (size_t j = 0; j < m_Entities[i].getModel()->m_Textures.size(); j++)
+            for (size_t j = 0; j < entities[i].getModel()->m_Textures.size(); j++)
             {
-                infos[i].push_back(m_Entities[i].getModel()->m_Textures[j].getImageInfo());
+                // auto tex = static_cast<karhu::NTexture>(entities[i].getModel()->m_Textures[j]);
+                infos[i].push_back(entities[i].getModel()->m_Textures[j].getImageInfo());
             }
-            m_Entities[i].m_Buffer = std::make_unique<kBuffer>(m_device.lDevice());
-            m_Entities[i].m_Buffer->createBuffer(sizeof(ObjBuffer));
+            entities[i].m_Buffer = std::make_unique<Buffer>();
+            entities[i].m_Buffer->createBuffer(sizeof(ObjBuffer));
         }
 
-        for (size_t i = 0; i < m_Entities.size(); i++)
+        for (size_t i = 0; i < entities.size(); i++)
         {
-            auto id = m_Entities[i].getId();
-            m_descriptorBuilder->allocateDescriptor(m_Entities[i].m_DescriptorSet, m_layout, m_pool);
-            m_descriptorBuilder->writeBuffer(m_Entities[i].m_DescriptorSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_Entities[i].m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
+            auto id = entities[i].getId();
+            m_descriptorBuilder->allocateDescriptor(entities[i].m_DescriptorSet, m_layout, m_pool);
+            m_descriptorBuilder->writeBuffer(entities[i].m_DescriptorSet, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entities[i].m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
          
-            m_descriptorBuilder->writeImg(m_Entities[i].m_DescriptorSet, 1, infos[i][0], id);
-            m_descriptorBuilder->writeImg(m_Entities[i].m_DescriptorSet, 2, infos[i][1], id);
-            m_descriptorBuilder->writeImg(m_Entities[i].m_DescriptorSet, 3, infos[i][2], id);
-            m_descriptorBuilder->writeImg(m_Entities[i].m_DescriptorSet, 4, infos[i][3], id);
-            m_descriptorBuilder->writeImg(m_Entities[i].m_DescriptorSet, 5, infos[i][4], id);
-            m_descriptorBuilder->fillWritesMap(m_Entities[i].getId());
-            
+            m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 1, infos[i][0], id);
+            m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 2, infos[i][1], id);
+            m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 3, infos[i][2], id);
+            m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 4, infos[i][3], id);
+            m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 5, infos[i][4], id);
+            m_descriptorBuilder->fillWritesMap(entities[i].getId());
         }
+
+        m_descriptorBuilder->createDescriptorSets(entities, m_layout, m_pool);
     }
 
     void DisneySystem::createGraphicsPipeline(VkDevice device,
             VkExtent2D extent,
-            std::vector<VkDescriptorSetLayout> layouts,
+            VkDescriptorSetLayout layout,
             VkRenderPass renderPass)
     {
+        std::vector<VkDescriptorSetLayout> layouts = {
+            m_layout,
+            layout
+        };
+
         m_pipelinebuilder.getHandle()->m_device = device;
 
         PipelineStruct pipelineStruct{};

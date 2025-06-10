@@ -15,7 +15,9 @@ namespace karhu
         VkBuffer m_buffer;
         VkDeviceMemory m_bufferMemory;
         void* m_bufferMapped;
-        void createBuffer(VkDeviceSize size);
+        VkDevice m_device;
+        VkPhysicalDevice m_phyiscalDevice;
+        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
         VkDescriptorBufferInfo getBufferInfo(VkDeviceSize size);
     };
 }

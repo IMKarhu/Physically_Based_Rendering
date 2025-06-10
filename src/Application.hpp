@@ -7,8 +7,11 @@
 #include "pipelinesystems/DisneySystem.hpp"
 #include "RenderPass.hpp"
 #include "Image.hpp"
+#include "Descriptors.hpp"
+#include "Entity.hpp"
 
 #include <memory>
+#include <unordered_map>
 
 namespace karhu
 {
@@ -17,6 +20,13 @@ namespace karhu
         public:
             Application();
             ~Application();
+
+            enum enityType
+            {
+                Disney,
+                Unreal,
+                Cube
+            };
 
             void run();
             void update();
@@ -29,12 +39,14 @@ namespace karhu
             Device m_device{ m_window->getInstance(), m_window->getSurface() };
             CommandBuffer m_commandBuffer{ m_device };
             SwapChain m_swapChain{ m_device, m_window };
-            DisneySystem m_disneySystem;
+            DisneySystem m_disneySystem{ m_device };
+            Descriptors m_builder{ m_device };
             std::vector<RenderPass> m_renderPasses;
             Image m_depthImage;
-            std::vector<Image> m_images;
 
             std::vector<VkFramebuffer> m_framebuffers;
+
+            std::unordered_map<enityType, std::vector<Entity>> m_entities;
 
             /*synchronization*/
             struct Semaphoras
@@ -45,5 +57,11 @@ namespace karhu
             std::vector<VkFence> m_inFlightFences;
             uint32_t m_currentImage = 0;
             float m_deltaTime = 0.0f;
+
+            /*Camera descriptor.... global...*/
+            std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+            VkDescriptorSetLayout m_layout;
+            VkDescriptorPool m_pool;
+            VkDescriptorSet m_set;
     };
 } // karhu namespace

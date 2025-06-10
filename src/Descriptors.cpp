@@ -1,5 +1,6 @@
 #include "Descriptors.hpp"
-/*#include "kEntity.hpp"*/
+#include "Entity.hpp"
+#include "utils/utils.hpp"
 
 namespace karhu
 {
@@ -16,7 +17,7 @@ namespace karhu
     {
         VkDescriptorSetLayout layout{};
         VkDescriptorSetLayoutCreateInfo createInfo{};
-        createInfo = Helpers::fillDescriptorSetLayoutCreateInfo();
+        createInfo = utils::fillDescriptorSetLayoutCreateInfo();
         createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         createInfo.pBindings = bindings.data();
 
@@ -28,7 +29,7 @@ namespace karhu
     void Descriptors::bind(std::vector< VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags)
     {
         VkDescriptorSetLayoutBinding bind{};
-        bind = Helpers::fillLayoutBindingStruct(binding, type, descriptorCount, flags);
+        bind = utils::fillLayoutBindingStruct(binding, type, descriptorCount, flags);
 
         bindings.push_back(bind);
     }
@@ -47,7 +48,7 @@ namespace karhu
         return pool;
     }
 
-    void Descriptors::createDescriptorSets(std::vector<kEntity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool)
+    void Descriptors::createDescriptorSets(std::vector<Entity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool)
     {
         
         /* loop through every object and create a descriptor set*/

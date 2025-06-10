@@ -85,10 +85,42 @@ namespace karhu
 
         createSyncObjects();
 
-        // m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
-        //         m_swapChain.getSwapChainExtent(),
-        //         std::vector<VkDescriptorSetLayout> layouts,
-        //         m_renderPasses[0].getRenderPass());
+        auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
+
+        /*Probably shouldn't be here but it'll work for now..*/
+        m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
+        m_pool = m_builder.createDescriptorPool(2);
+
+        m_builder.bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_layout = m_builder.createDescriptorSetLayout(m_bindings);
+
+        std::vector<std::unique_ptr<Buffer>> uboBuffers(2);
+        for (size_t i = 0; i < uboBuffers.size(); i++)
+        {
+            uboBuffers[i] = std::make_unique<Buffer>();
+            uboBuffers[i]->createBuffer(sizeof(UniformBufferObject),
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+
+        m_builder.allocateDescriptor(m_set, m_layout, m_pool);
+        m_builder.writeBuffer(m_set, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboBuffers[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
+        m_builder.fillWritesMap(0);
+        m_builder.createDescriptorSets(m_layout, m_pool);
+
+        auto ent1 = Entity::createEntity();
+        ent1.setModel(model);
+        ent1.setPosition({0.0f, 0.0f, -5.0f});
+        ent1.setScale({1.0f, 1.0f, 1.0f});
+        ent1.setRotation({90.0f, 0.0f, 0.0f});
+
+        m_entities[Disney].push_back(std::move(ent1));
+
+        m_disneySystem.createDescriptors(m_entities[Disney]);
+        m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
+                m_swapChain.getSwapChainExtent(),
+                m_layout,
+                m_renderPasses[0].getRenderPass());
     }
     Application::~Application()
     {

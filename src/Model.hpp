@@ -40,7 +40,7 @@ namespace karhu
             void createVertexBuffer(std::vector<Vertex>& vertices);
             void createIndexBuffer();
             void createIndexBuffer(std::vector<uint32_t>& indices);
-            std::vector<Texture> m_Textures;
+            std::vector<NTexture> m_Textures;
         private:
             /*this can live here for now. needs to be refactored somewhere else */
             void createBuffers(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);

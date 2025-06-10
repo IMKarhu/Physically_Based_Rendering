@@ -52,6 +52,7 @@ namespace karhu
             void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
             void copyBufferToImage(VkBuffer buffer);
             void createSampler(VkSamplerAddressMode addressMode);
+            VkDescriptorImageInfo getImageInfo();
         private:
             int m_width = 0;
             int m_height = 0;

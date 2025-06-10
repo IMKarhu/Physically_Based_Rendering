@@ -1,6 +1,5 @@
 #pragma once
 #include "Device.hpp"
-#include "utils/utils.hpp"
 #include "types.hpp"
 
 #include <unordered_map>
@@ -8,7 +7,7 @@
 
 namespace karhu
 {
-    class kEntity;
+    class Entity;
 
     class Descriptors
     {
@@ -22,7 +21,7 @@ namespace karhu
         VkDescriptorSetLayout createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings);
         void bind(std::vector<VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags);
         VkDescriptorPool createDescriptorPool(uint32_t maxSets);
-        void createDescriptorSets(std::vector<kEntity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool);
+        void createDescriptorSets(std::vector<Entity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool);
         void createDescriptorSets(VkDescriptorSetLayout layout, VkDescriptorPool pool);
         void cleanUp(VkDevice device);
         void addPoolElement(VkDescriptorType type, uint32_t count);

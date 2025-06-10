@@ -137,5 +137,23 @@ namespace karhu
             return 0;
         }
 
+
+        inline VkDescriptorSetLayoutBinding fillLayoutBindingStruct(uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags)
+        {
+            VkDescriptorSetLayoutBinding layoutBinding{};
+            layoutBinding.binding = binding;
+            layoutBinding.descriptorType = type;
+            layoutBinding.descriptorCount = descriptorCount;
+            layoutBinding.stageFlags = flags;
+            layoutBinding.pImmutableSamplers = nullptr;
+            return layoutBinding;
+        }
+
+        inline VkDescriptorSetLayoutCreateInfo fillDescriptorSetLayoutCreateInfo()
+        {
+            VkDescriptorSetLayoutCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            return createInfo;
+        }
     } // utils namespace
 } // karhu namespace
