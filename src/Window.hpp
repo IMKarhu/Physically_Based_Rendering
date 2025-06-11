@@ -20,10 +20,13 @@ namespace karhu
             bool windowShouldClose();
             void pollEvents();
             void waitEvents();
+            void frameBufferSize(GLFWwindow* window, int& width, int& height);
+            void setResized(bool resized);
 
             const VkInstance& getInstance();
             VkSurfaceKHR getSurface();
             GLFWwindow* getWindow();
+            bool resized();
         private:
             void initWindow();
             void createInstance();

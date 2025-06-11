@@ -13,6 +13,7 @@ namespace karhu
             VkFormat format,
             VkImageTiling tiling,
             VkImageUsageFlags usageFlags,
+            VkImageAspectFlags aspectFlags,
             VkMemoryPropertyFlags properties)
         : m_device(device)
     {
@@ -47,15 +48,51 @@ namespace karhu
 
         vkBindImageMemory(m_device, m_image, m_imageMemory, 0);
 
-        // createImageView(m_image, format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+        createImageView(m_image, format, aspectFlags, 1);
+    }
+
+    Image::Image(Image&& other) noexcept
+        : m_image(other.m_image)
+        , m_imageView(other.m_imageView)
+        , m_imageMemory(other.m_imageMemory)
+        , m_device(other.m_device)
+    {
+        other.m_image = VK_NULL_HANDLE;
+        other.m_imageView = VK_NULL_HANDLE;
+        other.m_device = VK_NULL_HANDLE;
+        other.m_imageMemory = VK_NULL_HANDLE;
+    }
+
+    Image& Image::operator=(Image&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (m_image != VK_NULL_HANDLE)
+            {
+                vkDestroyImage(m_device, m_image, nullptr);
+                vkDestroyImageView(m_device, m_imageView, nullptr);
+                vkFreeMemory(m_device, m_imageMemory, nullptr);
+            }
+
+            m_image = other.m_image;
+            m_imageView = other.m_imageView;
+            m_device = other.m_device;
+            m_imageMemory = other.m_imageMemory;
+
+            other.m_image = VK_NULL_HANDLE;
+            other.m_imageView = VK_NULL_HANDLE;
+            other.m_device = VK_NULL_HANDLE;
+            other.m_imageMemory = VK_NULL_HANDLE;
+        }
+        return *this;
     }
 
     Image::~Image()
     {
-        printf("calling Image class destructor! \n");
-        vkDestroyImage(m_device, m_image, nullptr);
-        vkDestroyImageView(m_device, m_imageView, nullptr);
-        vkFreeMemory(m_device, m_imageMemory, nullptr);
+        /*printf("calling Image class destructor! \n");*/
+        /*vkDestroyImage(m_device, m_image, nullptr);*/
+        /*vkDestroyImageView(m_device, m_imageView, nullptr);*/
+        /*vkFreeMemory(m_device, m_imageMemory, nullptr);*/
     }
 
     void Image::createImageView(VkImage image,

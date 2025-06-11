@@ -155,5 +155,34 @@ namespace karhu
             createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
             return createInfo;
         }
+        inline void createBuffers(VkDevice device,
+                VkPhysicalDevice physicalDevice,
+                VkDeviceSize size,
+                VkBufferUsageFlags usage,
+                VkMemoryPropertyFlags properties,
+                VkBuffer& buffer,
+                VkDeviceMemory& bufferMemory)
+        {
+            VkBufferCreateInfo createinfo{};
+            createinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            createinfo.size = size; //byte size of one vertices multiplied by size of vector
+            createinfo.usage = usage;
+            createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            
+            VK_CHECK(vkCreateBuffer(device, &createinfo, nullptr, &buffer));
+            
+            VkMemoryRequirements memRequirements;
+            vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+            
+            VkMemoryAllocateInfo allocinfo{};
+            allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocinfo.allocationSize = memRequirements.size;
+            allocinfo.memoryTypeIndex = utils::findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+            
+            VK_CHECK(vkAllocateMemory(device, &allocinfo, nullptr, &bufferMemory));
+            VK_CHECK(vkBindBufferMemory(device, buffer, bufferMemory, 0));
+
+        }
+
     } // utils namespace
 } // karhu namespace

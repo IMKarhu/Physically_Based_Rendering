@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Entity.hpp"
+
 #include <stdint.h>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -11,8 +13,9 @@ namespace karhu
         uint32_t currentFrameIndex;
         VkCommandBuffer commandBuffer;
         VkDescriptorSet globalSet;
-        VkDescriptorSet globalCubeSet;
-        // std::vector<kEntity>& entities;
+        /*VkDescriptorSet globalCubeSet;*/
+        Entity& camera;
+        std::vector<Entity>& entities;
         // std::vector<kEntity>& unrealEntities;
         // std::vector<kEntity>& cubemap;
         // std::vector<std::unique_ptr<kBuffer>>& cubeBuffers;

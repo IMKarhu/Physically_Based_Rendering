@@ -37,6 +37,16 @@ namespace karhu
         glfwWaitEvents();
     }
 
+    void Window::frameBufferSize(GLFWwindow* window, int& width, int& height)
+    {
+        glfwGetFramebufferSize(window, &width, &height);
+    }
+
+    void Window::setResized(bool resized)
+    {
+        m_resized = resized;
+    }
+
     const VkInstance& Window::getInstance()
     {
         return m_instance;
@@ -50,6 +60,11 @@ namespace karhu
     GLFWwindow* Window::getWindow()
     {
         return m_window;
+    }
+
+    bool Window::resized()
+    {
+        return m_resized;
     }
 
     void Window::initWindow()

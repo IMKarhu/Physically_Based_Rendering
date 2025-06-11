@@ -169,17 +169,17 @@ namespace karhu
             printf("metallicRoughness: %s \n", metallicRoughness.C_Str());
             printf("normal: %s \n", normalmap.C_Str());
             printf("ambient occlusion: %s \n", ao.C_Str());
-            NTexture base{ m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB};
-            NTexture normal{ m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
-            NTexture mr{ m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
-            NTexture amoc{ m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
-            NTexture em{ m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };
-            
-            m_Textures.push_back(base);
-            m_Textures.push_back(normal);
-            m_Textures.push_back(mr);
-            m_Textures.push_back(amoc);
-            m_Textures.push_back(em);
+            /*NTexture base{ m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB};*/
+            /*NTexture normal{ m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
+            /*NTexture mr{ m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
+            /*NTexture amoc{ m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
+            /*NTexture em{ m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
+
+            m_Textures.emplace_back(m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB);
+            m_Textures.emplace_back(m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            m_Textures.emplace_back(m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            m_Textures.emplace_back(m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            m_Textures.emplace_back(m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
         }
     }
     

@@ -2,13 +2,35 @@
 
 #include "Image.hpp"
 #include "FrameBuffer.hpp"
+#include "Camera.hpp"
+#include "keyboardMovement.hpp"
+#include "frame.hpp"
 
 #include <array>
+#include <chrono>
 
 namespace karhu
 {
     Application::Application()
     {
+        
+        printf("end of application constructor\n");
+    }
+    Application::~Application()
+    {
+        cleanUpBeforeReCreate();
+
+        for ( size_t i = 0; i < m_commandBuffer.getMaxFramesInFlight(); i++)
+        {
+            vkDestroySemaphore(m_device.lDevice(), m_semaphores.m_availableSemaphores[i], nullptr);
+            vkDestroySemaphore(m_device.lDevice(), m_semaphores.m_finishedSemaphores[i], nullptr);
+        }
+    }
+
+    void Application::run()
+    {
+
+        printf("start of run\n");
         std::vector<VkAttachmentDescription> attachments(2);
         // 0 is color 1 is depth
         attachments[0].format = m_swapChain.getSwapChainImageFormat();
@@ -52,8 +74,10 @@ namespace karhu
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
+        printf("before renderpass creation");
         RenderPass renderPass{ m_device, attachments, subPassDesc, dependency };
         m_renderPasses.emplace_back(std::move(renderPass));
+        printf("after renderpass creation");
 
 
         m_depthImage = Image(m_device.lDevice(),
@@ -65,13 +89,14 @@ namespace karhu
                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT),
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
-        m_depthImage.createImageView(m_depthImage.getImage(),
-                m_device.findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-                    VK_IMAGE_TILING_OPTIMAL,
-                    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT),
                 VK_IMAGE_ASPECT_DEPTH_BIT,
-                1);
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
+        /*m_depthImage.createImageView(m_depthImage.getImage(),*/
+        /*        m_device.findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },*/
+        /*            VK_IMAGE_TILING_OPTIMAL,*/
+        /*            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT),*/
+        /*        VK_IMAGE_ASPECT_DEPTH_BIT,*/
+        /*        1);*/
 
 
         karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers,
@@ -98,6 +123,8 @@ namespace karhu
         for (size_t i = 0; i < uboBuffers.size(); i++)
         {
             uboBuffers[i] = std::make_unique<Buffer>();
+            uboBuffers[i]->m_device = m_device.lDevice();
+            uboBuffers[i]->m_phyiscalDevice = m_device.pDevice();
             uboBuffers[i]->createBuffer(sizeof(UniformBufferObject),
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -121,36 +148,65 @@ namespace karhu
                 m_swapChain.getSwapChainExtent(),
                 m_layout,
                 m_renderPasses[0].getRenderPass());
-    }
-    Application::~Application()
-    {
-        for (auto frameBuffer : m_framebuffers)
-        {
-            vkDestroyFramebuffer(m_device.lDevice(), frameBuffer, nullptr);
-        }
 
-        for ( size_t i = 0; i < m_commandBuffer.getMaxFramesInFlight(); i++)
-        {
-            vkDestroySemaphore(m_device.lDevice(), m_semaphores.m_availableSemaphores[i], nullptr);
-            vkDestroySemaphore(m_device.lDevice(), m_semaphores.m_finishedSemaphores[i], nullptr);
-        }
+
+        update(uboBuffers);
     }
 
-    void Application::run()
+    void Application::update(std::vector<std::unique_ptr<Buffer>>& gBuffers)
     {
-        update();
-    }
+        auto cameraEntity = Entity::createEntity();
+        cameraEntity.setPosition({0.0f, 0.0f, -20.0});
+        Camera camera{};
+        keyboardMovement movement{};
+        auto currentTime = std::chrono::high_resolution_clock::now();
 
-    void Application::update()
-    {
         while(!m_window->windowShouldClose())
         {
             m_window->pollEvents();
             uint32_t currentFrame = 0;
             uint32_t imageIndex = 0;
+            auto startTime = std::chrono::high_resolution_clock::now();
+            float dt = std::chrono::duration<float, std::chrono::seconds::period>(startTime - currentTime).count();
+            currentTime = startTime;
+
+            camera.update(dt);
+            movement.update(m_window->getWindow(),
+                    dt,
+                    camera,
+                    m_swapChain.getSwapChainExtent().width,
+                    m_swapChain.getSwapChainExtent().height);
+            camera.setView(cameraEntity.getPosition(),
+                    cameraEntity.getRotation(),
+                    glm::vec3(0.0f, 1.0f, 0.0f));
+            camera.setPerspective(glm::radians(45.0f),
+                    m_swapChain.getSwapChainExtent().width / (float)m_swapChain.getSwapChainExtent().height,
+                    0.1f, 100.0f);
+
+
             begin(currentFrame, imageIndex);
+
+            Frame frameInfo
+            {
+                currentFrame,
+                m_commandBuffer.getCommandBuffer(currentFrame),
+                m_set,
+                cameraEntity,
+                m_entities[Disney]
+            };
+
+            m_disneySystem.renderEntities(frameInfo);
+
+            updateBuffers(gBuffers, camera);
+
+            for (auto& entity : m_entities[Disney])
+            {
+                entity.updateBuffer();
+            }
+
             end(currentFrame, imageIndex);
         }
+        VK_CHECK(vkDeviceWaitIdle(m_device.lDevice()));
     }
 
     void Application::begin(uint32_t currentFrameIndex, uint32_t imageIndex)
@@ -166,8 +222,9 @@ namespace karhu
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            /*reCreateSwapChain();*/
-            /*return 0;*/
+            printf("out of date");
+            reCreateSwapChain();
+            return;
         }
         else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
         {
@@ -246,16 +303,31 @@ namespace karhu
 
         VkResult res = vkQueuePresentKHR(m_device.pQueue(), &presentinfo);
 
-        /*if (res == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR || m_Window->getResize())*/
-        /*{*/
-        /*    m_Window->setResize(false);*/
-        /*    reCreateSwapChain();*/
-        /*}*/
-        /*else if (res != VK_SUCCESS)*/
-        /*{*/
-        /*    throw std::runtime_error("Failed to present swapchain image1\n");*/
-        /*}*/
+        if (res == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR || m_window->resized())
+        {
+            /*printf("out of date or suboptimal or window was resized\n");*/
+            m_window->setResized(false);
+            reCreateSwapChain();
+        }
+        else if (res != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to present swapchain image1\n");
+        }
         currentFrameIndex = (currentFrameIndex + 1) % m_commandBuffer.getMaxFramesInFlight();
+    }
+
+    void Application::updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera)
+    {
+        for( auto& buffer : gBuffers)
+        {
+            UniformBufferObject obj{};
+
+            obj.view = camera.getView();
+            obj.proj = camera.getProjection();
+            obj.proj[1][1] *= -1;
+
+            memcpy(buffer->m_bufferMapped, &obj, sizeof(obj));
+        }
     }
 
     void Application::createSyncObjects()
@@ -280,5 +352,65 @@ namespace karhu
                 throw std::runtime_error(" Failed to create Semaphores or fence!\n");
             }
         }
+    }
+
+    void Application::cleanUpBeforeReCreate()
+    {
+        /*vkDestroyImageView(m_device.lDevice(), m_depthImage.getImageView(), nullptr);*/
+        /*vkDestroyImage(m_device.lDevice(), m_depthImage.getImage(), nullptr);*/
+        for (auto frameBuffer : m_framebuffers)
+        {
+            vkDestroyFramebuffer(m_device.lDevice(), frameBuffer, nullptr);
+        }
+        for (auto view : m_swapChain.getSwapChainImageviews())
+        {
+            vkDestroyImageView(m_device.lDevice(), view, nullptr);
+        }
+        vkDestroySwapchainKHR(m_device.lDevice(), m_swapChain.getSwapchain(), nullptr);
+    }
+
+    void Application::reCreateSwapChain()
+    {
+        int width = 0;
+        int height = 0;
+        m_window->frameBufferSize(m_window->getWindow(), width, height);
+
+        while (width == 0 || height == 0)
+        {
+            if (m_window->windowShouldClose())
+            {
+                return;
+            }
+            m_window->frameBufferSize(m_window->getWindow(), width, height);
+            m_window->waitEvents();
+        }
+
+        VK_CHECK(vkDeviceWaitIdle(m_device.lDevice()));
+
+        cleanUpBeforeReCreate();
+
+        m_swapChain.createSwapChain();
+        m_swapChain.createSwapChainImageViews();
+
+        m_depthImage = Image(m_device.lDevice(),
+                m_device.pDevice(),
+                m_swapChain.getSwapChainExtent().width,
+                m_swapChain.getSwapChainExtent().height,
+                m_device.findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+                        VK_IMAGE_TILING_OPTIMAL,
+                        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT),
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_IMAGE_ASPECT_DEPTH_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
+
+        karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers,
+                m_swapChain.getSwapChainImageviews(),
+                m_renderPasses[0].getRenderPass(),
+                m_swapChain.getSwapChainExtent().width,
+                m_swapChain.getSwapChainExtent().height,
+                1,
+                false,
+                m_depthImage.getImageView());
     }
 } // namespace karhu

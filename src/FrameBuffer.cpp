@@ -22,7 +22,7 @@
             {
                 attachments.push_back(depthView);
             }
-            printf("size of attachments %zd \n", attachments.size());
+            /*printf("size of attachments %zd \n", attachments.size());*/
 
             VkFramebufferCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

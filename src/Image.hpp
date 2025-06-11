@@ -16,14 +16,15 @@ namespace karhu
                     VkFormat format,
                     VkImageTiling tiling,
                     VkImageUsageFlags usageFlags,
+                    VkImageAspectFlags aspectFlags,
                     VkMemoryPropertyFlags properties);
 
             ~Image();
 
-            // Image(const Image&) = delete;
-            // void operator=(const Image&) = delete;
-            // Image(Image&&) = delete;
-            // Image& operator=(Image&&) = delete;
+            /*Image(const Image&) = delete;*/
+            /*void operator=(const Image&) = delete;*/
+            Image(Image&&) noexcept;
+            Image& operator=(Image&&) noexcept;
 
             void createImageView(VkImage image,
                     VkFormat format,
@@ -33,8 +34,8 @@ namespace karhu
             const VkImage& getImage() const { return m_image; }
             const VkImageView& getImageView() const { return m_imageView; }
         private:
-            VkImage m_image;
-            VkImageView m_imageView;
+            VkImage m_image = VK_NULL_HANDLE;
+            VkImageView m_imageView = VK_NULL_HANDLE;
             VkDeviceMemory m_imageMemory;
 
             VkDevice m_device;

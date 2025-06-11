@@ -39,6 +39,7 @@ namespace karhu
             float m_Metalness = 0.0f;
             float m_Roughness = 0.0f;
             glm::vec3 m_LightPosition = glm::vec3(1.0f, 3.0f, 1.0f);
+            glm::vec4 m_lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         }vars;
 
         Device& m_device;

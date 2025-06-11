@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace karhu
 {
@@ -14,7 +15,23 @@ namespace karhu
     {
     public:
         Texture(Device& device);
-        virtual ~Texture();
+        virtual ~Texture() = 0;
+
+        //delete copy constructors
+        Texture(const Texture&) = delete;
+        Texture& operator=(const Texture&) = delete;
+
+        Texture(Texture&& other) noexcept
+            : m_image(std::move(other.m_image))
+            , m_device(other.m_device) {}
+        Texture& operator =(Texture&& other) noexcept
+        {
+            if (this != &other)
+            {
+                m_image = std::move(other.m_image);
+            }
+            return *this;
+        }
         
         // struct
         // {
@@ -36,10 +53,8 @@ namespace karhu
         const VkImage& getImage() const;
         const VkImageView& getImageView() const;
     protected:
-        Image m_image;
+        std::unique_ptr<Image> m_image;
     private:
-
-
         Device& m_device;
     };
 
@@ -47,7 +62,13 @@ namespace karhu
     {
         public:
             NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format);
-            ~NTexture();
+            ~NTexture() override;
+
+            NTexture(const NTexture&) = delete;
+            NTexture& operator=(const NTexture&) = delete;
+
+            NTexture(NTexture&&) noexcept;
+            NTexture& operator=(NTexture&&) noexcept;
 
             void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
             void copyBufferToImage(VkBuffer buffer);
@@ -67,7 +88,7 @@ namespace karhu
     {
         public:
             CubeTexture(Device& device, std::string filePath, VkFormat format);
-            ~CubeTexture();
+            ~CubeTexture() override;
         private:
             int m_width = 0;
             int m_height = 0;

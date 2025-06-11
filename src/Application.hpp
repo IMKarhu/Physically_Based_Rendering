@@ -9,6 +9,7 @@
 #include "Image.hpp"
 #include "Descriptors.hpp"
 #include "Entity.hpp"
+#include "Camera.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -29,11 +30,14 @@ namespace karhu
             };
 
             void run();
-            void update();
+            void update(std::vector<std::unique_ptr<Buffer>>& gBuffers);
             void begin(uint32_t currentFrameIndex, uint32_t imageIndex);
             void end(uint32_t currentFrameIndex, uint32_t imageIndex);
         private:
+            void updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera);
             void createSyncObjects();
+            void cleanUpBeforeReCreate();
+            void reCreateSwapChain();
         private:
             std::unique_ptr<Window> m_window = std::make_unique<Window>("Vulkan", 1080, 720);
             Device m_device{ m_window->getInstance(), m_window->getSurface() };

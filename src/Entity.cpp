@@ -12,7 +12,7 @@ namespace karhu
         ObjBuffer objBuffer{};
         objBuffer.model = getTransformMatrix();
         
-        memcpy(m_Buffer->m_BufferMapped, &objBuffer, sizeof(objBuffer));
+        memcpy(m_Buffer->m_bufferMapped, &objBuffer, sizeof(objBuffer));
     }
     void Entity::setModel(std::shared_ptr<Model> model)
     {

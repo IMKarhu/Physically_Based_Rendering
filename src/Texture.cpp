@@ -13,14 +13,20 @@ namespace karhu
     Texture::Texture(Device& device)
         : m_device(device) {}
 
+    Texture::~Texture() = default;
+
+    /*Texture::Texture(Texture&& other) noexcept*/
+    /*    : m_image(std::move(other.m_image)*/
+    /*    , m_device(other.m_device) {}*/
+
     const VkImage& Texture::getImage() const
     {
-        return m_image.getImage();
+        return m_image->getImage();
     }
 
     const VkImageView& Texture::getImageView() const
     {
-        return m_image.getImageView();
+        return m_image->getImageView();
     }
 
     NTexture::NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format)
@@ -28,7 +34,10 @@ namespace karhu
         , m_device(device)
         , m_commandBuffer(commandBuffer)
     {
-        stbi_uc* pixels = stbi_load(filePath.c_str(), &m_width, &m_height, &m_nrChannels, STBI_rgb_alpha);
+        std::string f1 = "../textures/";
+        std::string f2 = filePath;
+        std::string full = f1+f2;
+        stbi_uc* pixels = stbi_load(full.c_str(), &m_width, &m_height, &m_nrChannels, STBI_rgb_alpha);
         m_imageSize = m_width * m_height * 4;
 
         if (!pixels)
@@ -38,6 +47,13 @@ namespace karhu
 
         VkBuffer staging;
         VkDeviceMemory stagingMemory;
+        utils::createBuffers(m_device.lDevice(),
+                m_device.pDevice(),
+                m_imageSize,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                staging,
+                stagingMemory);
         // m_device.createBuffers(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging, stagingMemory);
     
         void* data;
@@ -47,13 +63,14 @@ namespace karhu
     
         stbi_image_free(pixels);
 
-        m_image = Image(m_device.lDevice(),
+        m_image = std::make_unique<Image>(m_device.lDevice(),
                 m_device.pDevice(),
                 m_width,
                 m_height,
                 format,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         transitionImageLayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -65,11 +82,35 @@ namespace karhu
         vkDestroyBuffer(m_device.lDevice(), staging, nullptr);
         vkFreeMemory(m_device.lDevice(), stagingMemory, nullptr);
         
-        m_image.createImageView(m_image.getImage(), format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        /*m_image.createImageView(m_image.getImage(), format, VK_IMAGE_ASPECT_COLOR_BIT, 1);*/
         createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);
     }
 
     NTexture::~NTexture() {}
+
+    NTexture::NTexture(NTexture&& other) noexcept
+        : Texture(std::move(other))
+        , m_width(other.m_width)
+        , m_height(other.m_height)
+        , m_nrChannels(other.m_nrChannels)
+        , m_imageSize(other.m_imageSize)
+        , m_sampler(other.m_sampler)
+        , m_device(other.m_device)
+        , m_commandBuffer(other.m_commandBuffer) {}
+
+    NTexture& NTexture::operator=(NTexture&& other) noexcept
+    {
+        if (this != &other)
+        {
+            Texture::operator=(std::move(other));
+            m_width = other.m_width;
+            m_height = other.m_height;
+            m_nrChannels = other.m_nrChannels;
+            m_imageSize = other.m_imageSize;
+            m_sampler = other.m_sampler;
+        }
+        return *this;
+    }
 
     void NTexture::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
     {
@@ -81,7 +122,7 @@ namespace karhu
         barrier.newLayout = newLayout;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = m_image.getImage();
+        barrier.image = m_image->getImage();
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
@@ -143,7 +184,7 @@ namespace karhu
         vkCmdCopyBufferToImage(
             commandBuffer,
             buffer,
-            m_image.getImage(),
+            m_image->getImage(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
             &region
@@ -184,7 +225,7 @@ namespace karhu
     {
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = m_image.getImageView();
+        imageInfo.imageView = m_image->getImageView();
         imageInfo.sampler = m_sampler;
         return imageInfo;
     }
