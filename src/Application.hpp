@@ -60,6 +60,7 @@ namespace karhu
             }m_semaphores;
             std::vector<VkFence> m_inFlightFences;
             uint32_t m_currentImage = 0;
+            uint32_t m_currentFrame = 0;
             float m_deltaTime = 0.0f;
 
             /*Camera descriptor.... global...*/

@@ -98,6 +98,10 @@ namespace karhu
         createInfo.image = image;
         createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         createInfo.format = format;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.subresourceRange.aspectMask = flags;
         createInfo.subresourceRange.baseMipLevel = 0;
         createInfo.subresourceRange.levelCount = 1;
@@ -121,17 +125,21 @@ namespace karhu
         }
         return formats[0];
     }
+
     VkPresentModeKHR SwapChain::chooseSwapChainPresentMode(const std::vector<VkPresentModeKHR>& presentModes)
     {
         for (auto& presentMode : std::as_const(presentModes))
         {
             if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
+                printf("using VK_PRESENT_MODE_MAILBOX_KHR\n");
                 return presentMode;
             }
         }
+        printf("using VK_PRESENT_MODE_FIFO_KHR\n");
         return VK_PRESENT_MODE_FIFO_KHR;
     }
+
     VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())

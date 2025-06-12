@@ -27,10 +27,10 @@ namespace karhu
                     VkSubpassDependency subPassDep);
 
             void beginRenderPass(VkFramebuffer& frameBuffer,
-                    VkExtent2D& extent,
+                    const VkExtent2D& extent,
                     std::vector<VkClearValue>& clearvalues,
-                    VkCommandBuffer& commandBuffer,
-                    VkSubpassContents& subPassContents);
+                    const VkCommandBuffer& commandBuffer,
+                    VkSubpassContents subPassContents);
 
             void endRenderPass(VkCommandBuffer& commandBuffer);
 

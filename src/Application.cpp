@@ -75,8 +75,8 @@ namespace karhu
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         printf("before renderpass creation");
-        RenderPass renderPass{ m_device, attachments, subPassDesc, dependency };
-        m_renderPasses.emplace_back(std::move(renderPass));
+        // RenderPass renderPass{ m_device, attachments, subPassDesc, dependency };
+        m_renderPasses.emplace_back(m_device, attachments, subPassDesc, dependency);
         printf("after renderpass creation");
 
 
@@ -164,7 +164,6 @@ namespace karhu
         while(!m_window->windowShouldClose())
         {
             m_window->pollEvents();
-            uint32_t currentFrame = 0;
             uint32_t imageIndex = 0;
             auto startTime = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float, std::chrono::seconds::period>(startTime - currentTime).count();
@@ -184,12 +183,12 @@ namespace karhu
                     0.1f, 100.0f);
 
 
-            begin(currentFrame, imageIndex);
+            begin(m_currentFrame, imageIndex);
 
             Frame frameInfo
             {
-                currentFrame,
-                m_commandBuffer.getCommandBuffer(currentFrame),
+                m_currentFrame,
+                m_commandBuffer.getCommandBuffer(m_currentFrame),
                 m_set,
                 cameraEntity,
                 m_entities[Disney]
@@ -204,21 +203,25 @@ namespace karhu
                 entity.updateBuffer();
             }
 
-            end(currentFrame, imageIndex);
+            end(m_currentFrame, imageIndex);
         }
         VK_CHECK(vkDeviceWaitIdle(m_device.lDevice()));
     }
 
     void Application::begin(uint32_t currentFrameIndex, uint32_t imageIndex)
     {
-        vkWaitForFences(m_device.lDevice(), 1, &m_inFlightFences[currentFrameIndex], VK_TRUE, UINT64_MAX);
+        static uint32_t imageIndexx = 0;
+        vkWaitForFences(m_device.lDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
         VkResult res = vkAcquireNextImageKHR(m_device.lDevice(),
                 m_swapChain.getSwapchain(),
                 UINT64_MAX,
-                m_semaphores.m_availableSemaphores[currentFrameIndex],
+                m_semaphores.m_availableSemaphores[m_currentFrame],
                 VK_NULL_HANDLE,
                 &imageIndex);
+
+        if (imageIndexx == 0)
+            std::cout << "res:" << res << std::endl;
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -231,26 +234,31 @@ namespace karhu
             throw std::runtime_error("Failed to get swapchain image!\n");
         }
 
-        vkResetFences(m_device.lDevice(), 1, &m_inFlightFences[currentFrameIndex]);
+        vkResetFences(m_device.lDevice(), 1, &m_inFlightFences[m_currentFrame]);
 
-        m_commandBuffer.resetCommandBuffer(currentFrameIndex);
+        m_commandBuffer.resetCommandBuffer(m_currentFrame);
 
-        m_commandBuffer.beginCommand(currentFrameIndex);
+        m_commandBuffer.beginCommand(m_currentFrame);
 
-        VkRenderPassBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        beginInfo.renderPass = m_renderPasses[0].getRenderPass();
-        beginInfo.framebuffer = m_framebuffers[imageIndex];
-        beginInfo.renderArea.offset = { 0,0 };
-        beginInfo.renderArea.extent = m_swapChain.getSwapChainExtent();
+        // VkRenderPassBeginInfo beginInfo{};
+        // beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        // beginInfo.renderPass = m_renderPasses[0].getRenderPass();
+        // beginInfo.framebuffer = m_framebuffers[imageIndex];
+        // beginInfo.renderArea.offset = { 0,0 };
+        // beginInfo.renderArea.extent = m_swapChain.getSwapChainExtent();
 
-        std::array<VkClearValue, 2> clearValues = {};
-        clearValues[0].color = { {0.0f ,0.0f ,0.0f ,1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
-        beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        beginInfo.pClearValues = clearValues.data();
+        std::vector<VkClearValue> clearValues;
+        clearValues.resize(2);
+        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clearValues[1].depthStencil = {1.0f, 0};
 
-        vkCmdBeginRenderPass(m_commandBuffer.getCommandBuffer(currentFrameIndex), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            // .color = { {0.0f ,0.0f ,0.0f ,1.0f} },
+            // .depthStencil = { 1.0f, 0 }
+        // beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        // beginInfo.pClearValues = clearValues.data();
+
+        // vkCmdBeginRenderPass(m_commandBuffer.getCommandBuffer(m_currentFrame), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        m_renderPasses[0].beginRenderPass(m_framebuffers[imageIndex], m_swapChain.getSwapChainExtent(), clearValues, m_commandBuffer.getCommandBuffer(m_currentFrame), VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewPort{};
         viewPort.x = 0.0f;
@@ -260,36 +268,38 @@ namespace karhu
         viewPort.minDepth = 0.0f;
         viewPort.maxDepth = 1.0f;
 
-        vkCmdSetViewport(m_commandBuffer.getCommandBuffer(currentFrameIndex), 0, 1, &viewPort);
+        vkCmdSetViewport(m_commandBuffer.getCommandBuffer(m_currentFrame), 0, 1, &viewPort);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
         scissor.extent = m_swapChain.getSwapChainExtent();
 
-        vkCmdSetScissor(m_commandBuffer.getCommandBuffer(currentFrameIndex), 0, 1, &scissor);
+        vkCmdSetScissor(m_commandBuffer.getCommandBuffer(m_currentFrame), 0, 1, &scissor);
+
+        imageIndexx++;
     }
 
     void Application::end(uint32_t currentFrameIndex, uint32_t imageIndex)
     {
-        vkCmdEndRenderPass(m_commandBuffer.getCommandBuffer(currentFrameIndex));
+        vkCmdEndRenderPass(m_commandBuffer.getCommandBuffer(m_currentFrame));
 
-        m_commandBuffer.endCommandBuffer(currentFrameIndex);
+        m_commandBuffer.endCommandBuffer(m_currentFrame);
 
         VkSubmitInfo submitinfo{};
         submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = { m_semaphores.m_availableSemaphores[currentFrameIndex] };
+        VkSemaphore waitSemaphores[] = { m_semaphores.m_availableSemaphores[m_currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitinfo.waitSemaphoreCount = 1;
         submitinfo.pWaitSemaphores = waitSemaphores;
         submitinfo.pWaitDstStageMask = waitStages;
         submitinfo.commandBufferCount = 1;
-        submitinfo.pCommandBuffers = &m_commandBuffer.getCommandBuffer(currentFrameIndex);
-        VkSemaphore signalSemaphores[] = { m_semaphores.m_finishedSemaphores[currentFrameIndex] };
+        submitinfo.pCommandBuffers = &m_commandBuffer.getCommandBuffer(m_currentFrame);
+        VkSemaphore signalSemaphores[] = { m_semaphores.m_finishedSemaphores[m_currentFrame] };
         submitinfo.signalSemaphoreCount = 1;
         submitinfo.pSignalSemaphores = signalSemaphores;
 
-        VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &submitinfo, m_inFlightFences[currentFrameIndex]));
+        VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &submitinfo, m_inFlightFences[m_currentFrame]));
 
         VkPresentInfoKHR presentinfo{};
         presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -303,9 +313,10 @@ namespace karhu
 
         VkResult res = vkQueuePresentKHR(m_device.pQueue(), &presentinfo);
 
-        if (res == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR || m_window->resized())
+        if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || m_window->resized())
         {
-            /*printf("out of date or suboptimal or window was resized\n");*/
+            // printf("out of date or suboptimal or window was resized\n");
+            std::cout << "res:" << res << std::endl;
             m_window->setResized(false);
             reCreateSwapChain();
         }
@@ -313,7 +324,7 @@ namespace karhu
         {
             throw std::runtime_error("Failed to present swapchain image1\n");
         }
-        currentFrameIndex = (currentFrameIndex + 1) % m_commandBuffer.getMaxFramesInFlight();
+        m_currentFrame = (m_currentFrame + 1) % m_commandBuffer.getMaxFramesInFlight();
     }
 
     void Application::updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera)
@@ -388,6 +399,9 @@ namespace karhu
         VK_CHECK(vkDeviceWaitIdle(m_device.lDevice()));
 
         cleanUpBeforeReCreate();
+
+        printf("size of framebuffers: %lld\n", m_framebuffers.size());
+        printf("size of imageviews %lld\n", m_swapChain.getSwapChainImageviews().size());
 
         m_swapChain.createSwapChain();
         m_swapChain.createSwapChainImageViews();

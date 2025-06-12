@@ -132,17 +132,17 @@ namespace karhu
             const aiMaterial* material = scene->mMaterials[i];
             
             aiString Matname = material->GetName();
-            printf("name of material: %s\n", Matname.C_Str());
+            // printf("name of material: %s\n", Matname.C_Str());
             
             auto numProps = material->mNumProperties;
-            printf("number of properties: %d\n", numProps);
+            // printf("number of properties: %d\n", numProps);
             for (auto j = 0; j < material->mNumProperties; j++)
             {
                 aiMaterialProperty* prop = material->mProperties[j];
                 aiString key = prop->mKey;
                 auto sema = prop->mSemantic;
-                printf("key %s\n", key.C_Str());
-                printf("semantic %d\n", sema);
+                // printf("key %s\n", key.C_Str());
+                // printf("semantic %d\n", sema);
             }
         }
         if (mesh->mMaterialIndex >= 0)
@@ -153,8 +153,8 @@ namespace karhu
             aiTextureType type2 = aiTextureType_AMBIENT_OCCLUSION;
             auto i = material->GetTextureCount(type);
             auto j = material->GetTextureCount(type2);
-            printf("count of normal textures: %f", i);
-            printf("count of ao textures: %f", j);
+            // printf("count of normal textures: %f", i);
+            // printf("count of ao textures: %f", j);
             material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE, &baseColor);
             material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &metallicRoughness);
             material->GetTexture(aiTextureType_NORMALS, 0, &normalmap);
@@ -164,7 +164,7 @@ namespace karhu
             float normalScale = 1.0f;
             //material->Get(AI_MATKEY_GLTF_NORMALS_SCALE)
             //material->GetTexture(AI_MATKEY_TEXTURE_NORMALS, &normal)
-            printf("helo\n");
+            // printf("helo\n");
             printf("BaseColor: %s \n", baseColor.C_Str());
             printf("metallicRoughness: %s \n", metallicRoughness.C_Str());
             printf("normal: %s \n", normalmap.C_Str());

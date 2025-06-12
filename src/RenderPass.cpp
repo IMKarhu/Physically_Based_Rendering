@@ -56,10 +56,10 @@ namespace karhu
     }
 
     void RenderPass::beginRenderPass(VkFramebuffer& frameBuffer,
-                    VkExtent2D& extent,
+                    const VkExtent2D& extent,
                     std::vector<VkClearValue>& clearvalues,
-                    VkCommandBuffer& commandBuffer,
-                    VkSubpassContents& subPassContents)
+                    const VkCommandBuffer& commandBuffer,
+                    VkSubpassContents subPassContents)
     {
         VkRenderPassBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

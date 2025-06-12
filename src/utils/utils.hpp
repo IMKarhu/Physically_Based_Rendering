@@ -24,7 +24,8 @@ namespace karhu
         };
 
         const std::vector<const char*> deviceExtensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
         };
 
         inline bool checkValidationSupport()
