@@ -6,10 +6,10 @@ namespace karhu
     RenderPass::RenderPass(Device& device,
             std::vector<VkAttachmentDescription>& attachments,
             VkSubpassDescription subPassDesc,
-            VkSubpassDependency subPassDep)
+            std::vector<VkSubpassDependency>& dependencies)
         : m_device(device)
     {
-        createRenderPass(attachments, subPassDesc, subPassDep);
+        createRenderPass(attachments, subPassDesc, dependencies);
     }
 
     RenderPass::~RenderPass()
@@ -41,7 +41,7 @@ namespace karhu
 
     void RenderPass::createRenderPass(std::vector<VkAttachmentDescription>& attachments,
             VkSubpassDescription subPassDesc,
-            VkSubpassDependency subPassDep)
+            std::vector<VkSubpassDependency> dependencies)
     {
         VkRenderPassCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -49,8 +49,8 @@ namespace karhu
         createInfo.pAttachments = attachments.data();
         createInfo.subpassCount = 1;
         createInfo.pSubpasses = &subPassDesc;
-        createInfo.dependencyCount = 1;
-        createInfo.pDependencies = &subPassDep;
+        createInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+        createInfo.pDependencies = dependencies.data();
 
         VK_CHECK(vkCreateRenderPass(m_device.lDevice(), &createInfo, nullptr, &m_renderPass));
     }

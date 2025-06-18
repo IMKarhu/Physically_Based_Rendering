@@ -69,14 +69,24 @@ namespace karhu
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        VkSubpassDependency depDependency{};
+        depDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        depDependency.dstSubpass = 0;
+        depDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        depDependency.srcAccessMask = 0;
+        depDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        depDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        std::vector<VkSubpassDependency> dependencies = { dependency, depDependency };
 
         printf("before renderpass creation");
         // RenderPass renderPass{ m_device, attachments, subPassDesc, dependency };
-        m_renderPasses.emplace_back(m_device, attachments, subPassDesc, dependency);
+        m_renderPasses.emplace_back(m_device, attachments, subPassDesc, dependencies);
         printf("after renderpass creation");
 
 
@@ -164,7 +174,7 @@ namespace karhu
         while(!m_window->windowShouldClose())
         {
             m_window->pollEvents();
-            uint32_t imageIndex = 0;
+            /*uint32_t imageIndex = 0;*/
             auto startTime = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float, std::chrono::seconds::period>(startTime - currentTime).count();
             currentTime = startTime;
@@ -183,7 +193,7 @@ namespace karhu
                     0.1f, 100.0f);
 
 
-            begin(m_currentFrame, imageIndex);
+            uint32_t imageIndex = begin(m_currentFrame);
 
             Frame frameInfo
             {
@@ -208,10 +218,10 @@ namespace karhu
         VK_CHECK(vkDeviceWaitIdle(m_device.lDevice()));
     }
 
-    void Application::begin(uint32_t currentFrameIndex, uint32_t imageIndex)
+    uint32_t Application::begin(uint32_t currentFrameIndex)
     {
-        static uint32_t imageIndexx = 0;
-        vkWaitForFences(m_device.lDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+        uint32_t imageIndex;
+        VK_CHECK(vkWaitForFences(m_device.lDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX));
 
         VkResult res = vkAcquireNextImageKHR(m_device.lDevice(),
                 m_swapChain.getSwapchain(),
@@ -220,14 +230,11 @@ namespace karhu
                 VK_NULL_HANDLE,
                 &imageIndex);
 
-        if (imageIndexx == 0)
-            std::cout << "res:" << res << std::endl;
-
         if (res == VK_ERROR_OUT_OF_DATE_KHR)
         {
             printf("out of date");
             reCreateSwapChain();
-            return;
+            return 0;
         }
         else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
         {
@@ -240,25 +247,16 @@ namespace karhu
 
         m_commandBuffer.beginCommand(m_currentFrame);
 
-        // VkRenderPassBeginInfo beginInfo{};
-        // beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        // beginInfo.renderPass = m_renderPasses[0].getRenderPass();
-        // beginInfo.framebuffer = m_framebuffers[imageIndex];
-        // beginInfo.renderArea.offset = { 0,0 };
-        // beginInfo.renderArea.extent = m_swapChain.getSwapChainExtent();
-
         std::vector<VkClearValue> clearValues;
         clearValues.resize(2);
         clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
 
-            // .color = { {0.0f ,0.0f ,0.0f ,1.0f} },
-            // .depthStencil = { 1.0f, 0 }
-        // beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        // beginInfo.pClearValues = clearValues.data();
-
-        // vkCmdBeginRenderPass(m_commandBuffer.getCommandBuffer(m_currentFrame), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-        m_renderPasses[0].beginRenderPass(m_framebuffers[imageIndex], m_swapChain.getSwapChainExtent(), clearValues, m_commandBuffer.getCommandBuffer(m_currentFrame), VK_SUBPASS_CONTENTS_INLINE);
+        m_renderPasses[0].beginRenderPass(m_framebuffers[imageIndex],
+                m_swapChain.getSwapChainExtent(),
+                clearValues,
+                m_commandBuffer.getCommandBuffer(m_currentFrame),
+                VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewPort{};
         viewPort.x = 0.0f;
@@ -276,7 +274,7 @@ namespace karhu
 
         vkCmdSetScissor(m_commandBuffer.getCommandBuffer(m_currentFrame), 0, 1, &scissor);
 
-        imageIndexx++;
+        return imageIndex;
     }
 
     void Application::end(uint32_t currentFrameIndex, uint32_t imageIndex)

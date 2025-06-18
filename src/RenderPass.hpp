@@ -13,7 +13,7 @@ namespace karhu
             RenderPass(Device& device,
                     std::vector<VkAttachmentDescription>& attachments,
                     VkSubpassDescription subPassDesc,
-                    VkSubpassDependency subPassDep);
+                    std::vector<VkSubpassDependency>& dependencies);
 
             ~RenderPass();
 
@@ -24,7 +24,7 @@ namespace karhu
 
             void createRenderPass(std::vector<VkAttachmentDescription>& attachments,
                     VkSubpassDescription subPassDesc,
-                    VkSubpassDependency subPassDep);
+                    std::vector<VkSubpassDependency> dependencies);
 
             void beginRenderPass(VkFramebuffer& frameBuffer,
                     const VkExtent2D& extent,
