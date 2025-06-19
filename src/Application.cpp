@@ -78,7 +78,7 @@ namespace karhu
         depDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         depDependency.dstSubpass = 0;
         depDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        depDependency.srcAccessMask = 0;
+        depDependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         depDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         depDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
@@ -101,12 +101,6 @@ namespace karhu
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VK_IMAGE_ASPECT_DEPTH_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
-        /*m_depthImage.createImageView(m_depthImage.getImage(),*/
-        /*        m_device.findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },*/
-        /*            VK_IMAGE_TILING_OPTIMAL,*/
-        /*            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT),*/
-        /*        VK_IMAGE_ASPECT_DEPTH_BIT,*/
-        /*        1);*/
 
 
         karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers,
@@ -174,7 +168,6 @@ namespace karhu
         while(!m_window->windowShouldClose())
         {
             m_window->pollEvents();
-            /*uint32_t imageIndex = 0;*/
             auto startTime = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float, std::chrono::seconds::period>(startTime - currentTime).count();
             currentTime = startTime;
@@ -206,6 +199,9 @@ namespace karhu
 
             m_disneySystem.renderEntities(frameInfo);
 
+
+            end(m_currentFrame, imageIndex);
+
             updateBuffers(gBuffers, camera);
 
             for (auto& entity : m_entities[Disney])
@@ -213,7 +209,6 @@ namespace karhu
                 entity.updateBuffer();
             }
 
-            end(m_currentFrame, imageIndex);
         }
         VK_CHECK(vkDeviceWaitIdle(m_device.lDevice()));
     }
@@ -232,7 +227,7 @@ namespace karhu
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            printf("out of date");
+            printf("swapchain out of date\n");
             reCreateSwapChain();
             return 0;
         }
