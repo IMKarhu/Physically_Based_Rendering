@@ -5,6 +5,7 @@
 #include "CommandBuffer.hpp"
 #include "SwapChain.hpp"
 #include "pipelinesystems/DisneySystem.hpp"
+#include "pipelinesystems/CubeMapSystem.hpp"
 #include "RenderPass.hpp"
 #include "Image.hpp"
 #include "Descriptors.hpp"
@@ -30,7 +31,7 @@ namespace karhu
             };
 
             void run();
-            void update(std::vector<std::unique_ptr<Buffer>>& gBuffers);
+            void update(std::vector<std::unique_ptr<Buffer>>& gBuffers, Entity& entity);
             uint32_t begin(uint32_t currentFrameIndex);
             void end(uint32_t currentFrameIndex, uint32_t imageIndex);
         private:
@@ -44,6 +45,7 @@ namespace karhu
             CommandBuffer m_commandBuffer{ m_device };
             SwapChain m_swapChain{ m_device, m_window };
             DisneySystem m_disneySystem{ m_device };
+            CubeMapSystem m_cubeMapSystem{ m_device };
             Descriptors m_builder{ m_device };
             std::vector<RenderPass> m_renderPasses;
             Image m_depthImage;

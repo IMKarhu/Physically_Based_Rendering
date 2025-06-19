@@ -115,6 +115,7 @@ namespace karhu
         createSyncObjects();
 
         auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
+        auto cube = std::make_shared<Model>(m_device, m_commandBuffer, CUBEMAPVERTS, CUBEMAPINDICES, true);
 
         /*Probably shouldn't be here but it'll work for now..*/
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
@@ -147,17 +148,27 @@ namespace karhu
 
         m_entities[Disney].push_back(std::move(ent1));
 
+        auto cubeEnt = Entity::createEntity();
+        cubeEnt.setModel(cube);
+        cubeEnt.setPosition({0.0f, 0.0f, 0.0f});
+
         m_disneySystem.createDescriptors(m_entities[Disney]);
         m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
                 m_swapChain.getSwapChainExtent(),
                 m_layout,
                 m_renderPasses[0].getRenderPass());
 
+        m_cubeMapSystem.createDescriptors(cubeEnt);
+        m_cubeMapSystem.createGraphicsPipeline(m_device.lDevice(),
+                m_swapChain.getSwapChainExtent(),
+                m_layout,
+                m_renderPasses[0].getRenderPass());
 
-        update(uboBuffers);
+
+        update(uboBuffers, cubeEnt);
     }
 
-    void Application::update(std::vector<std::unique_ptr<Buffer>>& gBuffers)
+    void Application::update(std::vector<std::unique_ptr<Buffer>>& gBuffers, Entity& entity)
     {
         auto cameraEntity = Entity::createEntity();
         cameraEntity.setPosition({0.0f, 0.0f, -20.0});
@@ -196,6 +207,8 @@ namespace karhu
                 cameraEntity,
                 m_entities[Disney]
             };
+
+            m_cubeMapSystem.renderSkyBox(frameInfo, entity);
 
             m_disneySystem.renderEntities(frameInfo);
 

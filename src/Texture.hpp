@@ -61,7 +61,7 @@ namespace karhu
     class NTexture : public Texture
     {
         public:
-            NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format);
+            NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format, bool isCubeMap = false);
             ~NTexture() override;
 
             NTexture(const NTexture&) = delete;
@@ -70,8 +70,8 @@ namespace karhu
             NTexture(NTexture&&) noexcept;
             NTexture& operator=(NTexture&&) noexcept;
 
-            void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-            void copyBufferToImage(VkBuffer buffer);
+            void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, bool isCubeMap = false);
+            void copyBufferToImage(VkBuffer buffer, bool isCubeMap = false);
             void createSampler(VkSamplerAddressMode addressMode);
             VkDescriptorImageInfo getImageInfo();
         private:

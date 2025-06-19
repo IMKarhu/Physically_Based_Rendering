@@ -29,7 +29,7 @@ namespace karhu
         return m_image->getImageView();
     }
 
-    NTexture::NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format)
+    NTexture::NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format, bool isCubeMap)
         : Texture(device)
         , m_device(device)
         , m_commandBuffer(commandBuffer)
@@ -37,13 +37,28 @@ namespace karhu
         std::string f1 = "../textures/";
         std::string f2 = filePath;
         std::string full = f1+f2;
-        stbi_uc* pixels = stbi_load(full.c_str(), &m_width, &m_height, &m_nrChannels, STBI_rgb_alpha);
-        m_imageSize = m_width * m_height * 4;
-
-        if (!pixels)
+        stbi_uc* pixels;
+        float* cubeData;
+        if (isCubeMap)
         {
-            throw std::runtime_error("Unable to load texture!\n");
+            cubeData = stbi_loadf(full.c_str(), &m_width, &m_height, &m_nrChannels, 0);
+            m_imageSize = m_width * m_height * sizeof(float) * 3; //rgb float32
+            
+            if (!cubeData)
+            {
+                throw std::runtime_error("Unable to load HDR image!\n");
+            }
         }
+        else {
+            pixels = stbi_load(full.c_str(), &m_width, &m_height, &m_nrChannels, STBI_rgb_alpha);
+            m_imageSize = m_width * m_height * 4;
+
+            if (!pixels)
+            {
+                throw std::runtime_error("Unable to load texture!\n");
+            }
+        }
+        
 
         VkBuffer staging;
         VkDeviceMemory stagingMemory;
@@ -54,7 +69,6 @@ namespace karhu
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 staging,
                 stagingMemory);
-        // m_device.createBuffers(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging, stagingMemory);
     
         void* data;
         vkMapMemory(m_device.lDevice(), stagingMemory, 0, m_imageSize, 0, &data);
@@ -71,13 +85,20 @@ namespace karhu
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                isCubeMap);
 
-        transitionImageLayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        transitionImageLayout(format,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                isCubeMap);
 
         copyBufferToImage(staging);
         
-        transitionImageLayout(format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transitionImageLayout(format,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                isCubeMap);
         
         vkDestroyBuffer(m_device.lDevice(), staging, nullptr);
         vkFreeMemory(m_device.lDevice(), stagingMemory, nullptr);
@@ -112,7 +133,7 @@ namespace karhu
         return *this;
     }
 
-    void NTexture::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+    void NTexture::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, bool isCubeMap)
     {
         VkCommandBuffer commandBuffer = m_commandBuffer.recordSingleCommand();
 
@@ -127,7 +148,14 @@ namespace karhu
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
+        if (isCubeMap)
+        {
+            barrier.subresourceRange.layerCount = 6;
+        }
+        else
+        {
+            barrier.subresourceRange.layerCount = 1;
+        }
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
 
@@ -160,7 +188,7 @@ namespace karhu
         m_commandBuffer.endSingleCommand(commandBuffer);
     }
 
-    void NTexture::copyBufferToImage(VkBuffer buffer)
+    void NTexture::copyBufferToImage(VkBuffer buffer, bool isCubeMap)
     {
         VkCommandBuffer commandBuffer = m_commandBuffer.recordSingleCommand();
 
@@ -172,7 +200,14 @@ namespace karhu
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
+        if (isCubeMap)
+        {
+            region.imageSubresource.layerCount = 6;
+        }
+        else
+        {
         region.imageSubresource.layerCount = 1;
+        }
 
         region.imageOffset = { 0, 0, 0 };
         region.imageExtent = {

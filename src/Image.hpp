@@ -17,7 +17,8 @@ namespace karhu
                     VkImageTiling tiling,
                     VkImageUsageFlags usageFlags,
                     VkImageAspectFlags aspectFlags,
-                    VkMemoryPropertyFlags properties);
+                    VkMemoryPropertyFlags properties,
+                    bool isCubeMap = false);
 
             ~Image();
 
@@ -29,7 +30,7 @@ namespace karhu
             void createImageView(VkImage image,
                     VkFormat format,
                     VkImageAspectFlags flags,
-                    uint32_t layerCount);
+                    bool isCubeMap = false);
 
             const VkImage& getImage() const { return m_image; }
             const VkImageView& getImageView() const { return m_imageView; }

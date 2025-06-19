@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
+#include <vector>
 
 
 namespace karhu
@@ -50,6 +51,49 @@ namespace karhu
             return attributeDescription;
         }
     };
+
+    struct CubeVertex
+    {
+        glm::vec3 pos;
+
+        static VkVertexInputBindingDescription getBindingDescription()
+        {
+            VkVertexInputBindingDescription description{};
+            description.binding = 0;
+            description.stride = sizeof(Vertex);
+            description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            return description;
+        }
+        static VkVertexInputAttributeDescription getAttributeDescription()
+        {
+            VkVertexInputAttributeDescription attributeDescription{};
+            attributeDescription.binding = 0;
+            attributeDescription.location = 0;
+            attributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescription.offset = offsetof(Vertex, pos);
+
+            return attributeDescription;
+        }
+    };
+
+    const std::vector<Vertex> CUBEMAPVERTS = {
+            { { -1.0f, -1.0f, -1.0f } }, // Vertex 0
+            { { -1.0f, -1.0f,  1.0f } }, // Vertex 1
+            { { 1.0f, -1.0f,  1.0f } }, // Vertex 2
+            { { 1.0f, -1.0f, -1.0f } }, // Vertex 3
+            { { -1.0f, 1.0f, -1.0f } }, // Vertex 4
+            { { -1.0f,  1.0f, 1.0f } }, // Vertex 5
+            { { 1.0f,  1.0f,  1.0f } }, // Vertex 6
+            { { 1.0f,  1.0f, -1.0f } }  // Vertex 7
+        };
+    const std::vector<uint32_t> CUBEMAPINDICES = {
+             0, 1, 2, 2, 3, 0, // Bottom face
+             4, 5, 6, 6, 7, 4, // Top face
+             0, 1, 5, 5, 4, 0, // Front face
+             1, 2, 6, 6, 5, 1, // Right face
+             2, 3, 7, 7, 6, 2, // Back face
+             3, 0, 4, 4, 7, 3  // Left face
+        };
 
     struct UniformBufferObject
     {

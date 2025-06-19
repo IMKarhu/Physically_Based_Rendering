@@ -14,7 +14,8 @@ namespace karhu
             VkImageTiling tiling,
             VkImageUsageFlags usageFlags,
             VkImageAspectFlags aspectFlags,
-            VkMemoryPropertyFlags properties)
+            VkMemoryPropertyFlags properties,
+            bool isCubeMap)
         : m_device(device)
     {
         VkImageCreateInfo imageInfo{};
@@ -24,7 +25,16 @@ namespace karhu
         imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
+        if (isCubeMap)
+        {
+            imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+            imageInfo.arrayLayers = 6;
+        }
+        else
+        {
+            imageInfo.flags = 0;
+            imageInfo.arrayLayers = 1;
+        }
         imageInfo.format = format;
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -48,7 +58,7 @@ namespace karhu
 
         vkBindImageMemory(m_device, m_image, m_imageMemory, 0);
 
-        createImageView(m_image, format, aspectFlags, 1);
+        createImageView(m_image, format, aspectFlags, isCubeMap);
     }
 
     Image::Image(Image&& other) noexcept
@@ -98,18 +108,27 @@ namespace karhu
     void Image::createImageView(VkImage image,
             VkFormat format,
             VkImageAspectFlags flags,
-            uint32_t layerCount)
+            bool isCubeMap)
     {
         VkImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         createInfo.image = image;
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         createInfo.format = format;
         createInfo.subresourceRange.aspectMask = flags;
         createInfo.subresourceRange.baseMipLevel = 0;
         createInfo.subresourceRange.levelCount = 1;
         createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = layerCount;
+        if (isCubeMap)
+        {
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        createInfo.subresourceRange.layerCount = 6;
+        }
+        else
+        {
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.subresourceRange.layerCount = 1;
+        }
+
 
         VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView));
     }
