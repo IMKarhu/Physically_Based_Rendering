@@ -11,6 +11,7 @@
 #include "Descriptors.hpp"
 #include "Entity.hpp"
 #include "Camera.hpp"
+#include "FrameBuffer.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -39,6 +40,7 @@ namespace karhu
             void createSyncObjects();
             void cleanUpBeforeReCreate();
             void reCreateSwapChain();
+            void createRenderPassForCubeMap();
         private:
             std::unique_ptr<Window> m_window = std::make_unique<Window>("Vulkan", 1080, 720);
             Device m_device{ m_window->getInstance(), m_window->getSurface() };
@@ -50,7 +52,7 @@ namespace karhu
             std::vector<RenderPass> m_renderPasses;
             Image m_depthImage;
 
-            std::vector<VkFramebuffer> m_framebuffers;
+            std::unordered_map<FramebufferType, std::vector<VkFramebuffer>> m_framebuffers;
 
             std::unordered_map<enityType, std::vector<Entity>> m_entities;
 

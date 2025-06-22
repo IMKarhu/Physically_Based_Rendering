@@ -28,6 +28,7 @@ namespace karhu
                     VkDescriptorSetLayout layout,
                     VkRenderPass renderPass);
             void renderSkyBox(Frame& frameInfo, Entity& entity);
+            void updateCubeUbo();
 
         private:
             CubePipelineBuilder m_pipelineBuilder;
@@ -36,6 +37,7 @@ namespace karhu
             VkDescriptorPool m_pool;
             VkDescriptorSetLayout m_layout;
             std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+            std::vector<glm::mat4> m_matrices;
 
 
             Device& m_device;

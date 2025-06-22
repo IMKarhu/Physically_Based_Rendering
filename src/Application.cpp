@@ -1,7 +1,6 @@
 #include "Application.hpp"
 
 #include "Image.hpp"
-#include "FrameBuffer.hpp"
 #include "Camera.hpp"
 #include "keyboardMovement.hpp"
 #include "frame.hpp"
@@ -89,6 +88,8 @@ namespace karhu
         m_renderPasses.emplace_back(m_device, attachments, subPassDesc, dependencies);
         printf("after renderpass creation");
 
+        createRenderPassForCubeMap();
+
 
         m_depthImage = Image(m_device.lDevice(),
                 m_device.pDevice(),
@@ -103,7 +104,7 @@ namespace karhu
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
 
-        karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers,
+        karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers[Normal],
                 m_swapChain.getSwapChainImageviews(),
                 m_renderPasses[0].getRenderPass(),
                 m_swapChain.getSwapChainExtent().width,
@@ -112,10 +113,20 @@ namespace karhu
                 false,
                 m_depthImage.getImageView());
 
+
         createSyncObjects();
 
         auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
         auto cube = std::make_shared<Model>(m_device, m_commandBuffer, CUBEMAPVERTS, CUBEMAPINDICES, true);
+
+        karhu::createFrameBuffer(m_device.lDevice(),
+                m_framebuffers[FramebufferType::Cube],
+                cube->m_Textures[0].getCubeImageViewsPerFace(),
+                m_renderPasses[1].getRenderPass(),
+                512,
+                512,
+                1,
+                true);
 
         /*Probably shouldn't be here but it'll work for now..*/
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
@@ -260,7 +271,7 @@ namespace karhu
         clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
 
-        m_renderPasses[0].beginRenderPass(m_framebuffers[imageIndex],
+        m_renderPasses[0].beginRenderPass(m_framebuffers[FramebufferType::Normal][imageIndex],
                 m_swapChain.getSwapChainExtent(),
                 clearValues,
                 m_commandBuffer.getCommandBuffer(m_currentFrame),
@@ -375,7 +386,7 @@ namespace karhu
     {
         /*vkDestroyImageView(m_device.lDevice(), m_depthImage.getImageView(), nullptr);*/
         /*vkDestroyImage(m_device.lDevice(), m_depthImage.getImage(), nullptr);*/
-        for (auto frameBuffer : m_framebuffers)
+        for (auto frameBuffer : m_framebuffers[FramebufferType::Normal])
         {
             vkDestroyFramebuffer(m_device.lDevice(), frameBuffer, nullptr);
         }
@@ -424,7 +435,7 @@ namespace karhu
                 VK_IMAGE_ASPECT_DEPTH_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
-        karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers,
+        karhu::createFrameBuffer(m_device.lDevice(), m_framebuffers[FramebufferType::Normal],
                 m_swapChain.getSwapChainImageviews(),
                 m_renderPasses[0].getRenderPass(),
                 m_swapChain.getSwapChainExtent().width,
@@ -432,5 +443,37 @@ namespace karhu
                 1,
                 false,
                 m_depthImage.getImageView());
+    }
+
+    void Application::createRenderPassForCubeMap()
+    {
+        std::vector<VkAttachmentDescription> colorAttachment(1);
+        colorAttachment[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        colorAttachment[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkAttachmentReference attachmentRef{};
+        attachmentRef.attachment = 0;
+        attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &attachmentRef;
+
+        std::vector<VkSubpassDependency> dependency(1);
+        dependency[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency[0].dstSubpass = 0;
+        dependency[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency[0].srcAccessMask = 0;
+        dependency[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        m_renderPasses.emplace_back(m_device, colorAttachment, subpass, dependency);
     }
 } // namespace karhu

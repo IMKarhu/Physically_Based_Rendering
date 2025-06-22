@@ -29,6 +29,11 @@ namespace karhu
         return m_image->getImageView();
     }
 
+    const std::vector<VkImageView>& Texture::getCubeImageViewsPerFace() const
+    {
+        return m_image->getImageViews();
+    }
+
     NTexture::NTexture(Device& device, CommandBuffer& commandBuffer, std::string filePath, VkFormat format, bool isCubeMap)
         : Texture(device)
         , m_device(device)
@@ -42,7 +47,7 @@ namespace karhu
         if (isCubeMap)
         {
             cubeData = stbi_loadf(full.c_str(), &m_width, &m_height, &m_nrChannels, 0);
-            m_imageSize = m_width * m_height * sizeof(float) * 3; //rgb float32
+            m_imageSize = 512 * 512 * 4 * sizeof(float) * 6; //rgb float32
             
             if (!cubeData)
             {
@@ -72,12 +77,34 @@ namespace karhu
     
         void* data;
         vkMapMemory(m_device.lDevice(), stagingMemory, 0, m_imageSize, 0, &data);
-        memcpy(data, pixels, static_cast<size_t>(m_imageSize));
+        if (isCubeMap)
+        {
+            memcpy(data, cubeData, static_cast<size_t>(m_imageSize));
+        }
+        else
+        {
+            memcpy(data, pixels, static_cast<size_t>(m_imageSize));
+        }
         vkUnmapMemory(m_device.lDevice(), stagingMemory);
-    
-        stbi_image_free(pixels);
 
-        m_image = std::make_unique<Image>(m_device.lDevice(),
+        if (isCubeMap)
+        {
+            stbi_image_free(cubeData);
+            m_image = std::make_unique<Image>(m_device.lDevice(),
+                m_device.pDevice(),
+                m_width,
+                m_height,
+                format,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                isCubeMap);
+        }
+        else
+        {
+            stbi_image_free(pixels);
+            m_image = std::make_unique<Image>(m_device.lDevice(),
                 m_device.pDevice(),
                 m_width,
                 m_height,
@@ -87,13 +114,16 @@ namespace karhu
                 VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 isCubeMap);
+        }
+
+        
 
         transitionImageLayout(format,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 isCubeMap);
 
-        copyBufferToImage(staging);
+        copyBufferToImage(staging, isCubeMap);
         
         transitionImageLayout(format,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -203,18 +233,24 @@ namespace karhu
         if (isCubeMap)
         {
             region.imageSubresource.layerCount = 6;
+            region.imageOffset = { 0, 0, 0 };
+            region.imageExtent = {
+                static_cast<uint32_t>(512),
+                static_cast<uint32_t>(512),
+                1
+            };
+
         }
         else
         {
-        region.imageSubresource.layerCount = 1;
+            region.imageSubresource.layerCount = 1;
+            region.imageOffset = { 0, 0, 0 };
+            region.imageExtent = {
+                static_cast<uint32_t>(m_width),
+                static_cast<uint32_t>(m_height),
+                1
+            };
         }
-
-        region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = {
-            static_cast<uint32_t>(m_width),
-            static_cast<uint32_t>(m_height),
-            1
-        };
 
         vkCmdCopyBufferToImage(
             commandBuffer,

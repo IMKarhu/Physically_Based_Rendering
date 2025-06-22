@@ -7,10 +7,19 @@
 namespace karhu
 {
     CubeMapSystem::CubeMapSystem(Device& device)
-        : m_device(device) {}
+        : m_device(device)
+    {
+        m_matrices = {
+            glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),  // +X
+            glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),  // -X
+            glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),  // +Y
+            glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),  // -Y
+            glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),  // +Z
+            glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))   // -Z
+        };
+    }
 
     CubeMapSystem::~CubeMapSystem() {}
-
     void CubeMapSystem::createDescriptors(Entity& entity)
     {
         m_descriptorBuilder = std::make_unique<Descriptors>(m_device);
@@ -111,5 +120,9 @@ namespace karhu
         
         entity.getModel()->bind(frameInfo.commandBuffer);
         entity.getModel()->draw(frameInfo.commandBuffer);
+    }
+
+    void CubeMapSystem::updateCubeUbo()
+    {
     }
 } // karhu namespace

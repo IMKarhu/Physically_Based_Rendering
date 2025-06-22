@@ -8,6 +8,12 @@
 
 namespace karhu
 {
+    enum FramebufferType
+    {
+        Normal,
+        Cube
+    };
+
     void createFrameBuffer(VkDevice device,
             std::vector<VkFramebuffer>& frameBuffers,
             const std::vector<VkImageView>& imageViews,

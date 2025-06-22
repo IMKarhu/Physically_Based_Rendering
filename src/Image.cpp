@@ -21,17 +21,19 @@ namespace karhu
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = width;
-        imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = 1;
         if (isCubeMap)
         {
+            imageInfo.extent.width = 512;
+            imageInfo.extent.height = 512;
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             imageInfo.arrayLayers = 6;
         }
         else
         {
+            imageInfo.extent.width = width;
+            imageInfo.extent.height = height;
             imageInfo.flags = 0;
             imageInfo.arrayLayers = 1;
         }
@@ -59,11 +61,19 @@ namespace karhu
         vkBindImageMemory(m_device, m_image, m_imageMemory, 0);
 
         createImageView(m_image, format, aspectFlags, isCubeMap);
+        if (isCubeMap)
+        {
+            for(size_t face = 0; face < 6; ++face)
+            {
+                createImageViewPerFace(m_image, format, aspectFlags, face);
+            }
+        }
     }
 
     Image::Image(Image&& other) noexcept
         : m_image(other.m_image)
         , m_imageView(other.m_imageView)
+        , m_faceImageViews(other.m_faceImageViews)
         , m_imageMemory(other.m_imageMemory)
         , m_device(other.m_device)
     {
@@ -71,6 +81,10 @@ namespace karhu
         other.m_imageView = VK_NULL_HANDLE;
         other.m_device = VK_NULL_HANDLE;
         other.m_imageMemory = VK_NULL_HANDLE;
+        for(size_t i = 0; i < m_faceImageViews.size(); i++)
+        {
+            m_faceImageViews[i] = VK_NULL_HANDLE;
+        }
     }
 
     Image& Image::operator=(Image&& other) noexcept
@@ -82,17 +96,26 @@ namespace karhu
                 vkDestroyImage(m_device, m_image, nullptr);
                 vkDestroyImageView(m_device, m_imageView, nullptr);
                 vkFreeMemory(m_device, m_imageMemory, nullptr);
+                for(size_t i = 0; i < m_faceImageViews.size(); i++)
+                {
+                    vkDestroyImageView(m_device, m_faceImageViews[i], nullptr);
+                }
             }
 
             m_image = other.m_image;
             m_imageView = other.m_imageView;
             m_device = other.m_device;
             m_imageMemory = other.m_imageMemory;
+            m_faceImageViews = other.m_faceImageViews;
 
             other.m_image = VK_NULL_HANDLE;
             other.m_imageView = VK_NULL_HANDLE;
             other.m_device = VK_NULL_HANDLE;
             other.m_imageMemory = VK_NULL_HANDLE;
+            for(size_t i = 0; i < m_faceImageViews.size(); i++)
+            {
+                m_faceImageViews[i] = VK_NULL_HANDLE;
+            }
         }
         return *this;
     }
@@ -132,5 +155,26 @@ namespace karhu
 
         VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView));
     }
+
+    void Image::createImageViewPerFace(VkImage image,
+            VkFormat format,
+            VkImageAspectFlags flags,
+            size_t face)
+    {
+        m_faceImageViews.resize(6);
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = image;
+        createInfo.format = format;
+        createInfo.subresourceRange.aspectMask = flags;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = face;
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.subresourceRange.layerCount = 1;
+
+        VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_faceImageViews[face]));
+    }
+
 
 } // karhu namespace

@@ -52,6 +52,7 @@ namespace karhu
         // VkDescriptorImageInfo getImageInfo();
         const VkImage& getImage() const;
         const VkImageView& getImageView() const;
+        const std::vector<VkImageView>& getCubeImageViewsPerFace() const;
     protected:
         std::unique_ptr<Image> m_image;
     private:
