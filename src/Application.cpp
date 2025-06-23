@@ -128,6 +128,9 @@ namespace karhu
                 1,
                 true);
 
+
+
+
         /*Probably shouldn't be here but it'll work for now..*/
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
         m_pool = m_builder.createDescriptorPool(2);
@@ -475,5 +478,43 @@ namespace karhu
         dependency[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
         m_renderPasses.emplace_back(m_device, colorAttachment, subpass, dependency);
+
+
+        // FB, Att, RP, Pipe, etc.
+        std::vector<VkAttachmentDescription> attDesc(1);
+        // Color attachment
+        attDesc[0].format = VK_FORMAT_R16G16_SFLOAT;
+        attDesc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attDesc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attDesc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attDesc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attDesc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attDesc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attDesc[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        
+        VkSubpassDescription subpassDescription = {};
+        subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpassDescription.colorAttachmentCount = 1;
+        subpassDescription.pColorAttachments = &colorReference;
+        
+        // Use subpass dependencies for layout transitions
+        std::vector<VkSubpassDependency> dependencies(2);
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        m_renderPasses.emplace_back(m_device, attDesc, subpassDescription, dependencies);
     }
 } // namespace karhu

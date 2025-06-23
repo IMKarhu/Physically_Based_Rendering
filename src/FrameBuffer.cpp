@@ -36,3 +36,26 @@
             VK_CHECK(vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffers[i]));
         }
     }
+
+    void karhu::createFrameBuffer1(VkDevice device,
+            VkFramebuffer& frameBuffer,
+            const VkImageView& imageView,
+            const VkRenderPass& renderPass,
+            uint32_t width,
+            uint32_t height,
+            uint32_t layers,
+            bool isCube,
+            const VkImageView& depthView)
+    {
+        VkFramebufferCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        createInfo.renderPass = renderPass;
+        createInfo.attachmentCount = 1;
+        createInfo.pAttachments = &imageView;
+        createInfo.width = width;
+        createInfo.height = height;
+        createInfo.layers = layers;
+        
+        VK_CHECK(vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffer));
+    }
+

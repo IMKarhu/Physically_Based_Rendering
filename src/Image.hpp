@@ -37,13 +37,17 @@ namespace karhu
                     VkFormat format,
                     VkImageAspectFlags flags,
                     size_t face);
+            //for now only for generating BRDF lookup table.
+            void createSampler(VkDevice device);
 
             const VkImage& getImage() const { return m_image; }
             const VkImageView& getImageView() const { return m_imageView; }
+            const VkSampler& getSampler() const { return m_sampler; }
             const std::vector<VkImageView>& getImageViews() const { return m_faceImageViews; }
         private:
             VkImage m_image = VK_NULL_HANDLE;
             VkImageView m_imageView = VK_NULL_HANDLE;
+            VkSampler m_sampler = VK_NULL_HANDLE;
             std::vector<VkImageView> m_faceImageViews;
             VkDeviceMemory m_imageMemory;
 

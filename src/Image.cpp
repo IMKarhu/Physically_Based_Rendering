@@ -75,12 +75,14 @@ namespace karhu
         , m_imageView(other.m_imageView)
         , m_faceImageViews(other.m_faceImageViews)
         , m_imageMemory(other.m_imageMemory)
+        , m_sampler(other.m_sampler)
         , m_device(other.m_device)
     {
         other.m_image = VK_NULL_HANDLE;
         other.m_imageView = VK_NULL_HANDLE;
         other.m_device = VK_NULL_HANDLE;
         other.m_imageMemory = VK_NULL_HANDLE;
+        other.m_sampler = VK_NULL_HANDLE;
         for(size_t i = 0; i < m_faceImageViews.size(); i++)
         {
             m_faceImageViews[i] = VK_NULL_HANDLE;
@@ -96,6 +98,7 @@ namespace karhu
                 vkDestroyImage(m_device, m_image, nullptr);
                 vkDestroyImageView(m_device, m_imageView, nullptr);
                 vkFreeMemory(m_device, m_imageMemory, nullptr);
+                vkDestroySampler(m_device, m_sampler, nullptr);
                 for(size_t i = 0; i < m_faceImageViews.size(); i++)
                 {
                     vkDestroyImageView(m_device, m_faceImageViews[i], nullptr);
@@ -107,11 +110,13 @@ namespace karhu
             m_device = other.m_device;
             m_imageMemory = other.m_imageMemory;
             m_faceImageViews = other.m_faceImageViews;
+            m_sampler = other.m_sampler;
 
             other.m_image = VK_NULL_HANDLE;
             other.m_imageView = VK_NULL_HANDLE;
             other.m_device = VK_NULL_HANDLE;
             other.m_imageMemory = VK_NULL_HANDLE;
+            other.m_sampler = VK_NULL_HANDLE;
             for(size_t i = 0; i < m_faceImageViews.size(); i++)
             {
                 m_faceImageViews[i] = VK_NULL_HANDLE;
@@ -174,6 +179,21 @@ namespace karhu
         createInfo.subresourceRange.layerCount = 1;
 
         VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_faceImageViews[face]));
+    }
+
+    void Image::createSampler(VkDevice device)
+    {
+        VkSamplerCreateInfo samplerCI{};
+        samplerCI.magFilter = VK_FILTER_LINEAR;
+        samplerCI.minFilter = VK_FILTER_LINEAR;
+        samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerCI.minLod = 0.0f;
+        samplerCI.maxLod = 1.0f;
+        samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        VK_CHECK(vkCreateSampler(device, &samplerCI, nullptr, &m_sampler));
     }
 
 
