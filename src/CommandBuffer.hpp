@@ -32,6 +32,7 @@ namespace karhu
             void endSingleCommand(VkCommandBuffer commandBuffer);
             void resetCommandBuffer(uint32_t index);
             void endCommandBuffer(uint32_t index);
+            void flushCommandBuffer(VkCommandBuffer& commandBuffer);
         private:
             VkCommandPool m_commandPool = VK_NULL_HANDLE;
             std::vector<VkCommandBuffer> m_commandBuffers;

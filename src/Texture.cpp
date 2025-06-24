@@ -92,6 +92,7 @@ namespace karhu
             stbi_image_free(cubeData);
             m_image = std::make_unique<Image>(m_device.lDevice(),
                 m_device.pDevice(),
+                1,
                 m_width,
                 m_height,
                 format,
@@ -106,6 +107,7 @@ namespace karhu
             stbi_image_free(pixels);
             m_image = std::make_unique<Image>(m_device.lDevice(),
                 m_device.pDevice(),
+                1,
                 m_width,
                 m_height,
                 format,

@@ -8,6 +8,7 @@ namespace karhu
     Image::Image() {}
     Image::Image(VkDevice device,
             VkPhysicalDevice physicalDevice,
+            uint32_t mipLevels,
             uint32_t width,
             uint32_t height,
             VkFormat format,
@@ -22,11 +23,11 @@ namespace karhu
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
+        imageInfo.mipLevels = mipLevels;
         if (isCubeMap)
         {
-            imageInfo.extent.width = 512;
-            imageInfo.extent.height = 512;
+            imageInfo.extent.width = width;
+            imageInfo.extent.height = height;
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             imageInfo.arrayLayers = 6;
         }
@@ -60,12 +61,12 @@ namespace karhu
 
         vkBindImageMemory(m_device, m_image, m_imageMemory, 0);
 
-        createImageView(m_image, format, aspectFlags, isCubeMap);
+        createImageView(m_image, format, aspectFlags, mipLevels, isCubeMap);
         if (isCubeMap)
         {
             for(size_t face = 0; face < 6; ++face)
             {
-                createImageViewPerFace(m_image, format, aspectFlags, face);
+                createImageViewPerFace(m_image, format, aspectFlags, mipLevels, face);
             }
         }
     }
@@ -136,6 +137,7 @@ namespace karhu
     void Image::createImageView(VkImage image,
             VkFormat format,
             VkImageAspectFlags flags,
+            uint32_t mipLevels,
             bool isCubeMap)
     {
         VkImageViewCreateInfo createInfo{};
@@ -144,7 +146,7 @@ namespace karhu
         createInfo.format = format;
         createInfo.subresourceRange.aspectMask = flags;
         createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.levelCount = mipLevels;
         createInfo.subresourceRange.baseArrayLayer = 0;
         if (isCubeMap)
         {
@@ -164,6 +166,7 @@ namespace karhu
     void Image::createImageViewPerFace(VkImage image,
             VkFormat format,
             VkImageAspectFlags flags,
+            uint32_t mipLevels,
             size_t face)
     {
         m_faceImageViews.resize(6);
@@ -173,7 +176,7 @@ namespace karhu
         createInfo.format = format;
         createInfo.subresourceRange.aspectMask = flags;
         createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.levelCount = mipLevels;
         createInfo.subresourceRange.baseArrayLayer = face;
         createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         createInfo.subresourceRange.layerCount = 1;
@@ -181,7 +184,7 @@ namespace karhu
         VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_faceImageViews[face]));
     }
 
-    void Image::createSampler(VkDevice device)
+    void Image::createSampler(VkDevice device, uint32_t mipLevels)
     {
         VkSamplerCreateInfo samplerCI{};
         samplerCI.magFilter = VK_FILTER_LINEAR;
@@ -191,7 +194,7 @@ namespace karhu
         samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         samplerCI.minLod = 0.0f;
-        samplerCI.maxLod = 1.0f;
+        samplerCI.maxLod = static_cast<float>(mipLevels);
         samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
         VK_CHECK(vkCreateSampler(device, &samplerCI, nullptr, &m_sampler));
     }

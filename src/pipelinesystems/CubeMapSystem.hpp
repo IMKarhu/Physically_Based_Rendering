@@ -14,6 +14,7 @@ namespace karhu
     class Device;
     class Descriptors;
     class Entity;
+    class CommandBuffer;
     class CubeMapSystem
     {
         public:
@@ -31,9 +32,8 @@ namespace karhu
             void renderSkyBox(Frame& frameInfo, Entity& entity);
             void updateCubeUbo();
 
-        private:
-            void generateBrdfLut(VkRenderPass renderPass, VkFramebuffer frameBuffer);
-            void generateIrradianceCube();
+            void generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer);
+            void generateIrradianceCube(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer);
             void generatePreFilteredCube();
         private:
             CubePipelineBuilder m_pipelineBuilder;
@@ -48,10 +48,8 @@ namespace karhu
 
             struct Textures {
                 Image m_brdfLut;
-                VkImage brdflut;
-                VkImageView brdflutView;
-                VkDeviceMemory brdfMemory;
-                VkSampler brdflutSampler;
+                
+                Image m_irradianceCube;
             } m_textures;
 
 

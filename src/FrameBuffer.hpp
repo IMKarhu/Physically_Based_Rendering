@@ -26,7 +26,7 @@ namespace karhu
             const VkImageView& depthView = nullptr);
 
     void createFrameBuffer1(VkDevice device,
-            VkFramebuffer& frameBuffer,
+            std::vector<VkFramebuffer>& frameBuffer,
             const VkImageView& imageView,
             const VkRenderPass& renderPass,
             uint32_t width,

@@ -176,7 +176,8 @@ namespace karhu
         m_cubeMapSystem.createGraphicsPipeline(m_device.lDevice(),
                 m_swapChain.getSwapChainExtent(),
                 m_layout,
-                m_renderPasses[0].getRenderPass());
+                m_renderPasses[1].getRenderPass());
+        m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(), m_framebuffers[FramebufferType::BRDFLUT], m_commandBuffer);
 
 
         update(uboBuffers, cubeEnt);
@@ -222,7 +223,7 @@ namespace karhu
                 m_entities[Disney]
             };
 
-            m_cubeMapSystem.renderSkyBox(frameInfo, entity);
+            // m_cubeMapSystem.renderSkyBox(frameInfo, entity);
 
             m_disneySystem.renderEntities(frameInfo);
 
@@ -516,5 +517,44 @@ namespace karhu
         dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         m_renderPasses.emplace_back(m_device, attDesc, subpassDescription, dependencies);
+
+        //irradiance cube renderPass
+        // FB, Att, RP, Pipe, etc.
+        std::vector<VkAttachmentDescription> irAttDesc(1);
+        // Color attachment
+        irAttDesc[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        irAttDesc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        irAttDesc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        irAttDesc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        irAttDesc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        irAttDesc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        irAttDesc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        irAttDesc[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference irColorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        
+        VkSubpassDescription irSubpassDescription = {};
+        subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpassDescription.colorAttachmentCount = 1;
+        subpassDescription.pColorAttachments = &irColorReference;
+        
+        // Use subpass dependencies for layout transitions
+        std::vector<VkSubpassDependency> irDependencies(2);
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        m_renderPasses.emplace_back(m_device, irAttDesc, irSubpassDescription, irDependencies);
+
     }
 } // namespace karhu

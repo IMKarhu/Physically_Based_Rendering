@@ -103,4 +103,9 @@ namespace karhu
     {
         VK_CHECK(vkEndCommandBuffer(m_commandBuffers[index]));
     }
+
+    void CommandBuffer::flushCommandBuffer(VkCommandBuffer& commandBuffer)
+    {
+        vkFreeCommandBuffers(m_device.lDevice(), m_commandPool, 1, &commandBuffer);
+    }
 } // karhu namespace

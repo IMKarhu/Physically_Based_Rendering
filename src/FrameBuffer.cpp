@@ -38,7 +38,7 @@
     }
 
     void karhu::createFrameBuffer1(VkDevice device,
-            VkFramebuffer& frameBuffer,
+            std::vector<VkFramebuffer>& frameBuffer,
             const VkImageView& imageView,
             const VkRenderPass& renderPass,
             uint32_t width,
@@ -47,6 +47,7 @@
             bool isCube,
             const VkImageView& depthView)
     {
+        frameBuffer.resize(1);
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         createInfo.renderPass = renderPass;
@@ -56,6 +57,6 @@
         createInfo.height = height;
         createInfo.layers = layers;
         
-        VK_CHECK(vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffer));
+        VK_CHECK(vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffer[0]));
     }
 

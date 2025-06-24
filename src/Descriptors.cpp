@@ -13,7 +13,7 @@ namespace karhu
     {
     }
 
-    VkDescriptorSetLayout Descriptors::createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings)
+    VkDescriptorSetLayout Descriptors::createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& bindings)
     {
         VkDescriptorSetLayout layout{};
         VkDescriptorSetLayoutCreateInfo createInfo{};

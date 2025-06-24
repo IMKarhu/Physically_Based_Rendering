@@ -13,6 +13,7 @@ namespace karhu
             Image();
             Image(VkDevice device,
                     VkPhysicalDevice physicalDevice,
+                    uint32_t mipLevels,
                     uint32_t width,
                     uint32_t height,
                     VkFormat format,
@@ -32,13 +33,15 @@ namespace karhu
             void createImageView(VkImage image,
                     VkFormat format,
                     VkImageAspectFlags flags,
+                    uint32_t mipLevels,
                     bool isCubeMap = false);
             void createImageViewPerFace(VkImage image,
                     VkFormat format,
                     VkImageAspectFlags flags,
+                    uint32_t mipLevels,
                     size_t face);
             //for now only for generating BRDF lookup table.
-            void createSampler(VkDevice device);
+            void createSampler(VkDevice device, uint32_t mipLevels);
 
             const VkImage& getImage() const { return m_image; }
             const VkImageView& getImageView() const { return m_imageView; }
