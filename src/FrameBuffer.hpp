@@ -12,7 +12,8 @@ namespace karhu
     {
         Normal,
         Cube,
-        BRDFLUT
+        BRDFLUT,
+        IRRADIANCE
     };
 
     void createFrameBuffer(VkDevice device,

@@ -33,13 +33,18 @@ namespace karhu
             void updateCubeUbo();
 
             void generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer);
-            void generateIrradianceCube(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer);
+            void generateIrradianceCube(VkRenderPass renderPass,
+                    std::vector<VkFramebuffer>& frameBuffer,
+                    CommandBuffer& commandBuffer,
+                    Entity& entity);
             void generatePreFilteredCube();
         private:
             CubePipelineBuilder m_pipelineBuilder;
             CubePipelineBuilder m_brdflutPipelineBuilder;
+            CubePipelineBuilder m_irradiancePipelineBuilder;
             std::unique_ptr<Descriptors> m_descriptorBuilder;
             std::unique_ptr<Descriptors> m_brdflutBuilder;
+            std::unique_ptr<Descriptors> m_irradianceCubeBuilder;
 
             VkDescriptorPool m_pool;
             VkDescriptorSetLayout m_layout;

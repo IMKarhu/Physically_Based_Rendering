@@ -122,7 +122,6 @@ namespace karhu
         allocInfo.descriptorPool = pool;
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = &layout;
-        printf("hello3\n");
         VK_CHECK(vkAllocateDescriptorSets(m_device.lDevice(), &allocInfo, &set));
     }
 }

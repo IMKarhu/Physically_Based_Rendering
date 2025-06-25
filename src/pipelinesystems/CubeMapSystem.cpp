@@ -241,8 +241,12 @@ namespace karhu
         printf("Lookup table generated!\n");
     }
 
-    void CubeMapSystem::generateIrradianceCube(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer)
+    void CubeMapSystem::generateIrradianceCube(VkRenderPass renderPass,
+            std::vector<VkFramebuffer>& frameBuffer,
+            CommandBuffer& commandBuffer,
+            Entity& entity)
     {
+        printf("Start generating IrradianceCubeMap\n");
         const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
         const uint32_t dimensions = 64;
         const uint32_t mips = static_cast<uint32_t>(floor(log2(dimensions))) + 1;
@@ -325,15 +329,256 @@ namespace karhu
             VkCommandBuffer cmdBuf;
             commandBuffer.allocCommandBuffer(cmdBuf);
             commandBuffer.beginCommand(cmdBuf);
-            
-            // vks::tools::setImageLayout(
-            //         layoutCmd,
-            //         offscreen.image,
-            //         VK_IMAGE_ASPECT_COLOR_BIT,
-            //         VK_IMAGE_LAYOUT_UNDEFINED,
-            //         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-            // vulkanDevice->flushCommandBuffer(layoutCmd, queue, true);
+
+            VkImageSubresourceRange subResourcerange{};
+            subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            subResourcerange.baseMipLevel = 0;
+            subResourcerange.levelCount = 1;
+            subResourcerange.layerCount = 1;
+
+            VkImageMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            barrier.image = offScreen.image;
+            barrier.subresourceRange = subResourcerange;
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            vkCmdPipelineBarrier(cmdBuf,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    0,
+                    0, nullptr,
+                    0, nullptr,
+                    1, &barrier);
+
+            commandBuffer.flushCommandBuffer(cmdBuf);
         }
+
+        m_irradianceCubeBuilder = std::make_unique<Descriptors>(m_device);
+
+        VkDescriptorSetLayout layout;
+        std::vector<VkDescriptorSetLayoutBinding> bindings{};
+
+        m_irradianceCubeBuilder->bind(bindings, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        layout = m_irradianceCubeBuilder->createDescriptorSetLayout(bindings);
+        VkDescriptorPool pool;
+        m_irradianceCubeBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
+        pool = m_irradianceCubeBuilder->createDescriptorPool(2);
+
+        VkDescriptorSet set;
+        VkDescriptorSetAllocateInfo descriptorSetAllocateInfo {};
+        descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocateInfo.descriptorPool = pool;
+        descriptorSetAllocateInfo.pSetLayouts = &layout;
+        descriptorSetAllocateInfo.descriptorSetCount = 1;
+        VK_CHECK(vkAllocateDescriptorSets(m_device.lDevice(), &descriptorSetAllocateInfo, &set));
+        m_irradianceCubeBuilder->allocateDescriptor(set, layout, pool);
+        m_irradianceCubeBuilder->writeImg(set, 0, entity.getModel()->m_Textures[0].getImageInfo(), 0);
+        m_irradianceCubeBuilder->fillWritesMap(0);
+        m_irradianceCubeBuilder->createDescriptorSets(layout, pool);
+
+        m_irradiancePipelineBuilder.getHandle()->m_device = m_device.lDevice();
+
+        PipelineStruct pipelineStruct{};
+        pipelineStruct.viewportWidth = dimensions;
+        pipelineStruct.viewportheight = dimensions;
+        // pipelineStruct.scissor.extent = extent;
+        pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineStruct.pipelineLayoutInfo.pSetLayouts = &layout;
+        pipelineStruct.renderPass = renderPass;
+
+        m_irradiancePipelineBuilder.createPipeline(pipelineStruct, "../shaders/irradianceCubevert.spv", "../shaders/irradianceCubefrag.spv");
+
+        VkClearValue clearValues[1];
+        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+        VkRenderPassBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        beginInfo.renderPass = renderPass;
+        beginInfo.renderArea.extent.width = dimensions;
+        beginInfo.renderArea.extent.height = dimensions;
+        beginInfo.clearValueCount = 1;
+        beginInfo.pClearValues = clearValues;
+        beginInfo.framebuffer = frameBuffer[0];
+
+        VkCommandBuffer cmdBuf;
+        commandBuffer.allocCommandBuffer(cmdBuf);
+        commandBuffer.beginCommand(cmdBuf);
+
+        vkCmdBeginRenderPass(cmdBuf, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        VkViewport viewPort{};
+        viewPort.x = 0.0f;
+        viewPort.y = 0.0f;
+        viewPort.width = dimensions;
+        viewPort.height = dimensions;
+        viewPort.minDepth = 0.0f;
+        viewPort.maxDepth = 1.0f;
+
+        vkCmdSetViewport(cmdBuf, 0, 1, &viewPort);
+
+        VkRect2D scissor{};
+        scissor.offset = { 0, 0 };
+        scissor.extent.width = dimensions;
+        scissor.extent.height = dimensions;
+
+        vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+
+        VkImageSubresourceRange subResourcerange{};
+        subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subResourcerange.baseMipLevel = 0;
+        subResourcerange.levelCount = mips;
+        subResourcerange.layerCount = 6;
+
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.image = m_textures.m_irradianceCube.getImage();
+        barrier.subresourceRange = subResourcerange;
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(cmdBuf,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+
+        for (uint32_t i = 0; i < mips; i++)
+        {
+            for (uint32_t j = 0; j < 6; j++)
+            {
+                viewPort.width = static_cast<float>(dimensions * std::pow(0.5, i));
+                viewPort.height = static_cast<float>(dimensions * std::pow(0.5, i));
+                vkCmdSetViewport(cmdBuf, 0, 1, &viewPort);
+
+                vkCmdBeginRenderPass(cmdBuf, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+                //pushconstant things
+                //
+
+                m_irradiancePipelineBuilder.bind(cmdBuf);
+                vkCmdBindDescriptorSets(cmdBuf,
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        m_irradiancePipelineBuilder.getHandle()->m_pipelineLayout,
+                        0,
+                        1,
+                        &set,
+                        0,
+                        NULL);
+
+                entity.getModel()->bind(cmdBuf);
+                entity.getModel()->draw(cmdBuf);
+
+                vkCmdEndRenderPass(cmdBuf);
+
+                VkImageSubresourceRange subResourcerange{};
+                subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                subResourcerange.baseMipLevel = 0;
+                subResourcerange.levelCount = 1;
+                subResourcerange.layerCount = 1;
+
+                VkImageMemoryBarrier barrier{};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                barrier.image = offScreen.image;
+                barrier.subresourceRange = subResourcerange;
+                barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                vkCmdPipelineBarrier(cmdBuf,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &barrier);
+
+                // Copy region for transfer from framebuffer to cube face
+                VkImageCopy copyRegion = {};
+                
+                copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.srcSubresource.baseArrayLayer = 0;
+                copyRegion.srcSubresource.mipLevel = 0;
+                copyRegion.srcSubresource.layerCount = 1;
+                copyRegion.srcOffset = { 0, 0, 0 };
+                
+                copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.dstSubresource.baseArrayLayer = j;
+                copyRegion.dstSubresource.mipLevel = i;
+                copyRegion.dstSubresource.layerCount = 1;
+                copyRegion.dstOffset = { 0, 0, 0 };
+                
+                copyRegion.extent.width = static_cast<uint32_t>(viewPort.width);
+                copyRegion.extent.height = static_cast<uint32_t>(viewPort.height);
+                copyRegion.extent.depth = 1;
+                
+                vkCmdCopyImage(
+                        cmdBuf,
+                        offScreen.image,
+                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        entity.getModel()->m_Textures[0].getImage(),
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        1,
+                        &copyRegion);
+
+                VkImageSubresourceRange subResourcerange2{};
+                subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                subResourcerange.baseMipLevel = 0;
+                subResourcerange.levelCount = 1;
+                subResourcerange.layerCount = 1;
+
+                VkImageMemoryBarrier barrier2{};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                barrier.image = offScreen.image;
+                barrier.subresourceRange = subResourcerange2;
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+                vkCmdPipelineBarrier(cmdBuf,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &barrier2);
+            }
+        }
+
+        VkImageSubresourceRange subResourcerange3{};
+        subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subResourcerange.baseMipLevel = 0;
+        subResourcerange.levelCount = 1;
+        subResourcerange.layerCount = 1;
+
+        VkImageMemoryBarrier barrier3{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.image = entity.getModel()->m_Textures[0].getImage();
+        barrier.subresourceRange = subResourcerange;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        
+        vkCmdPipelineBarrier(cmdBuf,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+        
+        commandBuffer.flushCommandBuffer(cmdBuf);
+
+        printf("irradianceCube generation complete!\n");
     }
 
     void CubeMapSystem::generatePreFilteredCube()

@@ -93,6 +93,7 @@ namespace karhu
 
         m_depthImage = Image(m_device.lDevice(),
                 m_device.pDevice(),
+                1,
                 m_swapChain.getSwapChainExtent().width,
                 m_swapChain.getSwapChainExtent().height,
                 m_device.findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
@@ -127,9 +128,6 @@ namespace karhu
                 512,
                 1,
                 true);
-
-
-
 
         /*Probably shouldn't be here but it'll work for now..*/
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
@@ -178,6 +176,7 @@ namespace karhu
                 m_layout,
                 m_renderPasses[1].getRenderPass());
         m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(), m_framebuffers[FramebufferType::BRDFLUT], m_commandBuffer);
+        m_cubeMapSystem.generateIrradianceCube(m_renderPasses[3].getRenderPass(), m_framebuffers[FramebufferType::IRRADIANCE], m_commandBuffer, cubeEnt);
 
 
         update(uboBuffers, cubeEnt);
@@ -429,6 +428,7 @@ namespace karhu
 
         m_depthImage = Image(m_device.lDevice(),
                 m_device.pDevice(),
+                1,
                 m_swapChain.getSwapChainExtent().width,
                 m_swapChain.getSwapChainExtent().height,
                 m_device.findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
