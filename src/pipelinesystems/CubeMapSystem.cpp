@@ -227,7 +227,7 @@ namespace karhu
 
         vkCmdDraw(cmdBuf, 3, 1, 0, 0);
         vkCmdEndRenderPass(cmdBuf);
-        vkEndCommandBuffer(cmdBuf);
+        VK_CHECK(vkEndCommandBuffer(cmdBuf));
 
 
         VkSubmitInfo submitInfo{};
@@ -237,8 +237,9 @@ namespace karhu
 
         VkFenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = 0;
         VkFence fence;
-        vkCreateFence(m_device.lDevice(), &fenceInfo, nullptr, &fence);
+        VK_CHECK(vkCreateFence(m_device.lDevice(), &fenceInfo, nullptr, &fence));
         VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &submitInfo, fence));
         vkWaitForFences(m_device.lDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
         commandBuffer.flushCommandBuffer(cmdBuf);

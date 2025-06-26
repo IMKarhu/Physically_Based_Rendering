@@ -120,6 +120,7 @@ namespace karhu
         {
             if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
+                printf("SwapChain surface format: VK_FORMAT_B8G8R8A8_SRGB and colorSpace: VK_COLOR_SPACE_SRGB_NONLINEAR_KHR\n");
                 return format;
             }
         }
