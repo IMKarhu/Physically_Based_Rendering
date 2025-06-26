@@ -63,7 +63,7 @@ namespace karhu
                 throw std::runtime_error("Unable to load texture!\n");
             }
         }
-        
+        const uint32_t mips = static_cast<uint32_t>(floor(log2(512))) + 1;
 
         VkBuffer staging;
         VkDeviceMemory stagingMemory;
@@ -124,8 +124,14 @@ namespace karhu
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 isCubeMap);
+        if (isCubeMap)
+        {
+            copyBufferToImage(staging, isCubeMap, mips);
+        }
+        else {
+             copyBufferToImage(staging, isCubeMap);
+        }
 
-        copyBufferToImage(staging, isCubeMap);
         
         transitionImageLayout(format,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -136,7 +142,13 @@ namespace karhu
         vkFreeMemory(m_device.lDevice(), stagingMemory, nullptr);
         
         /*m_image.createImageView(m_image.getImage(), format, VK_IMAGE_ASPECT_COLOR_BIT, 1);*/
-        createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+        if(isCubeMap)
+        {
+            createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+        }
+        else {
+             createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+        }
     }
 
     NTexture::~NTexture() {}
@@ -220,31 +232,46 @@ namespace karhu
         m_commandBuffer.endSingleCommand(commandBuffer);
     }
 
-    void NTexture::copyBufferToImage(VkBuffer buffer, bool isCubeMap)
+    void NTexture::copyBufferToImage(VkBuffer buffer, bool isCubeMap, uint32_t mips)
     {
         VkCommandBuffer commandBuffer = m_commandBuffer.recordSingleCommand();
 
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
+        std::vector<VkBufferImageCopy> regions;
 
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
         if (isCubeMap)
         {
-            region.imageSubresource.layerCount = 6;
-            region.imageOffset = { 0, 0, 0 };
-            region.imageExtent = {
-                static_cast<uint32_t>(512),
-                static_cast<uint32_t>(512),
-                1
-            };
-
+            for (size_t i = 0; i < 6; i++)
+            {
+                for(size_t mipLevels = 0; mipLevels < mips; mipLevels++)
+                {
+                    VkBufferImageCopy region{};
+                    region.bufferOffset = 0;
+                    region.bufferRowLength = 0;
+                    region.bufferImageHeight = 0;
+                    
+                    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    region.imageSubresource.mipLevel = mipLevels;
+                    region.imageSubresource.baseArrayLayer = i;
+                    region.imageSubresource.layerCount = 1;
+                    region.imageOffset = { 0, 0, 0 };
+                    region.imageExtent = {
+                        static_cast<uint32_t>(512) >> mipLevels,
+                        static_cast<uint32_t>(512) >> mipLevels,
+                        1
+                    };
+                    regions.push_back(region);
+                }
+            }
+            
         }
-        else
-        {
+        else {
+            VkBufferImageCopy region{};
+            region.bufferOffset = 0;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            region.imageSubresource.mipLevel = 0;
+            region.imageSubresource.baseArrayLayer = 0;
             region.imageSubresource.layerCount = 1;
             region.imageOffset = { 0, 0, 0 };
             region.imageExtent = {
@@ -252,21 +279,24 @@ namespace karhu
                 static_cast<uint32_t>(m_height),
                 1
             };
+            regions.push_back(region);
         }
+
+
 
         vkCmdCopyBufferToImage(
             commandBuffer,
             buffer,
             m_image->getImage(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &region
+            static_cast<uint32_t>(regions.size()),
+            regions.data()
         );
 
         m_commandBuffer.endSingleCommand(commandBuffer);
 
     }
-    void NTexture::createSampler(VkSamplerAddressMode addressMode)
+    void NTexture::createSampler(VkSamplerAddressMode addressMode, uint32_t  mips)
     {
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -288,7 +318,7 @@ namespace karhu
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         samplerInfo.mipLodBias = 0.0f;
         samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = 0.0f;
+        samplerInfo.maxLod = float(mips);
 
         if (vkCreateSampler(m_device.lDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");

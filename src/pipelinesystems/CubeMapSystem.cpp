@@ -6,6 +6,7 @@
 #include "../FrameBuffer.hpp"
 #include "../CommandBuffer.hpp"
 
+
 namespace karhu
 {
     CubeMapSystem::CubeMapSystem(Device& device)
@@ -180,6 +181,10 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1;
         pipelineStruct.pipelineLayoutInfo.pSetLayouts = &layout;
         pipelineStruct.renderPass = renderPass;
+
+        pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
         m_brdflutPipelineBuilder.createPipeline(pipelineStruct, "../shaders/brdflutvert.spv", "../shaders/brdflutfrag.spv");
 
@@ -389,6 +394,25 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.pSetLayouts = &layout;
         pipelineStruct.renderPass = renderPass;
 
+        pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        struct PushBlock {
+            glm::mat4 mvp;
+
+            float deltaPhi = (2.0 * float(M_PI)) / 180.0f;
+            float deltaTheta = (0.5 * float(M_PI)) / 64.0f;
+        } pushBlock;
+
+        VkPushConstantRange range{};
+        range.size = sizeof(PushBlock);
+        range.offset = 0;
+        range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        std::vector<VkPushConstantRange> ranges = { range };
+
+        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
+        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = ranges.data(); // Optional
+
+
         m_irradiancePipelineBuilder.createPipeline(pipelineStruct, "../shaders/irradianceCubevert.spv", "../shaders/irradianceCubefrag.spv");
 
         VkClearValue clearValues[1];
@@ -459,8 +483,13 @@ namespace karhu
 
                 vkCmdBeginRenderPass(cmdBuf, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                //pushconstant things
-                //
+                pushBlock.mvp = glm::perspective((float)(M_PI / 2.0), 1.0f, 0.1f, 512.0f) * m_matrices[j];
+                vkCmdPushConstants(cmdBuf,
+                        m_irradiancePipelineBuilder.getHandle()->m_pipelineLayout,
+                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                        0,
+                        sizeof(PushBlock),
+                        &pushBlock);
 
                 m_irradiancePipelineBuilder.bind(cmdBuf);
                 vkCmdBindDescriptorSets(cmdBuf,

@@ -57,6 +57,7 @@ namespace karhu
                 Image m_irradianceCube;
             } m_textures;
 
+            static constexpr double M_PI = 3.14159265358979323846;
 
             Device& m_device;
     };

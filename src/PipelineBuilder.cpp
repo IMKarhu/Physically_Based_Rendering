@@ -125,23 +125,23 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
 
-        VkPushConstantRange objPushConstant{};
-        objPushConstant.offset = 0;
-        objPushConstant.size = sizeof(ObjPushConstant);
-        objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-        VkPushConstantRange cameraPushConstant{};
-        cameraPushConstant.offset = 64;
-        cameraPushConstant.size = sizeof(pushConstants);
-        cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        std::vector<VkPushConstantRange> pushConstantRanges{
-            objPushConstant,
-            cameraPushConstant
-        };
-
-        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
-        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
+        // VkPushConstantRange objPushConstant{};
+        // objPushConstant.offset = 0;
+        // objPushConstant.size = sizeof(ObjPushConstant);
+        // objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        //
+        // VkPushConstantRange cameraPushConstant{};
+        // cameraPushConstant.offset = 64;
+        // cameraPushConstant.size = sizeof(pushConstants);
+        // cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        //
+        // std::vector<VkPushConstantRange> pushConstantRanges{
+        //     objPushConstant,
+        //     cameraPushConstant
+        // };
+        //
+        // pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
+        // pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
 
         VK_CHECK(vkCreatePipelineLayout(m_pipeline->m_device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_pipeline->m_pipelineLayout));
 
@@ -320,25 +320,25 @@ namespace karhu
         pipelineStruct.colorBlending.blendConstants[1] = 0.0f; // Optional
         pipelineStruct.colorBlending.blendConstants[2] = 0.0f; // Optional
         pipelineStruct.colorBlending.blendConstants[3] = 0.0f; // Optional
-        pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        // pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
-        VkPushConstantRange objPushConstant{};
-        objPushConstant.offset = 0;
-        objPushConstant.size = sizeof(ObjPushConstant);
-        objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-        VkPushConstantRange cameraPushConstant{};
-        cameraPushConstant.offset = 64;
-        cameraPushConstant.size = sizeof(pushConstants);
-        cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        std::vector<VkPushConstantRange> pushConstantRanges{
-            objPushConstant,
-            cameraPushConstant
-        };
-
-        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
-        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
+        // VkPushConstantRange objPushConstant{};
+        // objPushConstant.offset = 0;
+        // objPushConstant.size = sizeof(ObjPushConstant);
+        // objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        //
+        // VkPushConstantRange cameraPushConstant{};
+        // cameraPushConstant.offset = 64;
+        // cameraPushConstant.size = sizeof(pushConstants);
+        // cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        //
+        // std::vector<VkPushConstantRange> pushConstantRanges{
+        //     objPushConstant,
+        //     cameraPushConstant
+        // };
+        //
+        // pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
+        // pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
 
         VK_CHECK(vkCreatePipelineLayout(m_pipeline->m_device, &pipelineStruct.pipelineLayoutInfo, nullptr, &m_pipeline->m_pipelineLayout));
 
