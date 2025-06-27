@@ -270,6 +270,14 @@ namespace karhu
                 true);
         m_textures.m_irradianceCube.createSampler(m_device.lDevice(), mips);
 
+        karhu::createFrameBuffer1(m_device.lDevice(),
+            frameBuffer,
+            m_textures.m_brdfLut.getImageView(),
+            renderPass,
+            dimensions,
+            dimensions,
+            1);
+
 
         struct {
             VkImage image;
@@ -374,12 +382,12 @@ namespace karhu
         pool = m_irradianceCubeBuilder->createDescriptorPool(2);
 
         VkDescriptorSet set;
-        VkDescriptorSetAllocateInfo descriptorSetAllocateInfo {};
-        descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        descriptorSetAllocateInfo.descriptorPool = pool;
-        descriptorSetAllocateInfo.pSetLayouts = &layout;
-        descriptorSetAllocateInfo.descriptorSetCount = 1;
-        VK_CHECK(vkAllocateDescriptorSets(m_device.lDevice(), &descriptorSetAllocateInfo, &set));
+        //VkDescriptorSetAllocateInfo descriptorSetAllocateInfo {};
+        //descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        //descriptorSetAllocateInfo.descriptorPool = pool;
+        //descriptorSetAllocateInfo.pSetLayouts = &layout;
+        //descriptorSetAllocateInfo.descriptorSetCount = 1;
+        //VK_CHECK(vkAllocateDescriptorSets(m_device.lDevice(), &descriptorSetAllocateInfo, &set));
         m_irradianceCubeBuilder->allocateDescriptor(set, layout, pool);
         m_irradianceCubeBuilder->writeImg(set, 0, entity.getModel()->m_Textures[0].getImageInfo(), 0);
         m_irradianceCubeBuilder->fillWritesMap(0);
@@ -573,6 +581,7 @@ namespace karhu
                 barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                 barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+                //error here
                 vkCmdPipelineBarrier(cmdBuf,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,

@@ -26,7 +26,7 @@ namespace karhu
         m_indices = indices;
         createVertexBuffer(vertices);
         createIndexBuffer(indices);
-        m_Textures.emplace_back(m_device, commandBuffer, "monkstown_castle_4k.hdr", VK_FORMAT_R32G32B32A32_SFLOAT, true);
+        m_Textures.emplace_back(m_device, commandBuffer, "pisa_cube.ktx", VK_FORMAT_R32G32B32A32_SFLOAT, true);
 
         // if (hdr)
         // {

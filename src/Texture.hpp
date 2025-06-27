@@ -6,6 +6,10 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <ktx.h>
+#include <ktxvulkan.h>
+
+
 
 namespace karhu
 {
@@ -72,7 +76,7 @@ namespace karhu
             NTexture& operator=(NTexture&&) noexcept;
 
             void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, bool isCubeMap = false);
-            void copyBufferToImage(VkBuffer buffer, bool isCubeMap = false, uint32_t mips = 0);
+            void copyBufferToImage(VkBuffer buffer, bool isCubeMap = false, uint32_t mips = 0, ktxTexture *texture = nullptr);
             void createSampler(VkSamplerAddressMode addressMode, uint32_t mips = 0);
             VkDescriptorImageInfo getImageInfo();
         private:

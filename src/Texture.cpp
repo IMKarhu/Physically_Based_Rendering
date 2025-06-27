@@ -44,15 +44,31 @@ namespace karhu
         std::string full = f1+f2;
         stbi_uc* pixels;
         float* cubeData;
+        ktxTexture* texture;
+        ktx_uint8_t *texData;
+        ktx_size_t texSize;
         if (isCubeMap)
         {
-            cubeData = stbi_loadf(full.c_str(), &m_width, &m_height, &m_nrChannels, 0);
+            // cubeData = stbi_loadf(full.c_str(), &m_width, &m_height, &m_nrChannels, 0);
             m_imageSize = 512 * 512 * 4 * sizeof(float) * 6; //rgb float32
-            
-            if (!cubeData)
+            ktxResult result = ktxTexture_CreateFromNamedFile(full.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+            if(result != KTX_SUCCESS)
             {
                 throw std::runtime_error("Unable to load HDR image!\n");
             }
+
+            m_width = texture->baseWidth;
+            m_height = texture->baseHeight;
+            auto mips = texture->numLevels;
+            texData = ktxTexture_GetData(texture);
+            texSize = ktxTexture_GetSize(texture);
+            printf("width: %d height: %d mips: %d\n", m_width, m_height, mips);
+
+            
+            // if (!cubeData)
+            // {
+            //     throw std::runtime_error("Unable to load HDR image!\n");
+            // }
         }
         else {
             pixels = stbi_load(full.c_str(), &m_width, &m_height, &m_nrChannels, STBI_rgb_alpha);
@@ -67,32 +83,46 @@ namespace karhu
 
         VkBuffer staging;
         VkDeviceMemory stagingMemory;
-        utils::createBuffers(m_device.lDevice(),
-                m_device.pDevice(),
-                m_imageSize,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                staging,
-                stagingMemory);
+        if(isCubeMap)
+        {
+            utils::createBuffers(m_device.lDevice(),
+                    m_device.pDevice(),
+                    texSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    staging,
+                    stagingMemory);
+        }
+        else {
+                utils::createBuffers(m_device.lDevice(),
+                        m_device.pDevice(),
+                        m_imageSize,
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        staging,
+                        stagingMemory);
+
+        }
     
         void* data;
-        vkMapMemory(m_device.lDevice(), stagingMemory, 0, m_imageSize, 0, &data);
         if (isCubeMap)
         {
-            memcpy(data, cubeData, static_cast<size_t>(m_imageSize));
+            vkMapMemory(m_device.lDevice(), stagingMemory, 0, texSize, 0, &data);
+            memcpy(data, texData, static_cast<size_t>(texSize));
         }
         else
         {
+            vkMapMemory(m_device.lDevice(), stagingMemory, 0, m_imageSize, 0, &data);
             memcpy(data, pixels, static_cast<size_t>(m_imageSize));
         }
         vkUnmapMemory(m_device.lDevice(), stagingMemory);
 
         if (isCubeMap)
         {
-            stbi_image_free(cubeData);
+            // stbi_image_free(cubeData);
             m_image = std::make_unique<Image>(m_device.lDevice(),
                 m_device.pDevice(),
-                1,
+                mips,
                 m_width,
                 m_height,
                 format,
@@ -126,7 +156,7 @@ namespace karhu
                 isCubeMap);
         if (isCubeMap)
         {
-            copyBufferToImage(staging, isCubeMap, mips);
+            copyBufferToImage(staging, isCubeMap, mips, texture);
         }
         else {
              copyBufferToImage(staging, isCubeMap);
@@ -232,7 +262,7 @@ namespace karhu
         m_commandBuffer.endSingleCommand(commandBuffer);
     }
 
-    void NTexture::copyBufferToImage(VkBuffer buffer, bool isCubeMap, uint32_t mips)
+    void NTexture::copyBufferToImage(VkBuffer buffer, bool isCubeMap, uint32_t mips, ktxTexture *texture)
     {
         VkCommandBuffer commandBuffer = m_commandBuffer.recordSingleCommand();
 
@@ -244,6 +274,8 @@ namespace karhu
             {
                 for(size_t mipLevels = 0; mipLevels < mips; mipLevels++)
                 {
+                    ktx_size_t offset;
+                    ktxResult result = ktxTexture_GetImageOffset(texture, mipLevels, 0, i, &offset);
                     VkBufferImageCopy region{};
                     region.bufferOffset = 0;
                     region.bufferRowLength = 0;
@@ -253,10 +285,10 @@ namespace karhu
                     region.imageSubresource.mipLevel = mipLevels;
                     region.imageSubresource.baseArrayLayer = i;
                     region.imageSubresource.layerCount = 1;
-                    region.imageOffset = { 0, 0, 0 };
+                    region.bufferOffset = offset;
                     region.imageExtent = {
-                        static_cast<uint32_t>(512) >> mipLevels,
-                        static_cast<uint32_t>(512) >> mipLevels,
+                        texture->baseWidth >> mipLevels,
+                        texture->baseHeight >> mipLevels,
                         1
                     };
                     regions.push_back(region);
