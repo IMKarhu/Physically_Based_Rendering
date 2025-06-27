@@ -47,10 +47,11 @@ namespace karhu
         ktxTexture* texture;
         ktx_uint8_t *texData;
         ktx_size_t texSize;
+        uint32_t mips;
         if (isCubeMap)
         {
             // cubeData = stbi_loadf(full.c_str(), &m_width, &m_height, &m_nrChannels, 0);
-            m_imageSize = 512 * 512 * 4 * sizeof(float) * 6; //rgb float32
+            /*m_imageSize = 512 * 512 * 4 * sizeof(float) * 6; //rgb float32*/
             ktxResult result = ktxTexture_CreateFromNamedFile(full.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
             if(result != KTX_SUCCESS)
             {
@@ -59,7 +60,7 @@ namespace karhu
 
             m_width = texture->baseWidth;
             m_height = texture->baseHeight;
-            auto mips = texture->numLevels;
+            mips = texture->numLevels;
             texData = ktxTexture_GetData(texture);
             texSize = ktxTexture_GetSize(texture);
             printf("width: %d height: %d mips: %d\n", m_width, m_height, mips);
@@ -79,7 +80,7 @@ namespace karhu
                 throw std::runtime_error("Unable to load texture!\n");
             }
         }
-        const uint32_t mips = static_cast<uint32_t>(floor(log2(512))) + 1;
+        /*const uint32_t mips = static_cast<uint32_t>(floor(log2(512))) + 1;*/
 
         VkBuffer staging;
         VkDeviceMemory stagingMemory;

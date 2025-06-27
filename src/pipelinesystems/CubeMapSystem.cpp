@@ -567,19 +567,19 @@ namespace karhu
                         &copyRegion);
 
                 VkImageSubresourceRange subResourcerange2{};
-                subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                subResourcerange.baseMipLevel = 0;
-                subResourcerange.levelCount = 1;
-                subResourcerange.layerCount = 1;
+                subResourcerange2.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                subResourcerange2.baseMipLevel = 0;
+                subResourcerange2.levelCount = 1;
+                subResourcerange2.layerCount = 1;
 
                 VkImageMemoryBarrier barrier2{};
-                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                barrier.image = offScreen.image;
-                barrier.subresourceRange = subResourcerange2;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                barrier2.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                barrier2.image = offScreen.image;
+                barrier2.subresourceRange = subResourcerange2;
+                barrier2.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                barrier2.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
                 //error here
                 vkCmdPipelineBarrier(cmdBuf,
@@ -593,19 +593,19 @@ namespace karhu
         }
 
         VkImageSubresourceRange subResourcerange3{};
-        subResourcerange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        subResourcerange.baseMipLevel = 0;
-        subResourcerange.levelCount = 1;
-        subResourcerange.layerCount = 1;
+        subResourcerange3.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subResourcerange3.baseMipLevel = 0;
+        subResourcerange3.levelCount = 1;
+        subResourcerange3.layerCount = 1;
 
         VkImageMemoryBarrier barrier3{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier.image = entity.getModel()->m_Textures[0].getImage();
-        barrier.subresourceRange = subResourcerange;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier3.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier3.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier3.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier3.image = entity.getModel()->m_Textures[0].getImage();
+        barrier3.subresourceRange = subResourcerange3;
+        barrier3.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier3.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         
         vkCmdPipelineBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -613,7 +613,7 @@ namespace karhu
                 0,
                 0, nullptr,
                 0, nullptr,
-                1, &barrier);
+                1, &barrier3);
         
         commandBuffer.flushCommandBuffer(cmdBuf);
 
