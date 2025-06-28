@@ -280,6 +280,8 @@ namespace karhu
         printf("Lookup table generated!\n");
     }
 
+    /*IRRADIANCE CUBE GENERATION*/
+
     void CubeMapSystem::generateIrradianceCube(VkRenderPass renderPass,
             std::vector<VkFramebuffer>& frameBuffer,
             CommandBuffer& commandBuffer,
@@ -303,13 +305,13 @@ namespace karhu
                 true);
         m_textures.m_irradianceCube.createSampler(m_device.lDevice(), mips);
 
-        karhu::createFrameBuffer1(m_device.lDevice(),
-            frameBuffer,
-            m_textures.m_brdfLut.getImageView(),
-            renderPass,
-            dimensions,
-            dimensions,
-            1);
+        /*karhu::createFrameBuffer1(m_device.lDevice(),*/
+        /*    frameBuffer,*/
+        /*    m_textures.m_brdfLut.getImageView(),*/
+        /*    renderPass,*/
+        /*    dimensions,*/
+        /*    dimensions,*/
+        /*    1);*/
 
 
         struct {
@@ -400,6 +402,19 @@ namespace karhu
                     0, nullptr,
                     1, &barrier);
 
+            VK_CHECK(vkEndCommandBuffer(cmdBuf));
+            VkSubmitInfo info{};
+            info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            info.commandBufferCount = 1;
+            info.pCommandBuffers = &cmdBuf;
+
+            VkFenceCreateInfo fInfo{};
+            fInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            VkFence fence;
+            VK_CHECK(vkCreateFence(m_device.lDevice(), &fInfo, nullptr, &fence));
+            VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &info, fence));
+            VK_CHECK(vkWaitForFences(m_device.lDevice(), 1, &fence, VK_TRUE, UINT64_MAX));
+            vkDestroyFence(m_device.lDevice(), fence, nullptr);
             commandBuffer.flushCommandBuffer(cmdBuf);
         }
 
@@ -475,7 +490,7 @@ namespace karhu
         beginInfo.renderArea.extent.height = dimensions;
         beginInfo.clearValueCount = 1;
         beginInfo.pClearValues = clearValues;
-        beginInfo.framebuffer = frameBuffer[0];
+        beginInfo.framebuffer = offScreen.frameBuffer;
 
         VkCommandBuffer cmdBuf;
         commandBuffer.allocCommandBuffer(cmdBuf);
