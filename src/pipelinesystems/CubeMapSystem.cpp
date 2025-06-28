@@ -75,6 +75,34 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.pSetLayouts = layouts.data();
         pipelineStruct.renderPass = renderPass;
 
+        auto bindingDescription = CubeVertex::getBindingDescription();
+        auto attributeDescription = CubeVertex::getAttributeDescription();
+
+        pipelineStruct.vertexInputInfo.vertexBindingDescriptionCount = 1;
+        pipelineStruct.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        pipelineStruct.vertexInputInfo.vertexAttributeDescriptionCount = 1;
+        pipelineStruct.vertexInputInfo.pVertexAttributeDescriptions = &attributeDescription;
+
+        pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        /*VkPushConstantRange objPushConstant{};*/
+        /*objPushConstant.offset = 0;*/
+        /*objPushConstant.size = sizeof(ObjPushConstant);*/
+        /*objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;*/
+        /**/
+        /*VkPushConstantRange cameraPushConstant{};*/
+        /*cameraPushConstant.offset = 64;*/
+        /*cameraPushConstant.size = sizeof(pushConstants);*/
+        /*cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;*/
+        /**/
+        /*std::vector<VkPushConstantRange> pushConstantRanges{*/
+        /*    objPushConstant,*/
+        /*    cameraPushConstant*/
+        /*};*/
+
+        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+
         m_pipelineBuilder.createPipeline(pipelineStruct, "../shaders/cubemapvert.spv", "../shaders/cubemapfrag.spv");
     }
 
@@ -181,6 +209,11 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1;
         pipelineStruct.pipelineLayoutInfo.pSetLayouts = &layout;
         pipelineStruct.renderPass = renderPass;
+
+        pipelineStruct.vertexInputInfo.vertexBindingDescriptionCount = 0;
+        pipelineStruct.vertexInputInfo.pVertexBindingDescriptions = nullptr;
+        pipelineStruct.vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        pipelineStruct.vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
         pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
@@ -402,6 +435,14 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.setLayoutCount = 1;
         pipelineStruct.pipelineLayoutInfo.pSetLayouts = &layout;
         pipelineStruct.renderPass = renderPass;
+
+        auto bindingDescription = CubeVertex::getBindingDescription();
+        auto attributeDescription = CubeVertex::getAttributeDescription();
+
+        pipelineStruct.vertexInputInfo.vertexBindingDescriptionCount = 1;
+        pipelineStruct.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        pipelineStruct.vertexInputInfo.vertexAttributeDescriptionCount = 1;
+        pipelineStruct.vertexInputInfo.pVertexAttributeDescriptions = &attributeDescription;
 
         pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         struct PushBlock {

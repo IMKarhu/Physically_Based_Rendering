@@ -241,12 +241,11 @@ namespace karhu
         auto bindingDescription = CubeVertex::getBindingDescription();
         auto attributeDescription = CubeVertex::getAttributeDescription();
 
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+        pipelineStruct.vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        /*vertexInputInfo.vertexBindingDescriptionCount = 0;*/
+        /*vertexInputInfo.pVertexBindingDescriptions = nullptr;*/
+        /*vertexInputInfo.vertexAttributeDescriptionCount = 0;*/
+        /*vertexInputInfo.pVertexAttributeDescriptions = nullptr;*/
 
         pipelineStruct.inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         pipelineStruct.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -346,7 +345,7 @@ namespace karhu
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = stages;
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pVertexInputState = &pipelineStruct.vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &pipelineStruct.inputAssembly;
         pipelineInfo.pViewportState = &pipelineStruct.viewportState;
         pipelineInfo.pRasterizationState = &pipelineStruct.rasterizer;

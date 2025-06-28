@@ -25,6 +25,7 @@ namespace karhu
         VkPipelineColorBlendStateCreateInfo colorBlending{};
         VkPipelineDepthStencilStateCreateInfo depthStencil{};
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         VkRenderPass renderPass;
     };

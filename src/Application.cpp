@@ -120,14 +120,14 @@ namespace karhu
         auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
         auto cube = std::make_shared<Model>(m_device, m_commandBuffer, CUBEMAPVERTS, CUBEMAPINDICES, true);
 
-        karhu::createFrameBuffer(m_device.lDevice(),
-                m_framebuffers[FramebufferType::Cube],
-                cube->m_Textures[0].getCubeImageViewsPerFace(),
-                m_renderPasses[1].getRenderPass(),
-                512,
-                512,
-                1,
-                true);
+        /*karhu::createFrameBuffer(m_device.lDevice(),*/
+        /*        m_framebuffers[FramebufferType::Cube],*/
+        /*        cube->m_Textures[0].getCubeImageViewsPerFace(),*/
+        /*        m_renderPasses[1].getRenderPass(),*/
+        /*        512,*/
+        /*        512,*/
+        /*        1,*/
+        /*        true);*/
 
         /*Probably shouldn't be here but it'll work for now..*/
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
@@ -174,7 +174,7 @@ namespace karhu
         m_cubeMapSystem.createGraphicsPipeline(m_device.lDevice(),
                 m_swapChain.getSwapChainExtent(),
                 m_layout,
-                m_renderPasses[1].getRenderPass());
+                m_renderPasses[0].getRenderPass());
         m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(), m_framebuffers[FramebufferType::BRDFLUT], m_commandBuffer);
         m_cubeMapSystem.generateIrradianceCube(m_renderPasses[3].getRenderPass(), m_framebuffers[FramebufferType::IRRADIANCE], m_commandBuffer, cubeEnt);
 
