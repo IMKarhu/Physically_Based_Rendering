@@ -496,7 +496,7 @@ namespace karhu
         commandBuffer.allocCommandBuffer(cmdBuf);
         commandBuffer.beginCommand(cmdBuf);
 
-        vkCmdBeginRenderPass(cmdBuf, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        /*vkCmdBeginRenderPass(cmdBuf, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);*/
 
         VkViewport viewPort{};
         viewPort.x = 0.0f;
@@ -617,7 +617,7 @@ namespace karhu
                         cmdBuf,
                         offScreen.image,
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        entity.getModel()->m_Textures[0].getImage(),
+                        m_textures.m_irradianceCube.getImage(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         1,
                         &copyRegion);
@@ -658,7 +658,7 @@ namespace karhu
         barrier3.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier3.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         barrier3.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier3.image = entity.getModel()->m_Textures[0].getImage();
+        barrier3.image = m_textures.m_irradianceCube.getImage();
         barrier3.subresourceRange = subResourcerange3;
         barrier3.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier3.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -670,7 +670,19 @@ namespace karhu
                 0, nullptr,
                 0, nullptr,
                 1, &barrier3);
+        VK_CHECK(vkEndCommandBuffer(cmdBuf));
+        VkSubmitInfo info2{};
+        info2.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        info2.commandBufferCount = 1;
+        info2.pCommandBuffers = &cmdBuf;
         
+        VkFenceCreateInfo fInfo2{};
+        fInfo2.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        VkFence fence;
+        VK_CHECK(vkCreateFence(m_device.lDevice(), &fInfo2, nullptr, &fence));
+        VK_CHECK(vkQueueSubmit(m_device.gQueue(), 1, &info2, fence));
+        VK_CHECK(vkWaitForFences(m_device.lDevice(), 1, &fence, VK_TRUE, UINT64_MAX));
+        vkDestroyFence(m_device.lDevice(), fence, nullptr);
         commandBuffer.flushCommandBuffer(cmdBuf);
 
         printf("irradianceCube generation complete!\n");
