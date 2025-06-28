@@ -75,7 +75,7 @@ namespace karhu
             NTexture(NTexture&&) noexcept;
             NTexture& operator=(NTexture&&) noexcept;
 
-            void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, bool isCubeMap = false);
+            void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, bool isCubeMap = false);
             void copyBufferToImage(VkBuffer buffer, bool isCubeMap = false, uint32_t mips = 0, ktxTexture *texture = nullptr);
             void createSampler(VkSamplerAddressMode addressMode, uint32_t mips = 0);
             VkDescriptorImageInfo getImageInfo();

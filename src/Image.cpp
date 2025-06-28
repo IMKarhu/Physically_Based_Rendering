@@ -187,6 +187,7 @@ namespace karhu
     void Image::createSampler(VkDevice device, uint32_t mipLevels)
     {
         VkSamplerCreateInfo samplerCI{};
+        samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerCI.magFilter = VK_FILTER_LINEAR;
         samplerCI.minFilter = VK_FILTER_LINEAR;
         samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;

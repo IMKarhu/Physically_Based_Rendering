@@ -151,24 +151,35 @@ namespace karhu
 
         
 
-        transitionImageLayout(format,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                isCubeMap);
+
         if (isCubeMap)
         {
+            transitionImageLayout(format,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    mips,
+                    isCubeMap);
             copyBufferToImage(staging, isCubeMap, mips, texture);
+            transitionImageLayout(format,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    mips,
+                    isCubeMap);
         }
         else {
+            transitionImageLayout(format,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    1,
+                    isCubeMap);
              copyBufferToImage(staging, isCubeMap);
+             transitionImageLayout(format,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                     1,
+                     isCubeMap);
         }
 
-        
-        transitionImageLayout(format,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                isCubeMap);
-        
         vkDestroyBuffer(m_device.lDevice(), staging, nullptr);
         vkFreeMemory(m_device.lDevice(), stagingMemory, nullptr);
         
@@ -208,7 +219,7 @@ namespace karhu
         return *this;
     }
 
-    void NTexture::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, bool isCubeMap)
+    void NTexture::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, bool isCubeMap)
     {
         VkCommandBuffer commandBuffer = m_commandBuffer.recordSingleCommand();
 
@@ -221,7 +232,7 @@ namespace karhu
         barrier.image = m_image->getImage();
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.levelCount = mipLevels;
         barrier.subresourceRange.baseArrayLayer = 0;
         if (isCubeMap)
         {
@@ -278,15 +289,14 @@ namespace karhu
                     ktx_size_t offset;
                     ktxResult result = ktxTexture_GetImageOffset(texture, mipLevels, 0, i, &offset);
                     VkBufferImageCopy region{};
-                    region.bufferOffset = 0;
-                    region.bufferRowLength = 0;
-                    region.bufferImageHeight = 0;
+                    region.bufferOffset = offset;
+                    /*region.bufferRowLength = 0;*/
+                    /*region.bufferImageHeight = 0;*/
                     
                     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                     region.imageSubresource.mipLevel = mipLevels;
                     region.imageSubresource.baseArrayLayer = i;
                     region.imageSubresource.layerCount = 1;
-                    region.bufferOffset = offset;
                     region.imageExtent = {
                         texture->baseWidth >> mipLevels,
                         texture->baseHeight >> mipLevels,
