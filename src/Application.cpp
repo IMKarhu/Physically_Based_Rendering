@@ -222,7 +222,7 @@ namespace karhu
                 m_entities[Disney]
             };
 
-            // m_cubeMapSystem.renderSkyBox(frameInfo, entity);
+            m_cubeMapSystem.renderSkyBox(frameInfo, entity);
 
             m_disneySystem.renderEntities(frameInfo);
 

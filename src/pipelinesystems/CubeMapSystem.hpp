@@ -57,6 +57,12 @@ namespace karhu
                 Image m_irradianceCube;
             } m_textures;
 
+            struct Params
+            {
+                float exposure = 4.5f;
+                float gamma = 2.2f;
+            } m_params;
+
             static constexpr double M_PI = 3.14159265358979323846;
 
             Device& m_device;

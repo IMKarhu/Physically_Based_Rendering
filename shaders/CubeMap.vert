@@ -11,12 +11,15 @@ layout(location = 0) in vec3 inPosition;
 
 layout(location = 0) out vec3 localPos;
 
+out gl_PerVertex
+{
+    vec4 gl_Position;
+};
+
 void main()
 {
     localPos = inPosition;
 
     mat4 rotView = mat4(mat3(m_Ubo.view)); // this removes translation from view matrice
-    vec4 position = m_Ubo.proj * rotView * vec4(localPos, 1.0);
-
-    gl_Position = position.xyww;
+    gl_Position = m_Ubo.proj * rotView * vec4(inPosition.xyz, 1.0);
 }

@@ -32,6 +32,7 @@ namespace karhu
 
         m_descriptorBuilder->bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
         m_descriptorBuilder->bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_descriptorBuilder->bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_layout = m_descriptorBuilder->createDescriptorSetLayout(m_bindings);
 
         std::vector<VkDescriptorImageInfo> infos;
@@ -40,17 +41,17 @@ namespace karhu
         entity.m_Buffer = std::make_unique<Buffer>();
         entity.m_Buffer->m_device = m_device.lDevice();
         entity.m_Buffer->m_phyiscalDevice = m_device.pDevice();
-        entity.m_Buffer->createBuffer(sizeof(ObjBuffer),
+        entity.m_Buffer->createBuffer(sizeof(Params),
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         auto id = entity.getId();
         m_descriptorBuilder->allocateDescriptor(entity.m_DescriptorSet, m_layout, m_pool);
         m_descriptorBuilder->writeBuffer(entity.m_DescriptorSet,
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entity.m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
+                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entity.m_Buffer->getBufferInfo(sizeof(Params)), id);
         
         m_descriptorBuilder->writeImg(entity.m_DescriptorSet, 1, infos[0], id);
-        m_descriptorBuilder->fillWritesMap(entity.getId());
+        m_descriptorBuilder->fillWritesMap(0);
 
         m_descriptorBuilder->createDescriptorSets(m_layout, m_pool);
 
@@ -128,26 +129,26 @@ namespace karhu
                 0,
                 nullptr);
         
-        ObjPushConstant objConstant{};
-        objConstant.model = entity.getTransformMatrix();
-        vkCmdPushConstants(frameInfo.commandBuffer,
-                m_pipelineBuilder.getHandle()->m_pipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT,
-                0,
-                sizeof(ObjPushConstant),
-                &objConstant);
-        
-        pushConstants cameraConstants{};
-        cameraConstants.cameraPosition = frameInfo.camera.getPosition();
-        cameraConstants.lightPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-        cameraConstants.lighColor = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f);
-        cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-        vkCmdPushConstants(frameInfo.commandBuffer,
-                m_pipelineBuilder.getHandle()->m_pipelineLayout,
-                VK_SHADER_STAGE_FRAGMENT_BIT,
-                64,
-                sizeof(pushConstants),
-                &cameraConstants);
+        /*ObjPushConstant objConstant{};*/
+        /*objConstant.model = entity.getTransformMatrix();*/
+        /*vkCmdPushConstants(frameInfo.commandBuffer,*/
+        /*        m_pipelineBuilder.getHandle()->m_pipelineLayout,*/
+        /*        VK_SHADER_STAGE_VERTEX_BIT,*/
+        /*        0,*/
+        /*        sizeof(ObjPushConstant),*/
+        /*        &objConstant);*/
+        /**/
+        /*pushConstants cameraConstants{};*/
+        /*cameraConstants.cameraPosition = frameInfo.camera.getPosition();*/
+        /*cameraConstants.lightPosition = glm::vec3(0.0f, 0.0f, 0.0f);*/
+        /*cameraConstants.lighColor = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f);*/
+        /*cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);*/
+        /*vkCmdPushConstants(frameInfo.commandBuffer,*/
+        /*        m_pipelineBuilder.getHandle()->m_pipelineLayout,*/
+        /*        VK_SHADER_STAGE_FRAGMENT_BIT,*/
+        /*        64,*/
+        /*        sizeof(pushConstants),*/
+        /*        &cameraConstants);*/
         
         entity.getModel()->bind(frameInfo.commandBuffer);
         entity.getModel()->draw(frameInfo.commandBuffer);
