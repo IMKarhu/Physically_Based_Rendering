@@ -186,7 +186,7 @@ namespace karhu
         /*m_image.createImageView(m_image.getImage(), format, VK_IMAGE_ASPECT_COLOR_BIT, 1);*/
         if(isCubeMap)
         {
-            createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+            createSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, mips);
         }
         else {
              createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT);

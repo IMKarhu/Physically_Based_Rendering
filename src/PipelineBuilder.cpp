@@ -275,7 +275,7 @@ namespace karhu
         pipelineStruct.rasterizer.rasterizerDiscardEnable = VK_FALSE;
         pipelineStruct.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         pipelineStruct.rasterizer.lineWidth = 1.0f;
-        pipelineStruct.rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        pipelineStruct.rasterizer.cullMode = VK_CULL_MODE_NONE;
         pipelineStruct.rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         pipelineStruct.rasterizer.depthBiasEnable = VK_FALSE;
         pipelineStruct.rasterizer.depthBiasConstantFactor = 0.0f; // Optional
@@ -300,8 +300,8 @@ namespace karhu
         pipelineStruct.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
         pipelineStruct.depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        pipelineStruct.depthStencil.depthTestEnable = VK_TRUE;
-        pipelineStruct.depthStencil.depthWriteEnable = VK_TRUE;
+        pipelineStruct.depthStencil.depthTestEnable = VK_FALSE;
+        pipelineStruct.depthStencil.depthWriteEnable = VK_FALSE;
         pipelineStruct.depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
         pipelineStruct.depthStencil.depthBoundsTestEnable = VK_FALSE;
         pipelineStruct.depthStencil.minDepthBounds = 0.0f; // Optional

@@ -5,12 +5,13 @@ layout(location = 0) in vec3 localPos;
 
 layout(location = 0) out vec4 fragColor;
 
-layout(set = 1, binding = 1) uniform samplerCube cubeMap;
-layout(set = 1, binding = 2) uniform Params
+layout(set = 1, binding = 0) uniform Params
 {
     float exposure;
     float gamma;
 } params;
+layout(set = 1, binding = 1) uniform samplerCube cubeMap;
+
 
 // From http://filmicworlds.com/blog/filmic-tonemapping-operators/
 vec3 Uncharted2Tonemap(vec3 color)

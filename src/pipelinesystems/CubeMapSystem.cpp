@@ -30,9 +30,9 @@ namespace karhu
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_pool = m_descriptorBuilder->createDescriptorPool(1000);
 
-        m_descriptorBuilder->bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_descriptorBuilder->bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_descriptorBuilder->bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
-        m_descriptorBuilder->bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        // m_descriptorBuilder->bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_layout = m_descriptorBuilder->createDescriptorSetLayout(m_bindings);
 
         std::vector<VkDescriptorImageInfo> infos;
@@ -50,7 +50,7 @@ namespace karhu
         m_descriptorBuilder->writeBuffer(entity.m_DescriptorSet,
                 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entity.m_Buffer->getBufferInfo(sizeof(Params)), id);
         
-        m_descriptorBuilder->writeImg(entity.m_DescriptorSet, 1, infos[0], id);
+        m_descriptorBuilder->writeImg(entity.m_DescriptorSet, 1, infos[1], id);
         m_descriptorBuilder->fillWritesMap(0);
 
         m_descriptorBuilder->createDescriptorSets(m_layout, m_pool);
@@ -638,7 +638,7 @@ namespace karhu
                 barrier2.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                 barrier2.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-                //error here
+                
                 vkCmdPipelineBarrier(cmdBuf,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,

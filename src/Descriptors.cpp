@@ -26,7 +26,7 @@ namespace karhu
         return layout;
     }
 
-    void Descriptors::bind(std::vector< VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags)
+    void Descriptors::bind(std::vector<VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags)
     {
         VkDescriptorSetLayoutBinding bind{};
         bind = utils::fillLayoutBindingStruct(binding, type, descriptorCount, flags);

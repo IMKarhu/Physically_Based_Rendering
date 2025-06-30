@@ -163,6 +163,7 @@ namespace karhu
         auto cubeEnt = Entity::createEntity();
         cubeEnt.setModel(cube);
         cubeEnt.setPosition({0.0f, 0.0f, 0.0f});
+        //cubeEnt.setScale({ 1.0f, 1.0f, 1.0f });
 
         m_disneySystem.createDescriptors(m_entities[Disney]);
         m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
