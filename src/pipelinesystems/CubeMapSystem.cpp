@@ -173,13 +173,13 @@ namespace karhu
         memcpy(&entity.m_Buffer->m_bufferMapped, &m_params, sizeof(Params));
     }
 
-    void CubeMapSystem::generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer)
+    void CubeMapSystem::generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer, IblTextures& textures)
     {
         printf("Starting BRDF lookup table generation\n");
         const VkFormat format = VK_FORMAT_R16G16_SFLOAT;
         const uint32_t dimensions = 512;
 
-        m_textures.m_brdfLut = Image(m_device.lDevice(),
+        textures.m_brdfLut = Image(m_device.lDevice(),
                 m_device.pDevice(),
                 1,
                 dimensions,
@@ -190,11 +190,11 @@ namespace karhu
                 VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        m_textures.m_brdfLut.createSampler(m_device.lDevice(), 1);
+        textures.m_brdfLut.createSampler(m_device.lDevice(), 1);
 
         karhu::createFrameBuffer1(m_device.lDevice(),
                 frameBuffer,
-                m_textures.m_brdfLut.getImageView(),
+                textures.m_brdfLut.getImageView(),
                 renderPass,
                 dimensions,
                 dimensions,
@@ -301,14 +301,15 @@ namespace karhu
     void CubeMapSystem::generateIrradianceCube(VkRenderPass renderPass,
             std::vector<VkFramebuffer>& frameBuffer,
             CommandBuffer& commandBuffer,
-            Entity& entity)
+            Entity& entity,
+            IblTextures& textures)
     {
         printf("Start generating IrradianceCubeMap\n");
         const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
         const uint32_t dimensions = 64;
         const uint32_t mips = static_cast<uint32_t>(floor(log2(dimensions))) + 1;
 
-        m_textures.m_irradianceCube = Image(m_device.lDevice(),
+        textures.m_irradianceCube = Image(m_device.lDevice(),
                 m_device.pDevice(),
                 mips,
                 dimensions,
@@ -319,7 +320,7 @@ namespace karhu
                 VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 true);
-        m_textures.m_irradianceCube.createSampler(m_device.lDevice(), mips);
+        textures.m_irradianceCube.createSampler(m_device.lDevice(), mips);
 
         /*karhu::createFrameBuffer1(m_device.lDevice(),*/
         /*    frameBuffer,*/
@@ -541,7 +542,7 @@ namespace karhu
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.image = m_textures.m_irradianceCube.getImage();
+        barrier.image = textures.m_irradianceCube.getImage();
         barrier.subresourceRange = subResourcerange;
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -633,7 +634,7 @@ namespace karhu
                         cmdBuf,
                         offScreen.image,
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        m_textures.m_irradianceCube.getImage(),
+                        textures.m_irradianceCube.getImage(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         1,
                         &copyRegion);
@@ -674,7 +675,7 @@ namespace karhu
         barrier3.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier3.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         barrier3.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier3.image = m_textures.m_irradianceCube.getImage();
+        barrier3.image = textures.m_irradianceCube.getImage();
         barrier3.subresourceRange = subResourcerange3;
         barrier3.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier3.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;

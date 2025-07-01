@@ -200,5 +200,13 @@ namespace karhu
         VK_CHECK(vkCreateSampler(device, &samplerCI, nullptr, &m_sampler));
     }
 
+    VkDescriptorImageInfo Image::imageInfo()
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_imageView;
+        imageInfo.sampler = m_sampler;
+        return imageInfo;
+    }
 
 } // karhu namespace

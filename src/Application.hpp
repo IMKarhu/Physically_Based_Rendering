@@ -55,6 +55,7 @@ namespace karhu
             std::unordered_map<FramebufferType, std::vector<VkFramebuffer>> m_framebuffers;
 
             std::unordered_map<enityType, std::vector<Entity>> m_entities;
+            IblTextures m_iblTextures;
 
             /*synchronization*/
             struct Semaphoras

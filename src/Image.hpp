@@ -47,6 +47,7 @@ namespace karhu
             const VkImageView& getImageView() const { return m_imageView; }
             const VkSampler& getSampler() const { return m_sampler; }
             const std::vector<VkImageView>& getImageViews() const { return m_faceImageViews; }
+            VkDescriptorImageInfo imageInfo();
         private:
             VkImage m_image = VK_NULL_HANDLE;
             VkImageView m_imageView = VK_NULL_HANDLE;

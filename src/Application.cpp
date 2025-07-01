@@ -120,6 +120,19 @@ namespace karhu
         auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
         auto cube = std::make_shared<Model>(m_device, m_commandBuffer, CUBEMAPVERTS, CUBEMAPINDICES, true);
 
+        auto ent1 = Entity::createEntity();
+        ent1.setModel(model);
+        ent1.setPosition({0.0f, 0.0f, -5.0f});
+        ent1.setScale({1.0f, 1.0f, 1.0f});
+        ent1.setRotation({90.0f, 0.0f, 0.0f});
+
+        m_entities[Disney].push_back(std::move(ent1));
+
+        auto cubeEnt = Entity::createEntity();
+        cubeEnt.setModel(cube);
+        cubeEnt.setPosition({0.0f, 0.0f, 0.0f});
+        cubeEnt.setRotation({0.0f, 180.0f, 0.0f});
+
         /*karhu::createFrameBuffer(m_device.lDevice(),*/
         /*        m_framebuffers[FramebufferType::Cube],*/
         /*        cube->m_Textures[0].getCubeImageViewsPerFace(),*/
@@ -129,11 +142,18 @@ namespace karhu
         /*        1,*/
         /*        true);*/
 
+        m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(), m_framebuffers[FramebufferType::BRDFLUT], m_commandBuffer, m_iblTextures);
+        m_cubeMapSystem.generateIrradianceCube(m_renderPasses[3].getRenderPass(), m_framebuffers[FramebufferType::IRRADIANCE], m_commandBuffer, cubeEnt, m_iblTextures);
+
+
         /*Probably shouldn't be here but it'll work for now..*/
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
+        m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_pool = m_builder.createDescriptorPool(2);
 
         m_builder.bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_builder.bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_builder.bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_layout = m_builder.createDescriptorSetLayout(m_bindings);
 
         std::vector<std::unique_ptr<Buffer>> uboBuffers(2);
@@ -147,24 +167,19 @@ namespace karhu
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         }
 
+        std::vector<VkDescriptorImageInfo> infos;
+        // infos.resize(2);
+        infos.push_back(m_iblTextures.m_brdfLut.imageInfo());
+        infos.push_back(m_iblTextures.m_irradianceCube.imageInfo());
+
+
         m_builder.allocateDescriptor(m_set, m_layout, m_pool);
         m_builder.writeBuffer(m_set, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboBuffers[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
+        m_builder.writeImg(m_set, 1, infos[0], 0);
+        m_builder.writeImg(m_set, 2, infos[1], 0);
         m_builder.fillWritesMap(0);
         m_builder.createDescriptorSets(m_layout, m_pool);
 
-        auto ent1 = Entity::createEntity();
-        ent1.setModel(model);
-        ent1.setPosition({0.0f, 0.0f, -5.0f});
-        ent1.setScale({1.0f, 1.0f, 1.0f});
-        ent1.setRotation({90.0f, 0.0f, 0.0f});
-
-        m_entities[Disney].push_back(std::move(ent1));
-
-        auto cubeEnt = Entity::createEntity();
-        cubeEnt.setModel(cube);
-        cubeEnt.setPosition({0.0f, 0.0f, 0.0f});
-        cubeEnt.setRotation({0.0f, 180.0f, 0.0f});
-        // cubeEnt.setScale({ -1.0f, -1.0f, 1.0f });
 
         m_disneySystem.createDescriptors(m_entities[Disney]);
         m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
@@ -177,8 +192,6 @@ namespace karhu
                 m_swapChain.getSwapChainExtent(),
                 m_layout,
                 m_renderPasses[0].getRenderPass());
-        m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(), m_framebuffers[FramebufferType::BRDFLUT], m_commandBuffer);
-        m_cubeMapSystem.generateIrradianceCube(m_renderPasses[3].getRenderPass(), m_framebuffers[FramebufferType::IRRADIANCE], m_commandBuffer, cubeEnt);
 
 
         update(uboBuffers, cubeEnt);

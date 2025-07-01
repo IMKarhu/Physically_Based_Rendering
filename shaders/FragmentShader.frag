@@ -7,6 +7,9 @@ layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragUV;
 layout(location = 3) in vec4 fragWorldPosition;
 
+layout(set = 0, binding = 1) uniform sampler2D brdfLut;
+layout(set = 0, binding = 2) uniform samplerCube irradianceCube;
+
 layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
 layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
 layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and roughness
@@ -61,6 +64,8 @@ void main()
         roughness = 1.0;
     }
     float ao = texture(aoMap, fragUV).r;
+
+    vec3 irradiance = texture(irradianceCube, normal).rgb;
     
     //baseRefelectivity
     vec3 f0 = vec3(0.04);
@@ -98,12 +103,12 @@ void main()
     //kD *= 1.0 - metallic;
 
     //Lambertian
-    vec3 diffuseBRDF = kD * albedo;
+    vec3 diffuseBRDF = irradiance * albedo;
 
     Lo += (diffuseBRDF + SpecularBRDF) * radiance * NoL;
 
 
-    vec3 ambient = vec3(0.1) * albedo * ao;
+    vec3 ambient = (kD * diffuseBRDF + SpecularBRDF);
 
     vec3 color = ambient + Lo;
     color *= Fd_Lambert();

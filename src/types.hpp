@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Image.hpp"
+
 #include <vulkan/vulkan.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
@@ -118,5 +120,11 @@ namespace karhu
         alignas(16) glm::vec3 lightPosition;
         glm::vec4 lighColor;
         glm::vec4 albedoNormalMetalRoughness;
+    };
+
+    struct IblTextures {
+        Image m_brdfLut;
+        
+        Image m_irradianceCube;
     };
 }

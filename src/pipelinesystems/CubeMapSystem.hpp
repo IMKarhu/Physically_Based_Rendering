@@ -33,11 +33,12 @@ namespace karhu
             void renderSkyBox(Frame& frameInfo, Entity& entity);
             void updateCubeUbo(Entity& entity, Camera& camera);
 
-            void generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer);
+            void generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer, IblTextures& textures);
             void generateIrradianceCube(VkRenderPass renderPass,
                     std::vector<VkFramebuffer>& frameBuffer,
                     CommandBuffer& commandBuffer,
-                    Entity& entity);
+                    Entity& entity,
+                    IblTextures& textures);
             void generatePreFilteredCube();
         private:
             CubePipelineBuilder m_pipelineBuilder;
