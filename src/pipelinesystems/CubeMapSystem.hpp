@@ -15,6 +15,7 @@ namespace karhu
     class Descriptors;
     class Entity;
     class CommandBuffer;
+    class Camera;
     class CubeMapSystem
     {
         public:
@@ -30,7 +31,7 @@ namespace karhu
                     VkDescriptorSetLayout layout,
                     VkRenderPass renderPass);
             void renderSkyBox(Frame& frameInfo, Entity& entity);
-            void updateCubeUbo();
+            void updateCubeUbo(Entity& entity, Camera& camera);
 
             void generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer);
             void generateIrradianceCube(VkRenderPass renderPass,
@@ -50,6 +51,7 @@ namespace karhu
             VkDescriptorSetLayout m_layout;
             std::vector<VkDescriptorSetLayoutBinding> m_bindings;
             std::vector<glm::mat4> m_matrices;
+            std::unique_ptr<Buffer> m_uboBuffer;
 
             struct Textures {
                 Image m_brdfLut;
@@ -59,6 +61,8 @@ namespace karhu
 
             struct Params
             {
+                glm::mat4 proj;
+                glm::mat4 view;
                 float exposure = 4.5f;
                 float gamma = 2.2f;
             } m_params;

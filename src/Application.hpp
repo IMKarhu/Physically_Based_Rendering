@@ -36,7 +36,7 @@ namespace karhu
             uint32_t begin(uint32_t currentFrameIndex);
             void end(uint32_t currentFrameIndex, uint32_t imageIndex);
         private:
-            void updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera);
+            void updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera, bool flipY = false);
             void createSyncObjects();
             void cleanUpBeforeReCreate();
             void reCreateSwapChain();

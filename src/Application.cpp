@@ -163,7 +163,8 @@ namespace karhu
         auto cubeEnt = Entity::createEntity();
         cubeEnt.setModel(cube);
         cubeEnt.setPosition({0.0f, 0.0f, 0.0f});
-        //cubeEnt.setScale({ 1.0f, 1.0f, 1.0f });
+        cubeEnt.setRotation({0.0f, 180.0f, 0.0f});
+        // cubeEnt.setScale({ -1.0f, -1.0f, 1.0f });
 
         m_disneySystem.createDescriptors(m_entities[Disney]);
         m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
@@ -230,8 +231,8 @@ namespace karhu
 
             end(m_currentFrame, imageIndex);
 
-            updateBuffers(gBuffers, camera);
-
+            // m_cubeMapSystem.updateCubeUbo(entity, camera);
+            updateBuffers(gBuffers, camera, true);
             for (auto& entity : m_entities[Disney])
             {
                 entity.updateBuffer();
@@ -348,7 +349,7 @@ namespace karhu
         m_currentFrame = (m_currentFrame + 1) % m_commandBuffer.getMaxFramesInFlight();
     }
 
-    void Application::updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera)
+    void Application::updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera, bool flipY)
     {
         for( auto& buffer : gBuffers)
         {
@@ -356,7 +357,10 @@ namespace karhu
 
             obj.view = camera.getView();
             obj.proj = camera.getProjection();
-            obj.proj[1][1] *= -1;
+            if(flipY)
+            {
+                obj.proj[1][1] *= -1;
+            }
 
             memcpy(buffer->m_bufferMapped, &obj, sizeof(obj));
         }

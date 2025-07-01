@@ -6,6 +6,14 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
     mat4 view;
     mat4 proj;
 } m_Ubo;
+layout(set = 1, binding = 0) uniform Params
+{
+    mat4 view;
+    mat4 proj;
+    float exposure;
+    float gamma;
+} params;
+
 
 layout(location = 0) in vec3 inPosition;
 
@@ -19,7 +27,9 @@ out gl_PerVertex
 void main()
 {
     localPos = inPosition;
+    localPos.xy *= -1.0;
 
     mat4 rotView = mat4(mat3(m_Ubo.view)); // this removes translation from view matrice
     gl_Position = m_Ubo.proj * rotView * vec4(inPosition.xyz, 1.0);
+    // gl_Position.y = -gl_Position.y;
 }

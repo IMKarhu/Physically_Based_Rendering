@@ -41,11 +41,11 @@ namespace karhu
 
         vkMapMemory(m_device, m_bufferMemory, 0, size, 0, &m_bufferMapped);
     }
-    VkDescriptorBufferInfo Buffer::getBufferInfo(VkDeviceSize size)
+    VkDescriptorBufferInfo Buffer::getBufferInfo(VkDeviceSize size, VkDeviceSize offset)
     {
         VkDescriptorBufferInfo info{};
         info.buffer = m_buffer;
-        info.offset = 0;
+        info.offset = offset;
         info.range = size;
         return info;
     }

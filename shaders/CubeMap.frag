@@ -7,10 +7,13 @@ layout(location = 0) out vec4 fragColor;
 
 layout(set = 1, binding = 0) uniform Params
 {
+    mat4 view;
+    mat4 proj;
     float exposure;
     float gamma;
 } params;
 layout(set = 1, binding = 1) uniform samplerCube cubeMap;
+
 
 
 // From http://filmicworlds.com/blog/filmic-tonemapping-operators/
@@ -30,11 +33,11 @@ void main()
 {
     vec3 color = texture(cubeMap, localPos).rgb;
 
-    color = Uncharted2Tonemap(color * params.exposure);
-    color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    // color = Uncharted2Tonemap(color * params.exposure);
+    // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
 
     //Gamma correction
-    color = pow(color, vec3(1.0f / params.gamma));
+    // color = pow(color, vec3(1.0f / params.gamma));
 
     fragColor = vec4(color, 1.0);
 }

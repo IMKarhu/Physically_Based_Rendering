@@ -5,6 +5,7 @@
 #include "../Descriptors.hpp"
 #include "../FrameBuffer.hpp"
 #include "../CommandBuffer.hpp"
+#include "../Camera.hpp"
 
 
 namespace karhu
@@ -27,10 +28,11 @@ namespace karhu
     {
         m_descriptorBuilder = std::make_unique<Descriptors>(m_device);
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
+        // m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_pool = m_descriptorBuilder->createDescriptorPool(1000);
 
-        m_descriptorBuilder->bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_descriptorBuilder->bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         m_descriptorBuilder->bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         // m_descriptorBuilder->bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_layout = m_descriptorBuilder->createDescriptorSetLayout(m_bindings);
@@ -45,12 +47,21 @@ namespace karhu
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
+        // m_uboBuffer = std::make_unique<Buffer>();
+        // m_uboBuffer->m_device = m_device.lDevice();
+        // m_uboBuffer->m_phyiscalDevice = m_device.pDevice();
+        // m_uboBuffer->createBuffer(sizeof(UniformBufferObject),
+        //         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        //         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
         auto id = entity.getId();
         m_descriptorBuilder->allocateDescriptor(entity.m_DescriptorSet, m_layout, m_pool);
         m_descriptorBuilder->writeBuffer(entity.m_DescriptorSet,
                 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entity.m_Buffer->getBufferInfo(sizeof(Params)), id);
         
         m_descriptorBuilder->writeImg(entity.m_DescriptorSet, 1, infos[1], id);
+        // m_descriptorBuilder->writeBuffer(entity.m_DescriptorSet,
+        //         2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entity.m_Buffer->getBufferInfo(sizeof(Params)), id);
         m_descriptorBuilder->fillWritesMap(0);
 
         m_descriptorBuilder->createDescriptorSets(m_layout, m_pool);
@@ -154,8 +165,12 @@ namespace karhu
         entity.getModel()->draw(frameInfo.commandBuffer);
     }
 
-    void CubeMapSystem::updateCubeUbo()
+    void CubeMapSystem::updateCubeUbo(Entity& entity, Camera& camera)
     {
+        m_params.proj = camera.getProjection();
+        m_params.view = camera.getView();
+
+        memcpy(&entity.m_Buffer->m_bufferMapped, &m_params, sizeof(Params));
     }
 
     void CubeMapSystem::generateBrdfLut(VkRenderPass renderPass, std::vector<VkFramebuffer>& frameBuffer, CommandBuffer& commandBuffer)
