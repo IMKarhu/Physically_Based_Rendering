@@ -142,8 +142,20 @@ namespace karhu
         /*        1,*/
         /*        true);*/
 
-        m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(), m_framebuffers[FramebufferType::BRDFLUT], m_commandBuffer, m_iblTextures);
-        m_cubeMapSystem.generateIrradianceCube(m_renderPasses[3].getRenderPass(), m_framebuffers[FramebufferType::IRRADIANCE], m_commandBuffer, cubeEnt, m_iblTextures);
+        m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(),
+                m_framebuffers[FramebufferType::BRDFLUT],
+                m_commandBuffer,
+                m_iblTextures);
+        m_cubeMapSystem.generateIrradianceCube(m_renderPasses[3].getRenderPass(),
+                m_framebuffers[FramebufferType::IRRADIANCE],
+                m_commandBuffer,
+                cubeEnt,
+                m_iblTextures);
+        m_cubeMapSystem.generatePreFilteredCube(m_renderPasses[4].getRenderPass(),
+                m_framebuffers[FramebufferType::PREFILTER],
+                m_commandBuffer,
+                cubeEnt,
+                m_iblTextures);
 
 
         /*Probably shouldn't be here but it'll work for now..*/
@@ -154,6 +166,7 @@ namespace karhu
         m_builder.bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
         m_builder.bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_builder.bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_builder.bind(m_bindings, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_layout = m_builder.createDescriptorSetLayout(m_bindings);
 
         std::vector<std::unique_ptr<Buffer>> uboBuffers(2);
@@ -171,12 +184,14 @@ namespace karhu
         // infos.resize(2);
         infos.push_back(m_iblTextures.m_brdfLut.imageInfo());
         infos.push_back(m_iblTextures.m_irradianceCube.imageInfo());
+        infos.push_back(m_iblTextures.m_prefilteredCube.imageInfo());
 
 
         m_builder.allocateDescriptor(m_set, m_layout, m_pool);
         m_builder.writeBuffer(m_set, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboBuffers[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
         m_builder.writeImg(m_set, 1, infos[0], 0);
         m_builder.writeImg(m_set, 2, infos[1], 0);
+        m_builder.writeImg(m_set, 3, infos[2], 0);
         m_builder.fillWritesMap(0);
         m_builder.createDescriptorSets(m_layout, m_pool);
 
@@ -573,6 +588,42 @@ namespace karhu
         irDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         m_renderPasses.emplace_back(m_device, irAttDesc, irSubpassDescription, irDependencies);
+
+        std::vector<VkAttachmentDescription> pfAttDesc(1);
+        // Color attachment
+        pfAttDesc[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+        pfAttDesc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        pfAttDesc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        pfAttDesc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        pfAttDesc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        pfAttDesc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        pfAttDesc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        pfAttDesc[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference pfColorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        
+        VkSubpassDescription pfSubpassDescription = {};
+        pfSubpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        pfSubpassDescription.colorAttachmentCount = 1;
+        pfSubpassDescription.pColorAttachments = &pfColorReference;
+        
+        // Use subpass dependencies for layout transitions
+        std::vector<VkSubpassDependency> pfDependencies(2);
+        pfDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        pfDependencies[0].dstSubpass = 0;
+        pfDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        pfDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        pfDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        pfDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        pfDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        pfDependencies[1].srcSubpass = 0;
+        pfDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        pfDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        pfDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        pfDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        pfDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        pfDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        m_renderPasses.emplace_back(m_device, pfAttDesc, pfSubpassDescription, pfDependencies);
 
     }
 } // namespace karhu

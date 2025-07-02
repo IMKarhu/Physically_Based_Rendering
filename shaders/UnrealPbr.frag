@@ -140,5 +140,5 @@ vec3 F_Schlick(vec3 f0, float HoV)
 
 float Fd_Lambert()
 {
-return 1.0 / PI;
+    return 1.0 / PI;
 }

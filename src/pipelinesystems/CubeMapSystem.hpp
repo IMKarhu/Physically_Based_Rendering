@@ -39,14 +39,20 @@ namespace karhu
                     CommandBuffer& commandBuffer,
                     Entity& entity,
                     IblTextures& textures);
-            void generatePreFilteredCube();
+            void generatePreFilteredCube(VkRenderPass renderPass,
+            std::vector<VkFramebuffer>& frameBuffer,
+            CommandBuffer& commandBuffer,
+            Entity& entity,
+            IblTextures& textures);
         private:
             CubePipelineBuilder m_pipelineBuilder;
             CubePipelineBuilder m_brdflutPipelineBuilder;
             CubePipelineBuilder m_irradiancePipelineBuilder;
+            CubePipelineBuilder m_prefilteredPipelineBuilder;
             std::unique_ptr<Descriptors> m_descriptorBuilder;
             std::unique_ptr<Descriptors> m_brdflutBuilder;
             std::unique_ptr<Descriptors> m_irradianceCubeBuilder;
+            std::unique_ptr<Descriptors> m_prefilteredCubeBuilder;
 
             VkDescriptorPool m_pool;
             VkDescriptorSetLayout m_layout;

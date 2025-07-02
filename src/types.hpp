@@ -126,5 +126,6 @@ namespace karhu
         Image m_brdfLut;
         
         Image m_irradianceCube;
+        Image m_prefilteredCube;
     };
 }

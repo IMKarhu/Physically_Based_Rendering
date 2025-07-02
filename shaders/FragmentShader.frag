@@ -9,6 +9,7 @@ layout(location = 3) in vec4 fragWorldPosition;
 
 layout(set = 0, binding = 1) uniform sampler2D brdfLut;
 layout(set = 0, binding = 2) uniform samplerCube irradianceCube;
+layout(set = 0, binding = 3) uniform samplerCube prefilteredCube;
 
 layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
 layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
@@ -47,25 +48,22 @@ vec3 getNormalFromMap()
 
 float D_GGX(float NoH, float a);
 vec3 F_Schlick(float u, vec3 f0);
+vec3 F_SchlickR(float u, vec3 f0, float roughness);
 float V_SmithGGXCorrelated(float NoV, float NoL, float a);
 float Fd_Lambert();
+vec3 prefilteredReflection(vec3 R, float roughness);
+vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float roughness, vec3 albedo);
 
 void main()
 {
-    vec3 normal = getNormalFromMap();
+    vec3 normal = getNormalFromMap(); // normals
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
+    vec3 R = reflect(-V, normal);
     vec3 albedo = texture(texSampler, fragUV).rgb;
-    float metallic = texture(metallicMap, fragUV).b + camera.albedoNormalMetalRoughness.z;
-    float roughness = texture(metallicMap, fragUV).g + camera.albedoNormalMetalRoughness.w;
-//    float metallic = texture(metallicMap, fragUV).r + camera.albedoNormalMetalRoughness.z;
-//    float roughness = texture(roughnessMap, fragUV).r + camera.albedoNormalMetalRoughness.w;
-    if(roughness > 1.0)
-    {
-        roughness = 1.0;
-    }
+    float metallic = texture(metallicMap, fragUV).b;
+    float roughness = texture(metallicMap, fragUV).g;
     float ao = texture(aoMap, fragUV).r;
 
-    vec3 irradiance = texture(irradianceCube, normal).rgb;
     
     //baseRefelectivity
     vec3 f0 = vec3(0.04);
@@ -78,44 +76,28 @@ void main()
 
     //per light radiance, if we had more than one, we should calculate this for all the lights
     vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
-    vec3 H = normalize(V + L);
-    float dist = length(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
-    float attenuation = 1.0 / (dist *  dist);
-    vec3 radiance = camera.lightColor.xyz * attenuation;
-                    
-    //BRDF
-    float NoV = max(dot(normal, V), 0.000001);
-    float NoL = max(dot(normal, L), 0.000001);
-    float HoV = max(dot(H, V), 0.0);
-    float NoH = max(dot(normal, H), 0.0);
-            
-    float D = D_GGX(NoH, roughness); //Normal distribution for specular BRDF.  value between 0 and 1
-    float G = V_SmithGGXCorrelated(NoV, NoL, roughness); //Geometric attenuation for specular BRDF. value between 0 and 1
-    vec3 F = F_Schlick(HoV, f0); //Fresnel term for direct lighting. RGB values also between 0 and 1
-            
-    vec3 SpecularBRDF = F * G * D;
+    Lo += specularContribution(L, V, normal, f0, metallic, roughness, albedo);
+
+    vec2 brdf = texture(brdfLut, vec2(max(dot(normal, V), 0.0), roughness)).rg;
+    vec3 reflection = prefilteredReflection(R, roughness).rgb;
+    vec3 irradiance = texture(irradianceCube, normal).rgb;
     
-    //energy conservation, diffuse and specular light can't be above 1.0 (unles surface emits light)
-    //Diffuse scattering.
-    //Happens because light is refracted multiple times by dielectric medium.
-    //metals reflect or absorb energy, diffuse is always zero.
-    vec3 kD = mix(vec3(1.0) - F, vec3(0.0), metallic);
-    //kD *= 1.0 - metallic;
+    // diffuse is based on irradiance
+    vec3 diffuse = irradiance * albedo;
 
-    //Lambertian
-    vec3 diffuseBRDF = irradiance * albedo;
+    vec3 F = F_SchlickR(max(dot(normal, V), 0.000001), f0, roughness);
 
-    Lo += (diffuseBRDF + SpecularBRDF) * radiance * NoL;
+    //specular reflectance
+    vec3 specularRef = reflection * (F * brdf.x + brdf.y);
 
-
-    vec3 ambient = (kD * diffuseBRDF + SpecularBRDF);
+    vec3 kD = 1.0 - F;
+    kD *= 1.0 - metallic;
+    vec3 ambient = (kD * diffuse + specularRef);
 
     vec3 color = ambient + Lo;
-    color *= Fd_Lambert();
-    
 
     //hdr tonemapping
-    color = color / (color + vec3(1.0));
+    //color = color / (color + vec3(1.0));
     //gamma correction
     //color = pow(color, vec3(1.0/2.2));
 
@@ -124,14 +106,23 @@ void main()
 
 float D_GGX(float NoH, float a)
 {
-    float a2 = a * a;
-    float f = (NoH * a2 - NoH) * NoH + 1.0;
-    return a2/ (PI * f * f); // DGGX(h,a) = a2/ PI((n*h)pow2 (a2-1)+1)pow2
+    //float a2 = a * a;
+    //float f = (NoH * a2 - NoH) * NoH + 1.0;
+    //return a2/ (PI * f * f); // DGGX(h,a) = a2/ PI((n*h)pow2 (a2-1)+1)pow2
+    float alpha = a * a;
+    float a2 = alpha * alpha;
+    float denom = NoH * NoH * (a2 -1.0) +1.0;
+    return (a2)/(PI * denom * denom);
 }
 
 vec3 F_Schlick(float u, vec3 f0)
 {
-return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0); // Fresnel Schlick(v,h,f0,f90=1.0) = f0 + (f90 - f0)(1-v*h)power of 5
+    return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0); // Fresnel Schlick(v,h,f0,f90=1.0) = f0 + (f90 - f0)(1-v*h)power of 5
+}
+
+vec3 F_SchlickR(float u, vec3 f0, float roughness)
+{
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - u, 5.0);
 }
 
 float V_SmithGGXCorrelated(float NoV, float NoL, float a)
@@ -139,10 +130,45 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float a)
     float a2 = a * a;
     float ggxl = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
     float ggxv = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
-return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
+    return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
 }
 
 float Fd_Lambert()
 {
-return 1.0 / PI;
+    return 1.0 / PI;
+}
+
+vec3 prefilteredReflection(vec3 R, float roughness)
+{
+    const float MAX_REFLECTION_LOD = 9.0;
+    float lod = roughness * MAX_REFLECTION_LOD;
+    float lodf = floor(lod);
+    float lodc = ceil(lod);
+    vec3 a = textureLod(prefilteredCube, R, lodf).rgb;
+    vec3 b = textureLod(prefilteredCube, R, lodc).rgb;
+    return mix(a, b, lod - lodf);
+}
+
+vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float roughness, vec3 albedo)
+{
+    vec3 H = normalize(V + L);
+    float NoV = max(dot(N, V), 0.000001);
+    float NoL = max(dot(N, L), 0.000001);
+    float HoV = max(dot(H, V), 0.0);
+    float NoH = max(dot(N, H), 0.0);
+
+    vec3 lightColor = vec3(1.0);
+    vec3 color = vec3(0.0); //color we return from this function
+
+    if (NoL > 0.0)
+    {
+        float D = D_GGX(NoH, roughness); // Normal Distribution
+        float G = V_SmithGGXCorrelated(NoV, NoL, roughness); //Geometric shadowing
+        vec3 F = F_Schlick(NoV, F0); //Fresnel factor, reflectance depending on angle
+
+        vec3 specular = D * F * G / (4.0 * NoL * NoV + 0.001);
+        vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
+        color += (kD * albedo / PI + specular) * NoL;
+    }
+    return color;
 }
