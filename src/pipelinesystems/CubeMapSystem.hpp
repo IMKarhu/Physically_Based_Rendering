@@ -25,7 +25,8 @@ namespace karhu
             CubeMapSystem(const CubeMapSystem&) = delete;
             CubeMapSystem &operator = (const CubeMapSystem&) = delete;
 
-            void createDescriptors(Entity& entity);
+            //passing in IBL textures just for testing if convolution works
+            void createDescriptors(Entity& entity, IblTextures& textures);
             void createGraphicsPipeline(VkDevice device,
                     VkExtent2D extent,
                     VkDescriptorSetLayout layout,

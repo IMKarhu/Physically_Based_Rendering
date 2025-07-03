@@ -109,6 +109,26 @@ namespace karhu
         m_pipelinebuilder.createPipeline(pipelineStruct, "../shaders/vertexShader.spv", "../shaders/fragmentShader.spv");
     }
 
+    void DisneySystem::makeSpheres()
+    {
+        const unsigned int x_seg = 64;
+        const unsigned int y_seg = 64;
+        const double pi = 3.14159265359;
+
+        for (size_t i = 0; i <= x_seg; ++i)
+        {
+            for (size_t j = 0; j <= y_seg; ++j)
+            {
+                float xseg = (float)i / (float)x_seg;
+                float yseg = (float)j / (float)y_seg;
+
+                float xpos = std::cos(xseg * 2.0 * pi) * std::sin(yseg * pi);
+                float ypos = std::cos(yseg * pi);
+                float zpos = std::sin(xseg * 2.0f * pi) * std::sin(yseg * pi);
+            }
+        }
+    }
+
     void DisneySystem::renderEntities(Frame& frameInfo)
     {
         m_pipelinebuilder.bind(frameInfo.commandBuffer);

@@ -202,7 +202,7 @@ namespace karhu
                 m_layout,
                 m_renderPasses[0].getRenderPass());
 
-        m_cubeMapSystem.createDescriptors(cubeEnt);
+        m_cubeMapSystem.createDescriptors(cubeEnt, m_iblTextures);
         m_cubeMapSystem.createGraphicsPipeline(m_device.lDevice(),
                 m_swapChain.getSwapChainExtent(),
                 m_layout,

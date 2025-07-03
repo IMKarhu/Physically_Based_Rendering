@@ -71,11 +71,11 @@ namespace karhu
     {
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(filepath, aiProcess_CalcTangentSpace |
-                aiProcess_Triangulate |
-                aiProcess_JoinIdenticalVertices |
-                aiProcess_SortByPType |
-                aiProcess_FlipUVs |
-                aiProcess_GenSmoothNormals);
+                // aiProcess_Triangulate |
+                // aiProcess_JoinIdenticalVertices |
+                // aiProcess_SortByPType |
+                aiProcess_FlipUVs //|
+                /*aiProcess_GenSmoothNormals*/);
         
         if (scene == nullptr)
         {
@@ -115,6 +115,14 @@ namespace karhu
             
             vert.texcoords.x = mesh->mTextureCoords[0][i].x;
             vert.texcoords.y = mesh->mTextureCoords[0][i].y;
+
+            if(mesh->HasTangentsAndBitangents())
+            {
+                printf("found tangents\n");
+                vert.tangents.x = mesh->mTangents[i].x;
+                vert.tangents.y = mesh->mTangents[i].y;
+                vert.tangents.z = mesh->mTangents[i].z;
+            }
             
             vert.color = { 1.0f, 1.0f, 0.0f };
             

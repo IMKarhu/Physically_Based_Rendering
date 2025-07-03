@@ -21,11 +21,13 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
 layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec2 inUV;
+layout(location = 4) in vec3 inTangent;
 
 layout(location = 0) out vec3 fragColors;
 layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec2 fragUV;
 layout(location = 3) out vec4 fragWorldPosition;
+layout(location = 4) out vec3 fragTangent;
 
 void main()
 {
@@ -33,9 +35,10 @@ void main()
     gl_Position = m_Ubo.proj * m_Ubo.view * fragWorldPosition;
 
     //normalworldspace
-    vec3 nws = normalize(mat3(obj.model) * inNormal);
+    //vec3 nws = normalize(mat3(obj.model) * inNormal);
     
     fragColors = inColor;
     fragNormal = mat3(obj.model) * inNormal; // normals in world space
     fragUV = inUV;
+    fragTangent = mat3(obj.model) * inTangent;
 }

@@ -24,7 +24,7 @@ namespace karhu
     }
 
     CubeMapSystem::~CubeMapSystem() {}
-    void CubeMapSystem::createDescriptors(Entity& entity)
+    void CubeMapSystem::createDescriptors(Entity& entity, IblTextures& textures)
     {
         m_descriptorBuilder = std::make_unique<Descriptors>(m_device);
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
@@ -40,6 +40,7 @@ namespace karhu
         std::vector<VkDescriptorImageInfo> infos;
         infos.resize(1);
         infos.push_back(entity.getModel()->m_Textures[0].getImageInfo());
+        // infos.push_back(textures.m_irradianceCube.imageInfo());
         entity.m_Buffer = std::make_unique<Buffer>();
         entity.m_Buffer->m_device = m_device.lDevice();
         entity.m_Buffer->m_phyiscalDevice = m_device.pDevice();

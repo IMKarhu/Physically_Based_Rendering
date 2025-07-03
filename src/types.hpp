@@ -18,6 +18,7 @@ namespace karhu
         glm::vec3 color;
         glm::vec3 normal;
         glm::vec2 texcoords;
+        glm::vec3 tangents;
 
         static VkVertexInputBindingDescription getBindingDescription()
         {
@@ -27,9 +28,9 @@ namespace karhu
             description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
             return description;
         }
-        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescription()
+        static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescription()
         {
-            std::array<VkVertexInputAttributeDescription, 4> attributeDescription{};
+            std::array<VkVertexInputAttributeDescription, 5> attributeDescription{};
             attributeDescription[0].binding = 0;
             attributeDescription[0].location = 0;
             attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -49,6 +50,11 @@ namespace karhu
             attributeDescription[3].location = 3;
             attributeDescription[3].format = VK_FORMAT_R32G32_SFLOAT;
             attributeDescription[3].offset = offsetof(Vertex, texcoords);
+
+            attributeDescription[4].binding = 0;
+            attributeDescription[4].location = 4;
+            attributeDescription[4].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescription[4].offset = offsetof(Vertex, tangents);
 
             return attributeDescription;
         }

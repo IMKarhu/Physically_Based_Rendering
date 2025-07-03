@@ -6,6 +6,7 @@ layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragUV;
 layout(location = 3) in vec4 fragWorldPosition;
+layout(location = 4) in vec3 fragTangent;
 
 layout(set = 0, binding = 1) uniform sampler2D brdfLut;
 layout(set = 0, binding = 2) uniform samplerCube irradianceCube;
@@ -29,6 +30,19 @@ layout( push_constant, std140) uniform cameraConstants
 const float PI = 3.1415926535897932384626433832795;
 const float EPSILON = 0.00001;
 
+// From http://filmicworlds.com/blog/filmic-tonemapping-operators/
+vec3 Uncharted2Tonemap(vec3 color)
+{
+    float A = 0.15;
+    float B = 0.50;
+    float C = 0.10;
+    float D = 0.20;
+    float E = 0.02;
+    float F = 0.30;
+    float W = 11.2;
+    return ((color*(A*color+C*B)+D*E)/(color*(A*color+B)+D*F))-E/F;
+}
+
 vec3 getNormalFromMap()
 {
     vec3 tangentNormal = texture(normalMap, fragUV).xyz * 2.0 - 1.0;
@@ -39,7 +53,7 @@ vec3 getNormalFromMap()
     vec2 st2 = dFdy(fragUV);
 
     vec3 N   = normalize(fragNormal);
-    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 T  = normalize(fragTangent);
     vec3 B  = normalize(cross(T, N));
     mat3 TBN = mat3(T, B, N);
 
@@ -59,10 +73,10 @@ void main()
     vec3 normal = getNormalFromMap(); // normals
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
     vec3 R = reflect(-V, normal);
-    vec3 albedo = texture(texSampler, fragUV).rgb;
+    vec3 albedo = pow(texture(texSampler, fragUV).rgb, vec3(2.2));
     float metallic = texture(metallicMap, fragUV).b;
     float roughness = texture(metallicMap, fragUV).g;
-    float ao = texture(aoMap, fragUV).r;
+    // float ao = texture(aoMap, fragUV).r;
 
     
     //baseRefelectivity
@@ -85,21 +99,24 @@ void main()
     // diffuse is based on irradiance
     vec3 diffuse = irradiance * albedo;
 
-    vec3 F = F_SchlickR(max(dot(normal, V), 0.000001), f0, roughness);
+    vec3 F = F_SchlickR(max(dot(normal, V), 0.0), f0, roughness);
 
     //specular reflectance
     vec3 specularRef = reflection * (F * brdf.x + brdf.y);
 
     vec3 kD = 1.0 - F;
     kD *= 1.0 - metallic;
-    vec3 ambient = (kD * diffuse + specularRef);
+    vec3 ambient = (kD * diffuse + specularRef) * texture(aoMap, fragUV).rrr;
 
     vec3 color = ambient + Lo;
 
     //hdr tonemapping
-    //color = color / (color + vec3(1.0));
+    // color = color / (color + vec3(1.0));
+    //
+    // color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
+    // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction
-    //color = pow(color, vec3(1.0/2.2));
+    // color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
 
     outColor = vec4(color, 1.0);
 }
@@ -127,10 +144,15 @@ vec3 F_SchlickR(float u, vec3 f0, float roughness)
 
 float V_SmithGGXCorrelated(float NoV, float NoL, float a)
 {
-    float a2 = a * a;
-    float ggxl = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
-    float ggxv = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
-    return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
+    //float a2 = a * a;
+    //float ggxl = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
+    //float ggxv = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
+    //return 0.5 / (ggxv + ggxl); //V(v,l,a) = 0.5/ n*l sqrt((n*v)pow2(1-a2)+a2) + n*v sqrt((n*l)pow2(1-a2)+a2
+    float r = a * a;
+    float k = (r*r) / 8.0;
+    float gl = NoL / (NoL * (1.0 - k) + k);
+    float gv = NoV / (NoV * (1.0 - k) + k);
+    return gl * gv;
 }
 
 float Fd_Lambert()
@@ -152,12 +174,12 @@ vec3 prefilteredReflection(vec3 R, float roughness)
 vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float roughness, vec3 albedo)
 {
     vec3 H = normalize(V + L);
-    float NoV = max(dot(N, V), 0.000001);
-    float NoL = max(dot(N, L), 0.000001);
-    float HoV = max(dot(H, V), 0.0);
-    float NoH = max(dot(N, H), 0.0);
+    float NoV = clamp(dot(N, V), 0.0, 1.0);
+    float NoL = clamp(dot(N, L), 0.0, 1.0);
+    float HoV = clamp(dot(H, V), 0.0, 1.0);
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
 
-    vec3 lightColor = vec3(1.0);
+    vec3 lightColor = vec3(1.0); // constant light color
     vec3 color = vec3(0.0); //color we return from this function
 
     if (NoL > 0.0)
