@@ -14,6 +14,7 @@ namespace karhu
         public:
             Model(Device& device, CommandBuffer& commandBuffer, std::string filepath);
             Model(Device& device, CommandBuffer& commandBuffer, std::vector<Vertex> vertices, std::vector<uint32_t> indices, bool hdr = false);
+            Model(Device& device, CommandBuffer& commandBuffer, std::vector<Vertex> vertices, std::vector<uint32_t> indices, uint32_t indexCount);
             ~Model();
             
             Model(const Model&) = delete;

@@ -15,7 +15,7 @@ namespace karhu
     {
     }
 
-    void DisneySystem::createDescriptors(std::vector<Entity>& entities)
+    void DisneySystem::createDescriptors(std::vector<Entity>& entities, std::vector<Entity>& spheres)
     {
         m_descriptorBuilder = std::make_unique<Descriptors>(m_device);
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
@@ -64,6 +64,35 @@ namespace karhu
         }
 
         m_descriptorBuilder->createDescriptorSets(entities, m_layout, m_pool);
+
+        m_sphereDescBuilder = std::make_unique<Descriptors>(m_device);
+        m_sphereDescBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
+        m_pool1 = m_sphereDescBuilder->createDescriptorPool(1000);
+
+        m_sphereDescBuilder->bind(m_bindings1, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_layout1 = m_sphereDescBuilder->createDescriptorSetLayout(m_bindings1);
+
+        for (size_t i = 0; i < spheres.size(); i++)
+        {
+            spheres[i].m_Buffer = std::make_unique<Buffer>();
+            spheres[i].m_Buffer->m_device = m_device.lDevice();
+            spheres[i].m_Buffer->m_phyiscalDevice = m_device.pDevice();
+            spheres[i].m_Buffer->createBuffer(sizeof(ObjBuffer),
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+
+        for (size_t i = 0; i < spheres.size(); i++)
+        {
+            auto id = spheres[i].getId();
+            m_sphereDescBuilder->allocateDescriptor(spheres[i].m_DescriptorSet, m_layout1, m_pool1);
+            m_sphereDescBuilder->writeBuffer(spheres[i].m_DescriptorSet,
+                    0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, spheres[i].m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
+            m_sphereDescBuilder->fillWritesMap(spheres[i].getId());
+        }
+
+        m_sphereDescBuilder->createDescriptorSets(spheres, m_layout1, m_pool1);
+
     }
 
     void DisneySystem::createGraphicsPipeline(VkDevice device,
@@ -107,26 +136,35 @@ namespace karhu
 
 
         m_pipelinebuilder.createPipeline(pipelineStruct, "../shaders/vertexShader.spv", "../shaders/fragmentShader.spv");
-    }
 
-    void DisneySystem::makeSpheres()
-    {
-        const unsigned int x_seg = 64;
-        const unsigned int y_seg = 64;
-        const double pi = 3.14159265359;
+        layouts = {
+            layout,
+            m_layout1
+        };
 
-        for (size_t i = 0; i <= x_seg; ++i)
-        {
-            for (size_t j = 0; j <= y_seg; ++j)
-            {
-                float xseg = (float)i / (float)x_seg;
-                float yseg = (float)j / (float)y_seg;
+        m_spherePipeline.getHandle()->m_device = device;
 
-                float xpos = std::cos(xseg * 2.0 * pi) * std::sin(yseg * pi);
-                float ypos = std::cos(yseg * pi);
-                float zpos = std::sin(xseg * 2.0f * pi) * std::sin(yseg * pi);
-            }
-        }
+        pipelineStruct.viewportWidth = extent.width;
+        pipelineStruct.viewportheight = extent.height;
+        pipelineStruct.scissor.extent = extent;
+        pipelineStruct.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+        pipelineStruct.pipelineLayoutInfo.pSetLayouts = layouts.data();
+        pipelineStruct.renderPass = renderPass;
+
+        pipelineStruct.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        objPushConstant.offset = 0;
+        objPushConstant.size = sizeof(ObjPushConstant);
+        objPushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        cameraPushConstant.offset = 64;
+        cameraPushConstant.size = sizeof(pushConstants);
+        cameraPushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+
+        pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
+        pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
+
+        m_spherePipeline.createPipeline(pipelineStruct, "../shaders/NoTexvert.spv", "../shaders/NoTexfrag.spv");
     }
 
     void DisneySystem::renderEntities(Frame& frameInfo)
@@ -177,5 +215,55 @@ namespace karhu
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
         }
+    }
+    void DisneySystem::renderEntitiesNotextures(Frame& frameInfo)
+    {
+        m_spherePipeline.bind(frameInfo.commandBuffer);
+
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                m_spherePipeline.getHandle()->m_pipelineLayout,
+                0,
+                1,
+                &frameInfo.globalSet,
+                0,
+                nullptr);
+
+        for (auto& entity : frameInfo.spheres)
+        {
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    m_spherePipeline.getHandle()->m_pipelineLayout,
+                    1,
+                    1,
+                    &entity.m_DescriptorSet,
+                    0,
+                    nullptr);
+        
+            ObjPushConstant objConstant{};
+            objConstant.model = entity.getTransformMatrix();
+            vkCmdPushConstants(frameInfo.commandBuffer,
+                    m_spherePipeline.getHandle()->m_pipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT,
+                    0,
+                    sizeof(ObjPushConstant),
+                    &objConstant);
+        
+            pushConstants cameraConstants{};
+            cameraConstants.cameraPosition = frameInfo.camera.getPosition();
+            cameraConstants.lightPosition = vars.m_LightPosition;
+            cameraConstants.lighColor = vars.m_lightColor;
+            cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, vars.m_Metalness, vars.m_Roughness);
+            vkCmdPushConstants(frameInfo.commandBuffer,
+                    m_spherePipeline.getHandle()->m_pipelineLayout,
+                    VK_SHADER_STAGE_FRAGMENT_BIT,
+                    64,
+                    sizeof(pushConstants),
+                    &cameraConstants);
+
+            entity.getModel()->bind(frameInfo.commandBuffer);
+            entity.getModel()->draw(frameInfo.commandBuffer);
+        }
+
     }
 }

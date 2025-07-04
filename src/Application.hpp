@@ -28,6 +28,7 @@ namespace karhu
             {
                 Disney,
                 Unreal,
+                Sphere,
                 Cube
             };
 
@@ -41,6 +42,7 @@ namespace karhu
             void cleanUpBeforeReCreate();
             void reCreateSwapChain();
             void createRenderPassForCubeMap();
+            void generatePropertiesForSphere();
         private:
             std::unique_ptr<Window> m_window = std::make_unique<Window>("Vulkan", 1080, 720);
             Device m_device{ m_window->getInstance(), m_window->getSurface() };
@@ -73,5 +75,9 @@ namespace karhu
             VkDescriptorSetLayout m_layout;
             VkDescriptorPool m_pool;
             VkDescriptorSet m_set;
+
+            std::vector<Vertex> m_sphere;
+            std::vector<uint32_t> m_sphereIndices;
+            uint32_t indexCount;
     };
 } // karhu namespace

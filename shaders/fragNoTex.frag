@@ -21,13 +21,6 @@ layout(set = 0, binding = 1) uniform sampler2D brdfLut;
 layout(set = 0, binding = 2) uniform samplerCube irradianceCube;
 layout(set = 0, binding = 3) uniform samplerCube prefilteredCube;
 
-layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
-layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
-layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and roughness
-layout(set = 1, binding = 4) uniform sampler2D aoMap; //ao
-layout(set = 1, binding = 5) uniform sampler2D emissive; //emissive
-
-
 const float PI = 3.1415926535897932384626433832795;
 const float EPSILON = 0.00001;
 
@@ -44,23 +37,6 @@ vec3 Uncharted2Tonemap(vec3 color)
     return ((color*(A*color+C*B)+D*E)/(color*(A*color+B)+D*F))-E/F;
 }
 
-vec3 getNormalFromMap()
-{
-    vec3 tangentNormal = texture(normalMap, fragUV).xyz * 2.0 - 1.0;
-
-    //vec3 Q1  = dFdx(fragWorldPosition.xyz);
-    //vec3 Q2  = dFdy(fragWorldPosition.xyz);
-    //vec2 st1 = dFdx(fragUV);
-    //vec2 st2 = dFdy(fragUV);
-
-    vec3 N   = normalize(fragNormal);
-    vec3 T  = normalize(fragTangent);
-    vec3 B  = normalize(cross(T, N));
-    mat3 TBN = mat3(T, B, N);
-
-    return normalize(TBN * tangentNormal);
-}
-
 float D_GGX(float NoH, float a);
 vec3 F_Schlick(float u, vec3 f0);
 vec3 F_SchlickR(float u, vec3 f0, float roughness);
@@ -71,11 +47,11 @@ vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float
 
 void main()
 {
-    vec3 normal = getNormalFromMap(); // normals
-    vec3 albedo = pow(texture(texSampler, fragUV).rgb, vec3(2.2));
-    float metallic = texture(metallicMap, fragUV).b;
-    float roughness = texture(metallicMap, fragUV).g;
-    vec3 ao = texture(aoMap, fragUV).rrr;
+    vec3 normal = normalize(fragNormal); // normals
+    vec3 albedo = fragColor;
+    float metallic = 1.0f;
+    float roughness = 1.0f;
+    vec3 ao = vec3(1.0);
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
     vec3 R = reflect(-V, normal);
@@ -115,8 +91,8 @@ void main()
     //hdr tonemapping
     // color = color / (color + vec3(1.0));
     //
-     color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
-     color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
+    color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction
     // color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
 

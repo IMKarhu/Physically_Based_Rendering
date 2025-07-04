@@ -116,9 +116,13 @@ namespace karhu
 
 
         createSyncObjects();
+        
+
+        generatePropertiesForSphere();
 
         auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
         auto cube = std::make_shared<Model>(m_device, m_commandBuffer, CUBEMAPVERTS, CUBEMAPINDICES, true);
+        auto sphereMod = std::make_shared<Model>(m_device, m_commandBuffer, m_sphere, m_sphereIndices);
 
         auto ent1 = Entity::createEntity();
         ent1.setModel(model);
@@ -127,6 +131,15 @@ namespace karhu
         ent1.setRotation({90.0f, 0.0f, 0.0f});
 
         m_entities[Disney].push_back(std::move(ent1));
+
+        auto sphere = Entity::createEntity();
+        sphere.setModel(sphereMod);
+        sphere.setPosition({0.0f, 0.0f, -10.0f});
+        sphere.setScale({1.0f, 1.0f, 1.0f});
+        sphere.setRotation({90.0f, 0.0f, 0.0f});
+
+        m_entities[Sphere].push_back(std::move(sphere));
+
 
         auto cubeEnt = Entity::createEntity();
         cubeEnt.setModel(cube);
@@ -196,7 +209,7 @@ namespace karhu
         m_builder.createDescriptorSets(m_layout, m_pool);
 
 
-        m_disneySystem.createDescriptors(m_entities[Disney]);
+        m_disneySystem.createDescriptors(m_entities[Disney], m_entities[Sphere]);
         m_disneySystem.createGraphicsPipeline(m_device.lDevice(),
                 m_swapChain.getSwapChainExtent(),
                 m_layout,
@@ -249,12 +262,14 @@ namespace karhu
                 m_commandBuffer.getCommandBuffer(m_currentFrame),
                 m_set,
                 cameraEntity,
-                m_entities[Disney]
+                m_entities[Disney],
+                m_entities[Sphere]
             };
 
             m_cubeMapSystem.renderSkyBox(frameInfo, entity);
 
             m_disneySystem.renderEntities(frameInfo);
+            m_disneySystem.renderEntitiesNotextures(frameInfo);
 
 
             end(m_currentFrame, imageIndex);
@@ -625,5 +640,92 @@ namespace karhu
 
         m_renderPasses.emplace_back(m_device, pfAttDesc, pfSubpassDescription, pfDependencies);
 
+    }
+
+    void Application::generatePropertiesForSphere()
+    {
+        const unsigned int x_seg = 64;
+        const unsigned int y_seg = 64;
+        const double pi = 3.14159265359;
+        float radius = 1.0;
+
+        // for (size_t i = 0; i <= x_seg; ++i)
+        // {
+        //     for (size_t j = 0; j <= y_seg; ++j)
+        //     {
+        //         Vertex vert;
+        //         float xseg = (float)i / (float)x_seg;
+        //         float yseg = (float)j / (float)y_seg;
+        //
+        //         float xpos = std::cos(xseg * 2.0 * pi) * std::sin(yseg * pi);
+        //         float ypos = std::cos(yseg * pi);
+        //         float zpos = std::sin(xseg * 2.0f * pi) * std::sin(yseg * pi);
+        //
+        //         vert.pos = glm::vec3(xpos, ypos, zpos);
+        //         vert.texcoords = glm::vec2(xseg, yseg);
+        //         vert.normal = glm::vec3(xpos, ypos, zpos);
+        //         vert.color = glm::vec3(1.0f, 1.0f, 1.0f);
+        //         m_sphere.push_back(vert);
+        //     }
+        // }
+        //
+        // bool odd = false;
+        // for (size_t i = 0; i < y_seg; ++i)
+        // {
+        //     if (!odd)
+        //     {
+        //         for(size_t j = 0; j <= x_seg; ++j)
+        //         {
+        //             m_sphereIndices.push_back(i * (x_seg + 1) + j);
+        //             m_sphereIndices.push_back((i + 1)  * (x_seg + 1) + j);
+        //         }
+        //     }
+        //     else
+        //     {
+        //         for (int x = x_seg; x >= 0; --x)
+        //         {
+        //             m_sphereIndices.push_back((i + 1) * (x_seg + 1) + x);
+        //             m_sphereIndices.push_back(i * (x_seg + 1) + x);
+        //         }
+        //     }
+        //     odd = !odd;
+        // }
+        //
+        // indexCount = static_cast<uint32_t>(m_sphereIndices.size());
+        //
+        for (int i = 0; i <= x_seg; ++i)
+        {
+            float phi = i * pi / x_seg;
+            for (int j = 0; j <= y_seg; ++j)
+            {
+                Vertex vert;
+                float theta = j * (2.0*pi) / y_seg;
+                float x = radius * std::sin(phi) * std::cos(theta);
+                float y = radius * std::cos(phi);
+                float z = radius * std::sin(phi) * std::sin(theta);
+
+                vert.pos = glm::vec3(x, y, z);
+                vert.normal = glm::vec3(x, y, z);
+                vert.color = glm::vec3(1.0f, 0.0f, 0.0f);
+                m_sphere.push_back(vert);
+            }
+        }
+        int vertsPerRow = y_seg + 1;
+        for(int i = 0; i < x_seg; ++i)
+        {
+            for(int j = 0; j < y_seg; ++j)
+            {
+                int row1 = i * vertsPerRow;
+                int row2 = (i+1) * vertsPerRow;
+
+                m_sphereIndices.push_back(row1 + j);
+                m_sphereIndices.push_back(row2 + j);
+                m_sphereIndices.push_back(row1 + j + 1);
+
+                m_sphereIndices.push_back(row1 + j + 1);
+                m_sphereIndices.push_back(row2 + j);
+                m_sphereIndices.push_back(row2 + j + 1);
+            }
+        }
     }
 } // namespace karhu

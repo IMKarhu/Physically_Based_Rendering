@@ -26,7 +26,11 @@ namespace karhu
         m_indices = indices;
         createVertexBuffer(vertices);
         createIndexBuffer(indices);
-        m_Textures.emplace_back(m_device, commandBuffer, "pisa_cube.ktx", VK_FORMAT_R16G16B16A16_SFLOAT, true);
+        if (hdr)
+        {
+            printf("hdr file created\n");
+            m_Textures.emplace_back(m_device, commandBuffer, "pisa_cube.ktx", VK_FORMAT_R16G16B16A16_SFLOAT, true);
+        }
 
         // if (hdr)
         // {
@@ -34,6 +38,8 @@ namespace karhu
         //     m_Textures.push_back(tex);
         // }
     }
+
+
     
     Model::~Model()
     {
@@ -118,7 +124,6 @@ namespace karhu
 
             if(mesh->HasTangentsAndBitangents())
             {
-                printf("found tangents\n");
                 vert.tangents.x = mesh->mTangents[i].x;
                 vert.tangents.y = mesh->mTangents[i].y;
                 vert.tangents.z = mesh->mTangents[i].z;
@@ -179,12 +184,7 @@ namespace karhu
             printf("metallicRoughness: %s \n", metallicRoughness.C_Str());
             printf("normal: %s \n", normalmap.C_Str());
             printf("ambient occlusion: %s \n", ao.C_Str());
-            /*NTexture base{ m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB};*/
-            /*NTexture normal{ m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
-            /*NTexture mr{ m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
-            /*NTexture amoc{ m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
-            /*NTexture em{ m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM };*/
-
+   
             m_Textures.emplace_back(m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB);
             m_Textures.emplace_back(m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
             m_Textures.emplace_back(m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
