@@ -132,13 +132,18 @@ namespace karhu
 
         m_entities[Disney].push_back(std::move(ent1));
 
-        auto sphere = Entity::createEntity();
-        sphere.setModel(sphereMod);
-        sphere.setPosition({0.0f, 0.0f, -10.0f});
-        sphere.setScale({1.0f, 1.0f, 1.0f});
-        sphere.setRotation({90.0f, 0.0f, 0.0f});
-
-        m_entities[Sphere].push_back(std::move(sphere));
+        float offset = 2.0f;
+        float nrSpheres = 10.0f;
+        for ( int i = 0; i < nrSpheres; ++i)
+        {
+            auto sphere = Entity::createEntity();
+            sphere.setModel(sphereMod);
+            sphere.setPosition({(i - (nrSpheres / 2)) * offset, 0.0f, -10.0f});
+            sphere.setScale({1.0f, 1.0f, 1.0f});
+            sphere.setRotation({0.0f, 0.0f, 0.0f});
+            m_entities[Sphere].push_back(std::move(sphere));
+            /*offset += i;*/
+        }
 
 
         auto cubeEnt = Entity::createEntity();
@@ -706,7 +711,7 @@ namespace karhu
 
                 vert.pos = glm::vec3(x, y, z);
                 vert.normal = glm::vec3(x, y, z);
-                vert.color = glm::vec3(1.0f, 0.0f, 0.0f);
+                vert.color = glm::vec3(0.5f, 0.0f, 0.0f);
                 m_sphere.push_back(vert);
             }
         }

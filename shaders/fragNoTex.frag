@@ -1,5 +1,5 @@
 #version 450
-#extension GL_KHR_vulkan_glsl: enable
+//#extension GL_KHR_vulkan_glsl: enable
 
 layout(location = 0) out vec4 outColor;
 layout(location = 0) in vec3 fragColor;
@@ -49,14 +49,14 @@ void main()
 {
     vec3 normal = normalize(fragNormal); // normals
     vec3 albedo = fragColor;
-    float metallic = 1.0f;
-    float roughness = 1.0f;
+    float metallic = 0.1;
+    float roughness = 0.5;
     vec3 ao = vec3(1.0);
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
     vec3 R = reflect(-V, normal);
 
-    
+
     //baseRefelectivity
     vec3 f0 = vec3(0.04);
     // Fresnel reflectance at normal incidence.

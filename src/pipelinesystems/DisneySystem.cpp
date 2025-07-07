@@ -216,6 +216,7 @@ namespace karhu
             entity.getModel()->draw(frameInfo.commandBuffer);
         }
     }
+
     void DisneySystem::renderEntitiesNotextures(Frame& frameInfo)
     {
         m_spherePipeline.bind(frameInfo.commandBuffer);
@@ -263,6 +264,7 @@ namespace karhu
 
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
+            vars.m_Metalness += 0.1f;
         }
 
     }
