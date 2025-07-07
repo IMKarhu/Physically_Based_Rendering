@@ -26,7 +26,8 @@ namespace karhu
             transform = glm::rotate(transform, m_Rotation.y, { 0.0f, 1.0f, 0.0f });
             transform = glm::rotate(transform, m_Rotation.z, { 0.0f, 0.0f, 1.0f });
             transform = glm::scale(transform, m_Scale);
-            return transform; }
+            return transform;
+            /*return glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));*/}
         void setModel(std::shared_ptr<Model> model);
         std::shared_ptr<Model> getModel() { return m_Model; }
         

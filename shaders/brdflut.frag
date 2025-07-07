@@ -1,7 +1,7 @@
 // based on Sacsha Willems generate BRDF LUT fragment shader https://github.com/SaschaWillems/Vulkan/blob/master/shaders/glsl/pbribl/genbrdflut.frag
 #version 450
-#extension GL_KHR_vulkan_glsl: enable
-
+//#extension GL_KHR_vulkan_glsl: enable
+//
 layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outColor;
 layout (constant_id = 0) const uint NUM_SAMPLES = 1024u;

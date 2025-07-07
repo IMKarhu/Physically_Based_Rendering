@@ -1,6 +1,6 @@
 //Based on Sacsha Willems generate BRDFLUT vertex shader https://github.com/SaschaWillems/Vulkan/blob/master/shaders/glsl/pbribl/genbrdflut.vert
 #version 450
-#extension GL_KHR_vulkan_glsl: enable
+//#extension GL_KHR_vulkan_glsl: enable
 
 
 layout (location = 0) out vec2 outUV;

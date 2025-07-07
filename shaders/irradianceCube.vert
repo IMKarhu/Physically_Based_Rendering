@@ -1,6 +1,6 @@
 //Based on Sacsha Willems filtercube.vert https://github.com/SaschaWillems/Vulkan/blob/master/shaders/glsl/pbribl/filtercube.vert
 #version 450
-#extension GL_KHR_vulkan_glsl: enable
+//#extension GL_KHR_vulkan_glsl: enable
 
 
 layout (location = 0) in vec3 inPos;

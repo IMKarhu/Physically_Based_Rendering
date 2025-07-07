@@ -140,7 +140,7 @@ namespace karhu
             sphere.setModel(sphereMod);
             sphere.setPosition({(i - (nrSpheres / 2)) * offset, 0.0f, -10.0f});
             sphere.setScale({1.0f, 1.0f, 1.0f});
-            sphere.setRotation({0.0f, 0.0f, 0.0f});
+            sphere.setRotation({0.0f, 180.0f, 0.0f});
             m_entities[Sphere].push_back(std::move(sphere));
             /*offset += i;*/
         }
@@ -233,7 +233,7 @@ namespace karhu
     void Application::update(std::vector<std::unique_ptr<Buffer>>& gBuffers, Entity& entity)
     {
         auto cameraEntity = Entity::createEntity();
-        cameraEntity.setPosition({0.0f, 0.0f, -20.0});
+        cameraEntity.setPosition({0.0f, 0.0f, 20.0f});
         Camera camera{};
         keyboardMovement movement{};
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -654,50 +654,6 @@ namespace karhu
         const double pi = 3.14159265359;
         float radius = 1.0;
 
-        // for (size_t i = 0; i <= x_seg; ++i)
-        // {
-        //     for (size_t j = 0; j <= y_seg; ++j)
-        //     {
-        //         Vertex vert;
-        //         float xseg = (float)i / (float)x_seg;
-        //         float yseg = (float)j / (float)y_seg;
-        //
-        //         float xpos = std::cos(xseg * 2.0 * pi) * std::sin(yseg * pi);
-        //         float ypos = std::cos(yseg * pi);
-        //         float zpos = std::sin(xseg * 2.0f * pi) * std::sin(yseg * pi);
-        //
-        //         vert.pos = glm::vec3(xpos, ypos, zpos);
-        //         vert.texcoords = glm::vec2(xseg, yseg);
-        //         vert.normal = glm::vec3(xpos, ypos, zpos);
-        //         vert.color = glm::vec3(1.0f, 1.0f, 1.0f);
-        //         m_sphere.push_back(vert);
-        //     }
-        // }
-        //
-        // bool odd = false;
-        // for (size_t i = 0; i < y_seg; ++i)
-        // {
-        //     if (!odd)
-        //     {
-        //         for(size_t j = 0; j <= x_seg; ++j)
-        //         {
-        //             m_sphereIndices.push_back(i * (x_seg + 1) + j);
-        //             m_sphereIndices.push_back((i + 1)  * (x_seg + 1) + j);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         for (int x = x_seg; x >= 0; --x)
-        //         {
-        //             m_sphereIndices.push_back((i + 1) * (x_seg + 1) + x);
-        //             m_sphereIndices.push_back(i * (x_seg + 1) + x);
-        //         }
-        //     }
-        //     odd = !odd;
-        // }
-        //
-        // indexCount = static_cast<uint32_t>(m_sphereIndices.size());
-        //
         for (int i = 0; i <= x_seg; ++i)
         {
             float phi = i * pi / x_seg;
@@ -711,7 +667,7 @@ namespace karhu
 
                 vert.pos = glm::vec3(x, y, z);
                 vert.normal = glm::vec3(x, y, z);
-                vert.color = glm::vec3(0.5f, 0.0f, 0.0f);
+                vert.color = glm::vec3(1.0f, 0.765557f, 0.336057f);
                 m_sphere.push_back(vert);
             }
         }

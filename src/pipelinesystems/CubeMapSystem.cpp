@@ -257,8 +257,8 @@ namespace karhu
         vkCmdBeginRenderPass(cmdBuf, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewPort{};
-        viewPort.x = 0.0f;
-        viewPort.y = 0.0f;
+        // viewPort.x = 0.0f;
+        // viewPort.y = 0.0f;
         viewPort.width = dimensions;
         viewPort.height = dimensions;
         viewPort.minDepth = 0.0f;

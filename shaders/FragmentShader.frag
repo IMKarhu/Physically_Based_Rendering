@@ -1,5 +1,5 @@
 #version 450
-#extension GL_KHR_vulkan_glsl: enable
+//#extension GL_KHR_vulkan_glsl: enable
 
 layout(location = 0) out vec4 outColor;
 layout(location = 0) in vec3 fragColor;
@@ -25,7 +25,7 @@ layout(set = 1, binding = 1) uniform sampler2D texSampler; //albedo
 layout(set = 1, binding = 2) uniform sampler2D normalMap; //normal
 layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and roughness
 layout(set = 1, binding = 4) uniform sampler2D aoMap; //ao
-layout(set = 1, binding = 5) uniform sampler2D emissive; //emissive
+layout(set = 1, binding = 5) uniform sampler2D emissiveMap; //emissive
 
 
 const float PI = 3.1415926535897932384626433832795;
@@ -72,10 +72,11 @@ vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float
 void main()
 {
     vec3 normal = getNormalFromMap(); // normals
-    vec3 albedo = pow(texture(texSampler, fragUV).rgb, vec3(2.2));
+    vec3 albedo = texture(texSampler, fragUV).rgb;
     float metallic = texture(metallicMap, fragUV).b;
     float roughness = texture(metallicMap, fragUV).g;
     vec3 ao = texture(aoMap, fragUV).rrr;
+    vec3 emissive = texture(emissiveMap, fragUV).rgb;
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
     vec3 R = reflect(-V, normal);
@@ -110,7 +111,7 @@ void main()
     kD *= 1.0 - metallic;
     vec3 ambient = (kD * diffuse + specularRef) * ao;
 
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + Lo + emissive;
 
     //hdr tonemapping
     // color = color / (color + vec3(1.0));
@@ -118,7 +119,7 @@ void main()
      color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
      color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction
-    // color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
+    //color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
 
     outColor = vec4(color, 1.0);
 }
@@ -164,7 +165,7 @@ float Fd_Lambert()
 
 vec3 prefilteredReflection(vec3 R, float roughness)
 {
-    const float MAX_REFLECTION_LOD = 9.0;
+    const float MAX_REFLECTION_LOD = 4.0;
     float lod = roughness * MAX_REFLECTION_LOD;
     float lodf = floor(lod);
     float lodc = ceil(lod);

@@ -2,7 +2,7 @@
 // Generates an prefiltered Cube from environment cube
 
 #version 450
-#extension GL_KHR_vulkan_glsl: enable
+//#extension GL_KHR_vulkan_glsl: enable
 
 layout(location = 0) in vec3 inPos;
 layout(location = 0) out vec4 outColor;
