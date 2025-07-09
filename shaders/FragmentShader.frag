@@ -54,7 +54,7 @@ vec3 getNormalFromMap()
     //vec2 st2 = dFdy(fragUV);
 
     vec3 N   = normalize(fragNormal);
-    vec3 T  = normalize(fragTangent);
+    vec3 T  = normalize(fragTangent.xyz);
     vec3 B  = normalize(cross(T, N));
     mat3 TBN = mat3(T, B, N);
 
@@ -111,7 +111,7 @@ void main()
     kD *= 1.0 - metallic;
     vec3 ambient = (kD * diffuse + specularRef) * ao;
 
-    vec3 color = ambient + Lo + emissive;
+    vec3 color = ambient + Lo + emissive; //remember to add Lo
 
     //hdr tonemapping
     // color = color / (color + vec3(1.0));

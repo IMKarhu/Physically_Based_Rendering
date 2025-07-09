@@ -29,7 +29,7 @@ namespace karhu
         if (hdr)
         {
             printf("hdr file created\n");
-            m_Textures.emplace_back(m_device, commandBuffer, "pisa_cube.ktx", VK_FORMAT_R16G16B16A16_SFLOAT, true);
+            m_Textures.emplace_back(m_device, commandBuffer, "gcanyon_cube.ktx", VK_FORMAT_R16G16B16A16_SFLOAT, true);
         }
 
         // if (hdr)
@@ -190,7 +190,7 @@ namespace karhu
             m_Textures.emplace_back(m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
             m_Textures.emplace_back(m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
             m_Textures.emplace_back(m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
-            m_Textures.emplace_back(m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            m_Textures.emplace_back(m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_SRGB);
         }
     }
     

@@ -33,11 +33,14 @@ namespace karhu
             };
 
             void run();
-            void update(std::vector<std::unique_ptr<Buffer>>& gBuffers, Entity& entity);
+            void update(std::vector<std::unique_ptr<Buffer>>& gBuffers, std::vector<std::unique_ptr<Buffer>>& skyBuffers, Entity& entity);
             uint32_t begin(uint32_t currentFrameIndex);
             void end(uint32_t currentFrameIndex, uint32_t imageIndex);
         private:
-            void updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera, bool flipY = false);
+            void updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers,
+                    std::vector<std::unique_ptr<Buffer>>& skyBuffers,
+                    Camera& camera,
+                    bool flipY = false);
             void createSyncObjects();
             void cleanUpBeforeReCreate();
             void reCreateSwapChain();

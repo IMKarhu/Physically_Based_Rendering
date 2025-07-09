@@ -177,7 +177,7 @@ namespace karhu
 
 
         /*Probably shouldn't be here but it'll work for now..*/
-        m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
+        m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_pool = m_builder.createDescriptorPool(2);
 
@@ -185,6 +185,7 @@ namespace karhu
         m_builder.bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_builder.bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_builder.bind(m_bindings, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_builder.bind(m_bindings, 4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
         m_layout = m_builder.createDescriptorSetLayout(m_bindings);
 
         std::vector<std::unique_ptr<Buffer>> uboBuffers(2);
@@ -194,6 +195,17 @@ namespace karhu
             uboBuffers[i]->m_device = m_device.lDevice();
             uboBuffers[i]->m_phyiscalDevice = m_device.pDevice();
             uboBuffers[i]->createBuffer(sizeof(UniformBufferObject),
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+
+        std::vector<std::unique_ptr<Buffer>> uboBuffersSkyBox(2);
+        for (size_t i = 0; i < uboBuffersSkyBox.size(); i++)
+        {
+            uboBuffersSkyBox[i] = std::make_unique<Buffer>();
+            uboBuffersSkyBox[i]->m_device = m_device.lDevice();
+            uboBuffersSkyBox[i]->m_phyiscalDevice = m_device.pDevice();
+            uboBuffersSkyBox[i]->createBuffer(sizeof(UniformBufferObject),
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         }
@@ -210,6 +222,8 @@ namespace karhu
         m_builder.writeImg(m_set, 1, infos[0], 0);
         m_builder.writeImg(m_set, 2, infos[1], 0);
         m_builder.writeImg(m_set, 3, infos[2], 0);
+        m_builder.writeBuffer(m_set, 4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboBuffersSkyBox[0]->getBufferInfo(sizeof(UniformBufferObject)), 0);
+
         m_builder.fillWritesMap(0);
         m_builder.createDescriptorSets(m_layout, m_pool);
 
@@ -227,10 +241,10 @@ namespace karhu
                 m_renderPasses[0].getRenderPass());
 
 
-        update(uboBuffers, cubeEnt);
+        update(uboBuffers, uboBuffersSkyBox, cubeEnt);
     }
 
-    void Application::update(std::vector<std::unique_ptr<Buffer>>& gBuffers, Entity& entity)
+    void Application::update(std::vector<std::unique_ptr<Buffer>>& gBuffers, std::vector<std::unique_ptr<Buffer>>& skyBuffers, Entity& entity)
     {
         auto cameraEntity = Entity::createEntity();
         cameraEntity.setPosition({0.0f, 0.0f, 20.0f});
@@ -279,8 +293,8 @@ namespace karhu
 
             end(m_currentFrame, imageIndex);
 
+            updateBuffers(gBuffers, skyBuffers, camera, true);
             // m_cubeMapSystem.updateCubeUbo(entity, camera);
-            updateBuffers(gBuffers, camera, true);
             for (auto& entity : m_entities[Disney])
             {
                 entity.updateBuffer();
@@ -397,7 +411,10 @@ namespace karhu
         m_currentFrame = (m_currentFrame + 1) % m_commandBuffer.getMaxFramesInFlight();
     }
 
-    void Application::updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers, Camera& camera, bool flipY)
+    void Application::updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers,
+            std::vector<std::unique_ptr<Buffer>>& skyBuffers,
+            Camera& camera,
+            bool flipY)
     {
         for( auto& buffer : gBuffers)
         {
@@ -407,9 +424,18 @@ namespace karhu
             obj.proj = camera.getProjection();
             if(flipY)
             {
-                obj.proj[1][1] *= -1;
+                /*obj.proj[1][1] *= -1;*/
             }
 
+            memcpy(buffer->m_bufferMapped, &obj, sizeof(obj));
+        }
+        for( auto& buffer : skyBuffers)
+        {
+            UniformBufferObject obj{};
+
+            glm::mat4 view = glm::mat4(glm::mat3(camera.getView()));
+            obj.view = view;
+            obj.proj = camera.getProjection();
             memcpy(buffer->m_bufferMapped, &obj, sizeof(obj));
         }
     }

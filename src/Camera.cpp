@@ -74,6 +74,7 @@ namespace karhu
     {
         glm::mat4 cameraRot = getRotationMatrix();
         m_CameraVars.m_Position += glm::vec3(cameraRot * glm::vec4(m_CameraVars.m_Velocity * 10.5f * dt, 0.0f));
+        m_CameraVars.m_Position  = m_CameraVars.m_Position * -1.0f;
     }
 }
 
