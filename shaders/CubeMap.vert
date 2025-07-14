@@ -1,7 +1,7 @@
 #version 450
 //#extension GL_KHR_vulkan_glsl: enable
 
-layout(set = 0, binding = 4) uniform UniformBufferObject
+layout(set = 0, binding = 0) uniform UniformBufferObject
 {
     mat4 view;
     mat4 proj;
@@ -27,8 +27,8 @@ out gl_PerVertex
 void main()
 {
     localPos = inPosition;
-    //localPos.xy *= -1.0;
+    localPos.xy *= -1.0;
 
     mat4 rotView = mat4(mat3(m_Ubo.view)); // this removes translation from view matrice
-    gl_Position = m_Ubo.proj * m_Ubo.view * vec4(inPosition.xyz, 1.0);
+    gl_Position = m_Ubo.proj * rotView * vec4(inPosition.xyz, 1.0);
 }

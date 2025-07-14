@@ -23,6 +23,7 @@ namespace karhu
         
         struct
         {
+            glm::vec4 m_viewPos = glm::vec4();
             glm::vec3 m_Position;
             glm::vec3 m_Velocity;
             float m_Pitch{ 0.0f };

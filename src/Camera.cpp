@@ -12,6 +12,20 @@ namespace karhu
 
     void Camera::setView(glm::vec3 position, glm::vec3 direction, glm::vec3 up)
     {
+        // glm::mat4 curMat = m_ViewMatrix;
+        // glm::mat4 rotM = glm::mat4(1.0f);
+        // glm::mat4 transM;
+        //
+        // rotM = glm::rotate(rotM, glm::radians(glm::vec3().x * (1.0f)), glm::vec3(1.0f, 0.0f, 0.0f));
+        // rotM = glm::rotate(rotM, glm::radians(glm::vec3().y * (1.0f)), glm::vec3(0.0f, 1.0f, 0.0f));
+        // rotM = glm::rotate(rotM, glm::radians(glm::vec3().z * (1.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
+        //
+        // glm::vec3 translation = m_CameraVars.m_Position;
+        //
+        // transM = glm::translate(glm::mat4(1.0f), translation);
+        // m_ViewMatrix = rotM * transM;
+        //
+        m_CameraVars.m_viewPos = glm::vec4(m_CameraVars.m_Position, 0.0f) * glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f);
         glm::mat4 camTranslation = glm::translate(glm::mat4(1.0f), m_CameraVars.m_Position);
         glm::mat4 camRotation = getRotationMatrix();
         m_ViewMatrix = glm::inverse(camTranslation * camRotation);
@@ -74,7 +88,7 @@ namespace karhu
     {
         glm::mat4 cameraRot = getRotationMatrix();
         m_CameraVars.m_Position += glm::vec3(cameraRot * glm::vec4(m_CameraVars.m_Velocity * 10.5f * dt, 0.0f));
-        m_CameraVars.m_Position  = m_CameraVars.m_Position * -1.0f;
+        // m_CameraVars.m_Position  = m_CameraVars.m_Position * -1.0f;
     }
 }
 

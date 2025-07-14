@@ -424,7 +424,7 @@ namespace karhu
             obj.proj = camera.getProjection();
             if(flipY)
             {
-                /*obj.proj[1][1] *= -1;*/
+                obj.proj[1][1] *= -1;
             }
 
             memcpy(buffer->m_bufferMapped, &obj, sizeof(obj));

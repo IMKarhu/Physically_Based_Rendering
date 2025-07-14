@@ -79,7 +79,7 @@ void main()
     vec3 emissive = texture(emissiveMap, fragUV).rgb;
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
-    vec3 R = reflect(-V, normal);
+    vec3 R = reflect(V, normal);
 
     
     //baseRefelectivity
@@ -87,7 +87,6 @@ void main()
     // Fresnel reflectance at normal incidence.
     f0 = mix(f0, albedo, metallic);
     
-    //refletance equation
     vec3 Lo = vec3(0.0);
 
 
@@ -119,9 +118,9 @@ void main()
      color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
      color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction
-    //color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
+    color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
 
-    outColor = vec4(color, 1.0);
+    outColor = vec4(specularRef, 1.0);
 }
 
 float D_GGX(float NoH, float a)

@@ -49,8 +49,8 @@ void main()
 {
     vec3 normal = normalize(fragNormal); // normals
     vec3 albedo = fragColor;
-    float metallic = 1.0;
-    float roughness = 0.025;
+    float metallic = camera.albedoNormalMetalRoughness.x;
+    float roughness = 0.3;
     vec3 ao = vec3(1.0);
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);

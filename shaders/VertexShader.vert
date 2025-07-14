@@ -38,8 +38,8 @@ void main()
     //vec3 nws = mat3(transpose(inverse(obj.model))) * inNormal;
     
     fragColors = inColor;
-    fragNormal = mat3(transpose(inverse(obj.model))) * inNormal; // normals in world space
+    fragNormal = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inNormal; // normals in world space
     fragUV = inUV;
     // fragTangent = mat3(obj.model) * inTangent;
-    fragTangent = mat3(transpose(inverse(obj.model))) * inTangent;
+    fragTangent = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inTangent;
 }
