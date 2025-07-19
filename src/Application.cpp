@@ -142,7 +142,6 @@ namespace karhu
             sphere.setScale({1.0f, 1.0f, 1.0f});
             sphere.setRotation({0.0f, 180.0f, 0.0f});
             m_entities[Sphere].push_back(std::move(sphere));
-            /*offset += i;*/
         }
 
 
@@ -151,14 +150,6 @@ namespace karhu
         cubeEnt.setPosition({0.0f, 0.0f, 0.0f});
         cubeEnt.setRotation({0.0f, 180.0f, 0.0f});
 
-        /*karhu::createFrameBuffer(m_device.lDevice(),*/
-        /*        m_framebuffers[FramebufferType::Cube],*/
-        /*        cube->m_Textures[0].getCubeImageViewsPerFace(),*/
-        /*        m_renderPasses[1].getRenderPass(),*/
-        /*        512,*/
-        /*        512,*/
-        /*        1,*/
-        /*        true);*/
 
         m_cubeMapSystem.generateBrdfLut(m_renderPasses[2].getRenderPass(),
                 m_framebuffers[FramebufferType::BRDFLUT],
@@ -181,7 +172,7 @@ namespace karhu
         m_builder.addPoolElement(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
         m_pool = m_builder.createDescriptorPool(2);
 
-        m_builder.bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+        m_builder.bind(m_bindings, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         m_builder.bind(m_bindings, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_builder.bind(m_bindings, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_builder.bind(m_bindings, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);

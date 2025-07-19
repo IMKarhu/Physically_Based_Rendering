@@ -49,8 +49,8 @@ void main()
 {
     vec3 normal = normalize(fragNormal); // normals
     vec3 albedo = fragColor;
-    float metallic = camera.albedoNormalMetalRoughness.x;
-    float roughness = 0.3;
+    float metallic = 1.0;
+    float roughness = 1.0;
     vec3 ao = vec3(1.0);
 
     vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
@@ -94,7 +94,7 @@ void main()
     color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
     color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction
-    // color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
+    color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
 
     outColor = vec4(color, 1.0);
 }

@@ -186,7 +186,7 @@ namespace karhu
             printf("ambient occlusion: %s \n", ao.C_Str());
             printf("emissive: %s \n", emissive.C_Str());
    
-            m_Textures.emplace_back(m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            m_Textures.emplace_back(m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB);
             m_Textures.emplace_back(m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
             m_Textures.emplace_back(m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
             m_Textures.emplace_back(m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);

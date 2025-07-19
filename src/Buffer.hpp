@@ -3,7 +3,6 @@
 
 namespace karhu
 {
-    
     struct Buffer
     {
         Buffer();

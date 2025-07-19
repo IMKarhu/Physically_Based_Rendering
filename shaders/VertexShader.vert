@@ -31,15 +31,12 @@ layout(location = 4) out vec3 fragTangent;
 
 void main()
 {
-    fragWorldPosition =  obj.model * vec4(inPosition, 1.0);
+    fragWorldPosition = obj.model * vec4(inPosition, 1.0);
     gl_Position = m_Ubo.proj * m_Ubo.view * fragWorldPosition;
 
-    //normalworldspace
-    //vec3 nws = mat3(transpose(inverse(obj.model))) * inNormal;
-    
     fragColors = inColor;
-    fragNormal = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inNormal; // normals in world space
+    fragNormal = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inNormal; // normals in view space
     fragUV = inUV;
     // fragTangent = mat3(obj.model) * inTangent;
-    fragTangent = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inTangent;
+    fragTangent = inTangent; // tangents in viewspace mat3(transpose(inverse(m_Ubo.view * obj.model))) * 
 }

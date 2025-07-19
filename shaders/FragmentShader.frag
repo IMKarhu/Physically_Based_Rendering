@@ -8,6 +8,17 @@ layout(location = 2) in vec2 fragUV;
 layout(location = 3) in vec4 fragWorldPosition;
 layout(location = 4) in vec3 fragTangent;
 
+layout(set = 0, binding = 0) uniform UniformBufferObject
+{
+    mat4 view;
+    mat4 proj;
+} m_Ubo;
+
+layout(set = 1, binding = 0) uniform ObjBuffer
+{
+    mat4 model;
+} m_Obj;
+
 layout( push_constant, std140) uniform cameraConstants
 {
     layout(offset = 64) vec3 cameraPosition;
@@ -16,6 +27,7 @@ layout( push_constant, std140) uniform cameraConstants
     vec4 lightColor;
     vec4 albedoNormalMetalRoughness;
 } camera;
+
 
 layout(set = 0, binding = 1) uniform sampler2D brdfLut;
 layout(set = 0, binding = 2) uniform samplerCube irradianceCube;
@@ -89,6 +101,7 @@ void main()
     
     vec3 Lo = vec3(0.0);
 
+    // vec3 camPos = mat3(transpose(inverse(m_Ubo.view * obj.model))) * camera.lightPosition;
 
     //per light radiance, if we had more than one, we should calculate this for all the lights
     vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
@@ -118,9 +131,9 @@ void main()
      color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
      color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction
-    color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
+    //color = pow(color, vec3(1.0/2.2)); // 2.2 is gamma value
 
-    outColor = vec4(specularRef, 1.0);
+    outColor = vec4(color, 1.0);
 }
 
 float D_GGX(float NoH, float a)
