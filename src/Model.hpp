@@ -12,7 +12,7 @@ namespace karhu
     class Model
     {
         public:
-            Model(Device& device, CommandBuffer& commandBuffer, std::string filepath);
+            Model(Device& device, CommandBuffer& commandBuffer, std::string filepath, bool textures);
             Model(Device& device, CommandBuffer& commandBuffer, std::vector<Vertex> vertices, std::vector<uint32_t> indices, bool hdr = false);
             Model(Device& device, CommandBuffer& commandBuffer, std::vector<Vertex> vertices, std::vector<uint32_t> indices, uint32_t indexCount);
             ~Model();
@@ -51,5 +51,6 @@ namespace karhu
             std::vector<uint32_t> m_indices;
             Device& m_device;
             CommandBuffer& m_commandBuffer;
+            bool m_isTextures = false;
     };
 }

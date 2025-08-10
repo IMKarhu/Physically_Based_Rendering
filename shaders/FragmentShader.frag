@@ -60,11 +60,6 @@ vec3 getNormalFromMap()
 {
     vec3 tangentNormal = texture(normalMap, fragUV).xyz * 2.0 - 1.0;
 
-    //vec3 Q1  = dFdx(fragWorldPosition.xyz);
-    //vec3 Q2  = dFdy(fragWorldPosition.xyz);
-    //vec2 st1 = dFdx(fragUV);
-    //vec2 st2 = dFdy(fragUV);
-
     vec3 N   = normalize(fragNormal);
     vec3 T  = normalize(fragTangent.xyz);
     vec3 B  = normalize(cross(T, N));
@@ -101,7 +96,6 @@ void main()
     
     vec3 Lo = vec3(0.0);
 
-    // vec3 camPos = mat3(transpose(inverse(m_Ubo.view * obj.model))) * camera.lightPosition;
 
     //per light radiance, if we had more than one, we should calculate this for all the lights
     vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
@@ -123,7 +117,7 @@ void main()
     kD *= 1.0 - metallic;
     vec3 ambient = (kD * diffuse + specularRef) * ao;
 
-    vec3 color = ambient + Lo + emissive; //remember to add Lo
+    vec3 color = ambient + Lo + emissive;
 
     //hdr tonemapping
     // color = color / (color + vec3(1.0));

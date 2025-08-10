@@ -17,8 +17,8 @@ namespace karhu
         Entity& camera;
         std::vector<Entity>& entities;
         std::vector<Entity>& spheres;
-        // std::vector<kEntity>& unrealEntities;
-        // std::vector<kEntity>& cubemap;
-        // std::vector<std::unique_ptr<kBuffer>>& cubeBuffers;
+        std::vector<Entity>& unrealEntities;
+        std::vector<Entity>& unrealSpheres;
+
     };
 }

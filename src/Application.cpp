@@ -120,8 +120,9 @@ namespace karhu
 
         generatePropertiesForSphere();
 
-        auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf");
+        auto model = std::make_shared<Model>(m_device, m_commandBuffer, "../models/DamagedHelmet.gltf", true);
         auto cube = std::make_shared<Model>(m_device, m_commandBuffer, CUBEMAPVERTS, CUBEMAPINDICES, true);
+        auto spheregltf = std::make_shared<Model>(m_device, m_commandBuffer, "../models/sphere2.gltf", false);
         auto sphereMod = std::make_shared<Model>(m_device, m_commandBuffer, m_sphere, m_sphereIndices);
 
         auto ent1 = Entity::createEntity();
@@ -134,16 +135,47 @@ namespace karhu
 
         float offset = 2.0f;
         float nrSpheres = 10.0f;
-        for ( int i = 0; i < nrSpheres; ++i)
+        float nrRows = 10.0f;
+        float nrColumns = 10.0f;
+        for ( size_t row = 0; row < nrRows; ++row)
         {
-            auto sphere = Entity::createEntity();
-            sphere.setModel(sphereMod);
-            sphere.setPosition({(i - (nrSpheres / 2)) * offset, 0.0f, -10.0f});
-            sphere.setScale({1.0f, 1.0f, 1.0f});
-            sphere.setRotation({0.0f, 180.0f, 0.0f});
-            m_entities[Sphere].push_back(std::move(sphere));
+            for (size_t column = 0; column < nrColumns; ++column)
+            {
+                auto sphere = Entity::createEntity();
+                sphere.setModel(spheregltf);
+                sphere.setPosition({(column - (nrColumns / 2)) * offset, (row - (nrRows / 2)) * offset, -10.0f});
+                sphere.setScale({0.5f, 0.5f, 0.5f});
+                sphere.setRotation({0.0f, 180.0f, 0.0f});
+                m_entities[Sphere].push_back(std::move(sphere));
+            }
         }
 
+        auto entUnreal = Entity::createEntity();
+        entUnreal.setModel(model);
+        entUnreal.setPosition({10.0f, 0.0f, 5.0f});
+        entUnreal.setScale({1.0f, 1.0f, 1.0f});
+        entUnreal.setRotation({0.0f, 0.0f, 0.0f});
+
+        m_entities[Unreal].push_back(std::move(entUnreal));
+
+        for ( int row = 0; row < nrRows; ++row)
+        {
+            for (size_t column = 0; column < nrColumns; ++column)
+                
+            {
+                auto sphere = Entity::createEntity();
+                sphere.setModel(spheregltf);
+                sphere.setPosition({15.0f, (row - (nrRows / 2)) * offset, (column - (nrColumns / 2)) * offset});
+                sphere.setScale({0.5f, 0.5f, 0.5f});
+                sphere.setRotation({0.0f, 180.0f, 0.0f});
+                m_entities[SphereUE].push_back(std::move(sphere));
+            }
+            /*auto sphere = Entity::createEntity();*/
+            /*sphere.setModel(sphereMod);*/
+            /*sphere.setPosition({15.0f, 0.0f, (i - (nrSpheres / 2)) * offset});*/
+            /*sphere.setScale({1.0f, 1.0f, 1.0f});*/
+            /*sphere.setRotation({0.0f, 180.0f, 0.0f});*/
+        }
 
         auto cubeEnt = Entity::createEntity();
         cubeEnt.setModel(cube);
@@ -225,6 +257,12 @@ namespace karhu
                 m_layout,
                 m_renderPasses[0].getRenderPass());
 
+        m_unrealSystem.createDescriptors(m_entities[Unreal], m_entities[SphereUE]);
+        m_unrealSystem.createGraphicsPipeline(m_device.lDevice(),
+                m_swapChain.getSwapChainExtent(),
+                m_layout,
+                m_renderPasses[0].getRenderPass());
+
         m_cubeMapSystem.createDescriptors(cubeEnt, m_iblTextures);
         m_cubeMapSystem.createGraphicsPipeline(m_device.lDevice(),
                 m_swapChain.getSwapChainExtent(),
@@ -273,7 +311,9 @@ namespace karhu
                 m_set,
                 cameraEntity,
                 m_entities[Disney],
-                m_entities[Sphere]
+                m_entities[Sphere],
+                m_entities[Unreal],
+                m_entities[SphereUE]
             };
 
             m_cubeMapSystem.renderSkyBox(frameInfo, entity);
@@ -281,6 +321,8 @@ namespace karhu
             m_disneySystem.renderEntities(frameInfo);
             m_disneySystem.renderEntitiesNotextures(frameInfo);
 
+            m_unrealSystem.renderEntities(frameInfo);
+            m_unrealSystem.renderEntitiesNotextures(frameInfo);
 
             end(m_currentFrame, imageIndex);
 

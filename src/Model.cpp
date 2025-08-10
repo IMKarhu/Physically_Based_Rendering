@@ -7,9 +7,10 @@
 
 namespace karhu
 {
-    Model::Model(Device& device, CommandBuffer& commandBuffer, std::string filepath)
+    Model::Model(Device& device, CommandBuffer& commandBuffer, std::string filepath, bool textures)
         : m_device(device)
         , m_commandBuffer(commandBuffer)
+        , m_isTextures(textures)
     {
         loadModel(filepath);
         std::cout << "size of vertices: " << m_vertices.size() << std::endl;
@@ -160,38 +161,36 @@ namespace karhu
                 // printf("semantic %d\n", sema);
             }
         }
-        if (mesh->mMaterialIndex >= 0)
+        if (m_isTextures)
         {
-            aiString baseColor, metallicRoughness, normalmap, ao, emissive;
-            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-            aiTextureType type = aiTextureType_NORMALS;
-            aiTextureType type2 = aiTextureType_AMBIENT_OCCLUSION;
-            auto i = material->GetTextureCount(type);
-            auto j = material->GetTextureCount(type2);
-            // printf("count of normal textures: %f", i);
-            // printf("count of ao textures: %f", j);
-            material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE, &baseColor);
-            material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &metallicRoughness);
-            material->GetTexture(aiTextureType_NORMALS, 0, &normalmap);
-            material->GetTexture(aiTextureType_LIGHTMAP, 0, &ao);
-            material->GetTexture(aiTextureType_EMISSIVE, 0, &emissive);
-            //material->GetTexture(AI_MATKEY_COLOR_AMBIENT, &ao);
-            float normalScale = 1.0f;
-            //material->Get(AI_MATKEY_GLTF_NORMALS_SCALE)
-            //material->GetTexture(AI_MATKEY_TEXTURE_NORMALS, &normal)
-            // printf("helo\n");
-            printf("BaseColor: %s \n", baseColor.C_Str());
-            printf("metallicRoughness: %s \n", metallicRoughness.C_Str());
-            printf("normal: %s \n", normalmap.C_Str());
-            printf("ambient occlusion: %s \n", ao.C_Str());
-            printf("emissive: %s \n", emissive.C_Str());
-   
-            m_Textures.emplace_back(m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB);
-            m_Textures.emplace_back(m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
-            m_Textures.emplace_back(m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
-            m_Textures.emplace_back(m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
-            m_Textures.emplace_back(m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            if (mesh->mMaterialIndex >= 0)
+            {
+                aiString baseColor, metallicRoughness, normalmap, ao, emissive;
+                aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+                aiTextureType type = aiTextureType_NORMALS;
+                aiTextureType type2 = aiTextureType_AMBIENT_OCCLUSION;
+                auto i = material->GetTextureCount(type);
+                auto j = material->GetTextureCount(type2);
+                material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE, &baseColor);
+                material->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &metallicRoughness);
+                material->GetTexture(aiTextureType_NORMALS, 0, &normalmap);
+                material->GetTexture(aiTextureType_LIGHTMAP, 0, &ao);
+                material->GetTexture(aiTextureType_EMISSIVE, 0, &emissive);
+                float normalScale = 1.0f;
+                printf("BaseColor: %s \n", baseColor.C_Str());
+                printf("metallicRoughness: %s \n", metallicRoughness.C_Str());
+                printf("normal: %s \n", normalmap.C_Str());
+                printf("ambient occlusion: %s \n", ao.C_Str());
+                printf("emissive: %s \n", emissive.C_Str());
+
+                m_Textures.emplace_back(m_device, m_commandBuffer, baseColor.C_Str(), VK_FORMAT_R8G8B8A8_SRGB);
+                m_Textures.emplace_back(m_device, m_commandBuffer, normalmap.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+                m_Textures.emplace_back(m_device, m_commandBuffer, metallicRoughness.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+                m_Textures.emplace_back(m_device, m_commandBuffer, ao.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+                m_Textures.emplace_back(m_device, m_commandBuffer, emissive.C_Str(), VK_FORMAT_R8G8B8A8_UNORM);
+            }
         }
+        
     }
     
     void Model::createVertexBuffer()

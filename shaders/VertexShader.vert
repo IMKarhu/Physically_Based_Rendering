@@ -37,6 +37,5 @@ void main()
     fragColors = inColor;
     fragNormal = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inNormal; // normals in view space
     fragUV = inUV;
-    // fragTangent = mat3(obj.model) * inTangent;
-    fragTangent = inTangent; // tangents in viewspace mat3(transpose(inverse(m_Ubo.view * obj.model))) * 
+    fragTangent = inTangent;
 }

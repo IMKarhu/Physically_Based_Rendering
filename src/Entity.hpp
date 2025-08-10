@@ -37,6 +37,8 @@ namespace karhu
         glm::vec3& getRotation() { return m_Rotation; }
         void setScale(glm::vec3 scale);
         glm::vec3& getScale() { return m_Scale; }
+        void setOddOrEven(bool odd);
+        bool& getRowPlace() { return m_oddEven; }
         uint32_t getId() { return m_Id; }
         
         VkDescriptorSet m_DescriptorSet{ VK_NULL_HANDLE };
@@ -49,5 +51,6 @@ namespace karhu
         glm::vec3 m_Position{};
         glm::vec3 m_Scale{ 1.0f, 1.0f, 1.0f };
         glm::vec3 m_Rotation{};
+        bool m_oddEven = false;
     };
 }

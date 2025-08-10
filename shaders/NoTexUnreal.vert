@@ -34,9 +34,8 @@ void main()
     fragWorldPosition =  obj.model * vec4(inPosition, 1.0);
     gl_Position = m_Ubo.proj * m_Ubo.view * fragWorldPosition;
 
-    
     fragColors = inColor;
-    fragNormal = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inNormal; // normals in view space
+    fragNormal = transpose(inverse(mat3(m_Ubo.view * obj.model))) * inNormal;
     fragUV = inUV;
-    fragTangent = inTangent;
+    // fragTangent = mat3(obj.model) * inTangent;
 }

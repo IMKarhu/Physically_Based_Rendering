@@ -1,21 +1,18 @@
-#include "DisneySystem.hpp"
-
+#include "UnrealSystem.hpp"
 #include "../Device.hpp"
 #include "../Descriptors.hpp"
 #include "../Entity.hpp"
 
 namespace karhu
 {
-    DisneySystem::DisneySystem(Device& device)
+    UnrealSystem::UnrealSystem(Device& device)
         : m_device(device)
     {
     }
     
-    DisneySystem::~DisneySystem()
-    {
-    }
+    UnrealSystem::~UnrealSystem(){}
 
-    void DisneySystem::createDescriptors(std::vector<Entity>& entities, std::vector<Entity>& spheres)
+    void UnrealSystem::createDescriptors(std::vector<Entity>& entities, std::vector<Entity>& spheres)
     {
         m_descriptorBuilder = std::make_unique<Descriptors>(m_device);
         m_descriptorBuilder->addPoolElement(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000);
@@ -54,7 +51,7 @@ namespace karhu
             m_descriptorBuilder->allocateDescriptor(entities[i].m_DescriptorSet, m_layout, m_pool);
             m_descriptorBuilder->writeBuffer(entities[i].m_DescriptorSet,
                     0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entities[i].m_Buffer->getBufferInfo(sizeof(ObjBuffer)), id);
-         
+
             m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 1, infos[i][0], id);
             m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 2, infos[i][1], id);
             m_descriptorBuilder->writeImg(entities[i].m_DescriptorSet, 3, infos[i][2], id);
@@ -94,8 +91,7 @@ namespace karhu
         m_sphereDescBuilder->createDescriptorSets(spheres, m_layout1, m_pool1);
 
     }
-
-    void DisneySystem::createGraphicsPipeline(VkDevice device,
+    void UnrealSystem::createGraphicsPipeline(VkDevice device,
             VkExtent2D extent,
             VkDescriptorSetLayout layout,
             VkRenderPass renderPass)
@@ -135,7 +131,7 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
 
 
-        m_pipelinebuilder.createPipeline(pipelineStruct, "../shaders/vertexShader.spv", "../shaders/fragmentShader.spv");
+        m_pipelinebuilder.createPipeline(pipelineStruct, "../shaders/unrealpbrvert.spv", "../shaders/unrealpbrfrag.spv");
 
         layouts = {
             layout,
@@ -164,10 +160,10 @@ namespace karhu
         pipelineStruct.pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()); // Optional
         pipelineStruct.pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data(); // Optional
 
-        m_spherePipeline.createPipeline(pipelineStruct, "../shaders/NoTexvert.spv", "../shaders/NoTexfrag.spv");
-    }
+        m_spherePipeline.createPipeline(pipelineStruct, "../shaders/noTexUnrealvert.spv", "../shaders/noTexUnrealfrag.spv");
 
-    void DisneySystem::renderEntities(Frame& frameInfo)
+    }
+    void UnrealSystem::renderEntities(Frame& frameInfo)
     {
         m_pipelinebuilder.bind(frameInfo.commandBuffer);
 
@@ -180,7 +176,7 @@ namespace karhu
                 0,
                 nullptr);
 
-        for (auto& entity : frameInfo.entities)
+        for (auto& entity : frameInfo.unrealEntities)
         {
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -190,7 +186,7 @@ namespace karhu
                     &entity.m_DescriptorSet,
                     0,
                     nullptr);
-        
+
             ObjPushConstant objConstant{};
             objConstant.model = entity.getTransformMatrix();
             vkCmdPushConstants(frameInfo.commandBuffer,
@@ -199,7 +195,7 @@ namespace karhu
                     0,
                     sizeof(ObjPushConstant),
                     &objConstant);
-        
+
             pushConstants cameraConstants{};
             cameraConstants.cameraPosition = frameInfo.camera.getPosition();
             cameraConstants.lightPosition = vars.m_LightPosition;
@@ -215,9 +211,9 @@ namespace karhu
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
         }
-    }
 
-    void DisneySystem::renderEntitiesNotextures(Frame& frameInfo)
+    }
+    void UnrealSystem::renderEntitiesNotextures(Frame& frameInfo)
     {
         m_spherePipeline.bind(frameInfo.commandBuffer);
 
@@ -230,17 +226,10 @@ namespace karhu
                 0,
                 nullptr);
 
-        float met = vars.m_Metalness;
-        float rough = vars.m_Roughness;
-        for (auto& entity : frameInfo.spheres)
+        float met = 0.0f;
+        for (auto& entity : frameInfo.unrealSpheres)
         {
-            /*(met == 1.0f) ? met = 0.0f : met += 0.1f;*/
-            if(met >= 1.0f) {
-                met = 0.0f;
-                rough += 0.1f;
-            } else {
-                met += 0.1f;
-            }
+            met = vars.m_Metalness + 0.1f;
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     m_spherePipeline.getHandle()->m_pipelineLayout,
@@ -249,7 +238,7 @@ namespace karhu
                     &entity.m_DescriptorSet,
                     0,
                     nullptr);
-        
+
             ObjPushConstant objConstant{};
             objConstant.model = entity.getTransformMatrix();
             vkCmdPushConstants(frameInfo.commandBuffer,
@@ -258,12 +247,12 @@ namespace karhu
                     0,
                     sizeof(ObjPushConstant),
                     &objConstant);
-        
+
             pushConstants cameraConstants{};
             cameraConstants.cameraPosition = frameInfo.camera.getPosition();
             cameraConstants.lightPosition = vars.m_LightPosition;
             cameraConstants.lighColor = vars.m_lightColor;
-            cameraConstants.albedoNormalMetalRoughness = glm::vec4(met, rough,0.0f,0.0f);
+            cameraConstants.albedoNormalMetalRoughness = glm::vec4(met, vars.m_Roughness,0.0f,0.0f);
             vkCmdPushConstants(frameInfo.commandBuffer,
                     m_spherePipeline.getHandle()->m_pipelineLayout,
                     VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -273,9 +262,8 @@ namespace karhu
 
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
-            printf("metalness value: %f \n", met);
-            /*vars.m_Metalness += 0.1f;*/
-            /*vars.m_Roughness += 0.1f;*/
+            vars.m_Metalness += 0.1f;
+            // vars.m_Roughness += 0.1f;
         }
 
     }
