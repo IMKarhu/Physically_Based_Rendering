@@ -48,6 +48,8 @@ namespace karhu
             void reCreateSwapChain();
             void createRenderPassForCubeMap();
             void generatePropertiesForSphere();
+            void initializeImgui();
+            void renderGui(Frame& frameInfo);
         private:
             std::unique_ptr<Window> m_window = std::make_unique<Window>("Vulkan", 1080, 720);
             Device m_device{ m_window->getInstance(), m_window->getSurface() };
@@ -81,6 +83,8 @@ namespace karhu
             VkDescriptorSetLayout m_layout;
             VkDescriptorPool m_pool;
             VkDescriptorSet m_set;
+
+            VkDescriptorPool m_guiPool;
 
             std::vector<Vertex> m_sphere;
             std::vector<uint32_t> m_sphereIndices;

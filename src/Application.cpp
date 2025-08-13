@@ -5,6 +5,12 @@
 #include "keyboardMovement.hpp"
 #include "frame.hpp"
 
+#include <glm/gtc/type_ptr.hpp>
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+
+
 #include <array>
 #include <chrono>
 
@@ -116,7 +122,7 @@ namespace karhu
 
 
         createSyncObjects();
-        
+        initializeImgui();
 
         generatePropertiesForSphere();
 
@@ -147,6 +153,13 @@ namespace karhu
                 sphere.setScale({0.5f, 0.5f, 0.5f});
                 sphere.setRotation({0.0f, 180.0f, 0.0f});
                 m_entities[Sphere].push_back(std::move(sphere));
+
+                auto uesphere = Entity::createEntity();
+                uesphere.setModel(spheregltf);
+                uesphere.setPosition({15.0f, (row - (nrRows / 2)) * offset, (column - (nrColumns / 2)) * offset});
+                uesphere.setScale({0.5f, 0.5f, 0.5f});
+                uesphere.setRotation({0.0f, 180.0f, 0.0f});
+                m_entities[SphereUE].push_back(std::move(uesphere));
             }
         }
 
@@ -158,24 +171,24 @@ namespace karhu
 
         m_entities[Unreal].push_back(std::move(entUnreal));
 
-        for ( int row = 0; row < nrRows; ++row)
-        {
-            for (size_t column = 0; column < nrColumns; ++column)
-                
-            {
-                auto sphere = Entity::createEntity();
-                sphere.setModel(spheregltf);
-                sphere.setPosition({15.0f, (row - (nrRows / 2)) * offset, (column - (nrColumns / 2)) * offset});
-                sphere.setScale({0.5f, 0.5f, 0.5f});
-                sphere.setRotation({0.0f, 180.0f, 0.0f});
-                m_entities[SphereUE].push_back(std::move(sphere));
-            }
+        /*for ( int row = 0; row < nrRows; ++row)*/
+        /*{*/
+        /*    for (size_t column = 0; column < nrColumns; ++column)*/
+        /**/
+        /*    {*/
+        /*        auto sphere = Entity::createEntity();*/
+        /*        sphere.setModel(spheregltf);*/
+        /*        sphere.setPosition({15.0f, (row - (nrRows / 2)) * offset, (column - (nrColumns / 2)) * offset});*/
+        /*        sphere.setScale({0.5f, 0.5f, 0.5f});*/
+        /*        sphere.setRotation({0.0f, 180.0f, 0.0f});*/
+        /*        m_entities[SphereUE].push_back(std::move(sphere));*/
+        /*    }*/
             /*auto sphere = Entity::createEntity();*/
             /*sphere.setModel(sphereMod);*/
             /*sphere.setPosition({15.0f, 0.0f, (i - (nrSpheres / 2)) * offset});*/
             /*sphere.setScale({1.0f, 1.0f, 1.0f});*/
             /*sphere.setRotation({0.0f, 180.0f, 0.0f});*/
-        }
+        /*}*/
 
         auto cubeEnt = Entity::createEntity();
         cubeEnt.setModel(cube);
@@ -323,6 +336,7 @@ namespace karhu
 
             m_unrealSystem.renderEntities(frameInfo);
             m_unrealSystem.renderEntitiesNotextures(frameInfo);
+            renderGui(frameInfo);
 
             end(m_currentFrame, imageIndex);
 
@@ -747,5 +761,88 @@ namespace karhu
                 m_sphereIndices.push_back(row2 + j + 1);
             }
         }
+    }
+    void Application::initializeImgui()
+    {
+        VkDescriptorPoolSize poolSizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 1000;
+        pool_info.poolSizeCount = std::size(poolSizes);
+        pool_info.pPoolSizes = poolSizes;
+
+        VK_CHECK(vkCreateDescriptorPool(m_device.lDevice(), &pool_info, nullptr, &m_guiPool));
+
+
+        //initialize imgui
+
+        ImGui::CreateContext();
+
+        ImGui_ImplGlfw_InitForVulkan(m_window->getWindow(), true);
+
+        ImGui_ImplVulkan_InitInfo initInfo{};
+        initInfo.Instance = m_window->getInstance();
+        initInfo.PhysicalDevice = m_device.pDevice();
+        initInfo.Device = m_device.lDevice();
+        initInfo.Queue = m_device.gQueue();
+        initInfo.DescriptorPool = m_guiPool;
+        initInfo.MinImageCount = 3;
+        initInfo.ImageCount = 3;
+        initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        initInfo.RenderPass = m_renderPasses[0].getRenderPass();
+
+        ImGui_ImplVulkan_Init(&initInfo);
+
+        VkCommandBuffer commandBuffer = m_commandBuffer.recordSingleCommand();
+        ImGui_ImplVulkan_CreateFontsTexture();
+        m_commandBuffer.endSingleCommand(commandBuffer);
+
+        vkDeviceWaitIdle(m_device.lDevice());
+        ImGui_ImplVulkan_DestroyFontsTexture();
+
+    }
+    void Application::renderGui(Frame& frameInfo)
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        /*auto entPos = frameInfo.entities[1].getPosition();*/
+        ImGui::NewFrame();
+
+        static bool ibl = m_disneySystem.isIbl();
+       // ImGui::ShowDemoWindow();
+        ImGui::Begin("Controls");
+        ImGui::Checkbox("ibl", &ibl);
+        /*ImGui::SliderFloat("Metalness", &vars.m_Metalness, 0.0f, 1.0f);*/
+        /*ImGui::SliderFloat("Roughness", &vars.m_Roughness, 0.0f, 1.0f);*/
+        /*ImGui::SliderFloat3("lightPosition", glm::value_ptr(vars.m_LightPosition), -50.0f, 50.0f);*/
+
+        /*ImGui::SliderFloat3("objPosition", glm::value_ptr(entPos), -5.0f, 200.0f);*/
+        ImGui::End();
+
+        if(ibl != m_disneySystem.isIbl())
+        {
+            m_disneySystem.setIblActive(ibl);
+        }
+
+        /*frameInfo.entities[1].setPosition(entPos);*/
+
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frameInfo.commandBuffer);
     }
 } // namespace karhu

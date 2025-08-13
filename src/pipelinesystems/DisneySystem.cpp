@@ -204,6 +204,7 @@ namespace karhu
             cameraConstants.cameraPosition = frameInfo.camera.getPosition();
             cameraConstants.lightPosition = vars.m_LightPosition;
             cameraConstants.lighColor = vars.m_lightColor;
+            cameraConstants.offset = vars.ibl;
             cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, vars.m_Metalness, vars.m_Roughness);
             vkCmdPushConstants(frameInfo.commandBuffer,
                     m_pipelinebuilder.getHandle()->m_pipelineLayout,
@@ -215,6 +216,7 @@ namespace karhu
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
         }
+        printf("ibl bool: %f \n", (float)vars.ibl);
     }
 
     void DisneySystem::renderEntitiesNotextures(Frame& frameInfo)
@@ -234,12 +236,14 @@ namespace karhu
         float rough = vars.m_Roughness;
         for (auto& entity : frameInfo.spheres)
         {
-            /*(met == 1.0f) ? met = 0.0f : met += 0.1f;*/
             if(met >= 1.0f) {
                 met = 0.0f;
                 rough += 0.1f;
             } else {
                 met += 0.1f;
+            }
+            if (rough >= 1.0f) {
+                rough = 0.025f;
             }
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -263,7 +267,8 @@ namespace karhu
             cameraConstants.cameraPosition = frameInfo.camera.getPosition();
             cameraConstants.lightPosition = vars.m_LightPosition;
             cameraConstants.lighColor = vars.m_lightColor;
-            cameraConstants.albedoNormalMetalRoughness = glm::vec4(met, rough,0.0f,0.0f);
+            cameraConstants.offset = vars.ibl;
+            cameraConstants.albedoNormalMetalRoughness = glm::vec4(met, rough, 0.0f, 0.0f);
             vkCmdPushConstants(frameInfo.commandBuffer,
                     m_spherePipeline.getHandle()->m_pipelineLayout,
                     VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -273,10 +278,15 @@ namespace karhu
 
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
-            printf("metalness value: %f \n", met);
+            /*printf("metalness value: %f \n", met);*/
             /*vars.m_Metalness += 0.1f;*/
             /*vars.m_Roughness += 0.1f;*/
-        }
 
+        }
+    }
+
+    void DisneySystem::setIblActive(bool ibl)
+    {
+        vars.ibl = ibl;
     }
 }

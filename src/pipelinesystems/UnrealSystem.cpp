@@ -226,10 +226,19 @@ namespace karhu
                 0,
                 nullptr);
 
-        float met = 0.0f;
+        float met = vars.m_Metalness;
+        float rough = vars.m_Roughness;
         for (auto& entity : frameInfo.unrealSpheres)
         {
-            met = vars.m_Metalness + 0.1f;
+            if(met >= 1.0f) {
+                met = 0.0f;
+                rough += 0.1f;
+            } else {
+                met += 0.1f;
+            }
+            if (rough >= 1.0f) {
+                rough = 0.025f;
+            }
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     m_spherePipeline.getHandle()->m_pipelineLayout,
@@ -252,7 +261,7 @@ namespace karhu
             cameraConstants.cameraPosition = frameInfo.camera.getPosition();
             cameraConstants.lightPosition = vars.m_LightPosition;
             cameraConstants.lighColor = vars.m_lightColor;
-            cameraConstants.albedoNormalMetalRoughness = glm::vec4(met, vars.m_Roughness,0.0f,0.0f);
+            cameraConstants.albedoNormalMetalRoughness = glm::vec4(met, rough,0.0f,0.0f);
             vkCmdPushConstants(frameInfo.commandBuffer,
                     m_spherePipeline.getHandle()->m_pipelineLayout,
                     VK_SHADER_STAGE_FRAGMENT_BIT,

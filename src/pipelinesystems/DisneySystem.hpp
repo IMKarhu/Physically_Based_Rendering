@@ -28,6 +28,8 @@ namespace karhu
                 VkRenderPass renderPass);
         void renderEntities(Frame& frameInfo);
         void renderEntitiesNotextures(Frame& frameInfo);
+        bool isIbl() { return vars.ibl; }
+        void setIblActive(bool ibl);
     private:
         NormalPipelineBuilder m_pipelinebuilder;
         NormalPipelineBuilder m_spherePipeline;
@@ -45,10 +47,11 @@ namespace karhu
 
         struct {
             float m_Metalness = 0.0f;
-            float m_Roughness = 0.1f;
+            float m_Roughness = 0.025f;
             float offset = 0.0f;
+            bool ibl = true;
             glm::vec3 m_LightPosition = glm::vec3(0.0f, 200.0f, 0.0f);
-            glm::vec4 m_lightColor = glm::vec4(300.0f, 300.0f, 300.0f, 1.0f);
+            glm::vec4 m_lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         }vars;
 
         Device& m_device;

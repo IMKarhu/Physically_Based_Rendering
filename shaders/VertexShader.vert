@@ -35,6 +35,7 @@ void main()
     gl_Position = m_Ubo.proj * m_Ubo.view * fragWorldPosition;
 
     fragColors = inColor;
+    //fragNormal = mat3(obj.model) * inNormal;
     fragNormal = mat3(transpose(inverse(m_Ubo.view * obj.model))) * inNormal; // normals in view space
     fragUV = inUV;
     fragTangent = inTangent;
