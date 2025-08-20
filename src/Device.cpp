@@ -36,7 +36,7 @@ namespace karhu
         
         if (deviceCount == 0)
         {
-        	throw std::runtime_error("Failed to find GPU with a vulkan support!\n");
+            throw std::runtime_error("Failed to find GPU with a vulkan support!\n");
         }
         
         std::vector<VkPhysicalDevice> devices(deviceCount);

@@ -51,6 +51,7 @@ void main()
     vec3 albedo = fragColor;
     float metallic = camera.albedoNormalMetalRoughness.x;
     float roughness = camera.albedoNormalMetalRoughness.y;
+    //float roughness = 1.0;
 
     vec3 ao = vec3(1.0);
 
@@ -89,8 +90,6 @@ void main()
     vec3 color = ambient + Lo;
 
     //hdr tonemapping
-    // color = color / (color + vec3(1.0));
-    //
     color = Uncharted2Tonemap(color * 4.5); // 4.5 is exposure
     color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
     //gamma correction

@@ -84,16 +84,16 @@ namespace karhu
         }
     };
 
-    const std::vector<Vertex> CUBEMAPVERTS = {
-            { { -1.0f, -1.0f, -1.0f } }, // Vertex 0
-            { { -1.0f, -1.0f,  1.0f } }, // Vertex 1
-            { { 1.0f, -1.0f,  1.0f } }, // Vertex 2
-            { { 1.0f, -1.0f, -1.0f } }, // Vertex 3
-            { { -1.0f, 1.0f, -1.0f } }, // Vertex 4
-            { { -1.0f,  1.0f, 1.0f } }, // Vertex 5
-            { { 1.0f,  1.0f,  1.0f } }, // Vertex 6
-            { { 1.0f,  1.0f, -1.0f } }  // Vertex 7
-        };
+    /*const std::vector<Vertex> CUBEMAPVERTS = {*/
+    /*        { { -1.0f, -1.0f, -1.0f } }, // Vertex 0*/
+    /*        { { -1.0f, -1.0f,  1.0f } }, // Vertex 1*/
+    /*        { { 1.0f, -1.0f,  1.0f } }, // Vertex 2*/
+    /*        { { 1.0f, -1.0f, -1.0f } }, // Vertex 3*/
+    /*        { { -1.0f, 1.0f, -1.0f } }, // Vertex 4*/
+    /*        { { -1.0f,  1.0f, 1.0f } }, // Vertex 5*/
+    /*        { { 1.0f,  1.0f,  1.0f } }, // Vertex 6*/
+    /*        { { 1.0f,  1.0f, -1.0f } }  // Vertex 7*/
+    /*    };*/
     const std::vector<uint32_t> CUBEMAPINDICES = {
              0, 1, 2, 2, 3, 0, // Bottom face
              4, 5, 6, 6, 7, 4, // Top face

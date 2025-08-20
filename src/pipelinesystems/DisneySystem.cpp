@@ -216,7 +216,7 @@ namespace karhu
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
         }
-        printf("ibl bool: %f \n", (float)vars.ibl);
+        /*printf("ibl bool: %f \n", (float)vars.ibl);*/
     }
 
     void DisneySystem::renderEntitiesNotextures(Frame& frameInfo)
@@ -238,12 +238,14 @@ namespace karhu
         {
             if(met >= 1.0f) {
                 met = 0.0f;
-                rough += 0.1f;
+                rough += 0.125f;
+                printf("roughness value: %f\n", rough);
             } else {
                 met += 0.1f;
             }
             if (rough >= 1.0f) {
                 rough = 0.025f;
+                printf("reset roughness\n");
             }
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,

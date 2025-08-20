@@ -93,7 +93,7 @@ namespace karhu
         appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appinfo.pApplicationName = "Small vulkan renderer";
         appinfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appinfo.pEngineName = "LightningStrike";
+        appinfo.pEngineName = "Karhu";
         appinfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appinfo.apiVersion = VK_API_VERSION_1_3;
         
