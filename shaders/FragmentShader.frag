@@ -5,7 +5,7 @@ layout(location = 0) out vec4 outColor;
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragUV;
-layout(location = 3) in vec4 fragWorldPosition;
+layout(location = 3) in vec3 fragWorldPosition;
 layout(location = 4) in vec3 fragTangent;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject
@@ -39,7 +39,7 @@ layout(set = 1, binding = 3) uniform sampler2D metallicMap; //metallic and rough
 layout(set = 1, binding = 4) uniform sampler2D aoMap; //ao
 layout(set = 1, binding = 5) uniform sampler2D emissiveMap; //emissive
 
-
+const vec3 lPos = vec3(0.0, 10.0, 0.0);
 const float PI = 3.1415926535897932384626433832795;
 const float EPSILON = 0.00001;
 
@@ -72,7 +72,7 @@ float D_GGX(float NoH, float a);
 vec3 F_Schlick(float u, vec3 f0);
 vec3 F_SchlickR(float u, vec3 f0, float roughness);
 float V_SmithGGXCorrelated(float NoV, float NoL, float a);
-float Fd_Lambert();
+vec3 Fd_Lambert();
 vec3 prefilteredReflection(vec3 R, float roughness);
 vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float roughness, vec3 albedo);
 vec3 specularContributionNoIbl(vec3 L, vec3 V, vec3 N, vec3 f0, vec3 albedo, vec3 ao, float metallic, float roughness);
@@ -87,21 +87,43 @@ void main()
     vec3 ao = texture(aoMap, fragUV).rrr;
     vec3 emissive = texture(emissiveMap, fragUV).rgb;
 
-    vec3 V = normalize(camera.cameraPosition - fragWorldPosition.xyz);
-    vec3 R = reflect(V, normal);
+    // vec3 camPos = vec3(m_Obj.model * vec4(camera.cameraPosition, 1.0));
+    vec3 V = normalize(camera.cameraPosition - fragWorldPosition);
 
-    
+
     //baseRefelectivity
     vec3 f0 = vec3(0.04);
     // Fresnel reflectance at normal incidence.
     f0 = mix(f0, albedo, metallic);
-    
     vec3 Lo = vec3(0.0);
 
-    if(camera.offset == 1.0)
+    if(camera.offset == 3.0) //PBR
     {
+        // vec3 lightPos = vec3(m_Obj.model * vec4(camera.lightPosition, 1.0));
+        // vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+        vec3 L = normalize(normalize(lPos) - normalize(fragWorldPosition.xyz));
+
+        float rroughness = roughness;
+        Lo += specularContributionNoIbl(L, V, normal, f0, albedo, ao, metallic, rroughness);
+
+        //vec3 color = albedo * ao;
+        vec3 ambient = vec3(0.1) * albedo * ao;
+        vec3 color = Lo;
+
+        //hdr tonemapping
+        color = color / (color + vec3(1.0));
+        //gamma correction
+        color = pow(color, vec3(1.0/2.2));
+
+        outColor = vec4(color, 1.0);
+    }
+    else if(camera.offset == 2.0) // PBR+IBL
+    {
+        vec3 R = reflect(V, normal);
         //per light radiance, if we had more than one, we should calculate this for all the lights
-        vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+        // vec3 lightPos = vec3(m_Obj.model * vec4(camera.lightPosition, 1.0));
+        // vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
+        vec3 L = normalize(normalize(lPos) - normalize(fragWorldPosition.xyz));
         Lo += specularContribution(L, V, normal, f0, metallic, roughness, albedo);
 
         vec2 brdf = texture(brdfLut, vec2(max(dot(normal, V), 0.0), roughness)).rg;
@@ -130,27 +152,50 @@ void main()
 
         outColor = vec4(color, 1.0);
     }
+    else if(camera.offset == 1.0) // PHONG
+    {
+        // vec3 L = normalize(camera.lightPosition - fragWorldPosition);
+        vec3 L = normalize(normalize(lPos) - normalize(fragWorldPosition.xyz));
+
+        float specularStrength = 0.5;
+        float ambientStrength = 0.1;
+
+        vec3 ambient = ambientStrength * camera.lightColor.xyz;
+
+        vec3 R = reflect(-V, normal);
+        float specular = pow(max(dot(V, R), 0.0), 32);
+        vec3 specularComponent = specularStrength * specular * camera.lightColor.xyz;
+
+        float diffuse = max(dot(normal, L), 0.0);
+        vec3 diffuseComponent = diffuse * camera.lightColor.xyz;
+
+        vec3 color = (ambient + diffuseComponent + specularComponent) * albedo;
+        outColor = vec4(color, 1.0);
+    }
+    else if(camera.offset == 4.0) // Blinn-Phong
+    {
+        // vec3 L = normalize(camera.lightPosition - fragWorldPosition);
+        vec3 L = normalize(normalize(lPos) - normalize(fragWorldPosition.xyz));
+        vec3 H = normalize(L + V);
+        float specularStrength = 0.5;
+        float ambientStrength = 0.1;
+
+        vec3 ambient = ambientStrength * camera.lightColor.xyz;
+
+        // vec3 R = reflect(-V, normal);
+        float specular = pow(max(dot(normal, H), 0.0), 32);
+        vec3 specularComponent = specular * camera.lightColor.xyz;
+
+        float diffuse = max(dot(normal, L), 0.0);
+        vec3 diffuseComponent = diffuse * camera.lightColor.xyz;
+
+        vec3 color = (ambient + diffuseComponent + specularComponent) * albedo;
+        outColor = vec4(color, 1.0);
+
+    }
     else
     {
-        vec3 L = normalize(normalize(camera.lightPosition) - normalize(fragWorldPosition.xyz));
-
-        float rroughness = roughness;
-
-//#ifdef ROUGHNESS_PATTERN
-//        rroughness = max(rroughness, step(fract(fragWorldPosition.y * 2.02), 0.5));
-//#endif
-
-        Lo += specularContributionNoIbl(L, V, normal, f0, albedo, ao, metallic, rroughness);
-
-        //vec3 color = albedo * ao;
-        vec3 color = (Lo + emissive);
-
-        //hdr tonemapping
-        color = color / (color + vec3(1.0));
-        //gamma correction
-        color = pow(color, vec3(1.0/2.2));
-
-        outColor = vec4(color, 1.0);
+        outColor = vec4(albedo, 1.0);
     }
 }
 
@@ -188,9 +233,9 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float a)
     return gl * gv;
 }
 
-float Fd_Lambert()
+vec3 Fd_Lambert(vec3 albedo)
 {
-    return 1.0 / PI;
+    return (albedo / PI);
 }
 
 vec3 prefilteredReflection(vec3 R, float roughness)
@@ -233,10 +278,14 @@ vec3 specularContributionNoIbl(vec3 L, vec3 V, vec3 N, vec3 f0, vec3 albedo, vec
     vec3 H = normalize(V + L);
                     
     //BRDF
-    float NoV = clamp(dot(N, V), 0.0, 1.0);
-    float NoL = clamp(dot(N, L), 0.0, 1.0);
-    float HoV = clamp(dot(H, V), 0.0, 1.0);
-    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    // float NoV = clamp(dot(N, V), 0.0, 1.0);
+    // float NoL = clamp(dot(N, L), 0.0, 1.0);
+    // float HoV = clamp(dot(H, V), 0.0, 1.0);
+    // float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float NoV = max(dot(N, V), 0.000001);
+    float NoL = max(dot(N, L), 0.000001);
+    float HoV = max(dot(H, V), 0.0);
+    float NoH = max(dot(N, H), 0.0);
 
     vec3 color = vec3(0.0);
     vec3 specular = vec3(0.0);
@@ -249,13 +298,14 @@ vec3 specularContributionNoIbl(vec3 L, vec3 V, vec3 N, vec3 f0, vec3 albedo, vec
         float G = V_SmithGGXCorrelated(NoV, NoL, roughness); //Geometric attenuation for specular BRDF. value between 0 and 1
         vec3 F = F_Schlick(HoV, f0); //Fresnel term for direct lighting. RGB values also between 0 and 1
 
-        specular = D * F * G / (4.0 * NoL * NoV);
+        specular = D * F * G / (4.0 * NoL * NoV + 0.001);
 
-        kS = F; //specular reflection ratio
-        kD = 1.0 - kS;
-        kD *= 1.0 - metallic; // no diffuse in metals
+       //kS = F; //specular reflection ratio
+       //kD = 1.0 - kS;
+       //kD *= 1.0 - metallic; // no diffuse in metals
+        kD = mix(vec3(1.0) - F, vec3(0.0), metallic);
 
-        vec3 diffuse = (albedo / PI);
+        vec3 diffuse = Fd_Lambert(albedo);
         color = (kD * diffuse + specular) * NoL * camera.lightColor.xyz;
     }
 

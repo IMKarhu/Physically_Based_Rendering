@@ -204,7 +204,38 @@ namespace karhu
             cameraConstants.cameraPosition = frameInfo.camera.getPosition();
             cameraConstants.lightPosition = vars.m_LightPosition;
             cameraConstants.lighColor = vars.m_lightColor;
-            cameraConstants.offset = vars.ibl;
+            if(vars.albedo) {
+                    vars.ibl = false;
+                    vars.albedo = true;
+                    vars.phong = false;
+                    vars.blinnPhong = false;
+                    cameraConstants.offset = 0;
+            } else if(vars.phong) {
+                    vars.ibl = false;
+                    vars.albedo = false;
+                    vars.phong = true;
+                    vars.blinnPhong = false;
+                    cameraConstants.offset = 1;
+            } else if(vars.ibl) {
+                    vars.ibl = true;
+                    vars.albedo = false;
+                    vars.phong = false;
+                    vars.blinnPhong = false;
+                    cameraConstants.offset = 2;
+            } else if(vars.blinnPhong) {
+                    vars.ibl = false;
+                    vars.albedo = false;
+                    vars.phong = false;
+                    vars.blinnPhong = true;
+                    cameraConstants.offset = 4;
+
+            } else {
+                    vars.ibl = false;
+                    vars.albedo = false;
+                    vars.phong = false;
+                    vars.blinnPhong = false;
+                    cameraConstants.offset = 3;
+            }
             cameraConstants.albedoNormalMetalRoughness = glm::vec4(0.0f, 0.0f, vars.m_Metalness, vars.m_Roughness);
             vkCmdPushConstants(frameInfo.commandBuffer,
                     m_pipelinebuilder.getHandle()->m_pipelineLayout,
@@ -216,7 +247,6 @@ namespace karhu
             entity.getModel()->bind(frameInfo.commandBuffer);
             entity.getModel()->draw(frameInfo.commandBuffer);
         }
-        /*printf("ibl bool: %f \n", (float)vars.ibl);*/
     }
 
     void DisneySystem::renderEntitiesNotextures(Frame& frameInfo)
@@ -290,5 +320,17 @@ namespace karhu
     void DisneySystem::setIblActive(bool ibl)
     {
         vars.ibl = ibl;
+    }
+    void DisneySystem::setAlbedoActive(bool albedo)
+    {
+        vars.albedo = albedo;
+    }
+    void DisneySystem::setPhongActive(bool phong)
+    {
+        vars.phong = phong;
+    }
+    void DisneySystem::setBlinnPhongActive(bool blinnphong)
+    {
+        vars.blinnPhong = blinnphong;
     }
 }

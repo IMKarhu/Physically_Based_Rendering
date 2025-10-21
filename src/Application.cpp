@@ -825,9 +825,15 @@ namespace karhu
         ImGui::NewFrame();
 
         static bool ibl = m_disneySystem.isIbl();
+        static bool albedo = m_disneySystem.isAlbedo();
+        static bool phong = m_disneySystem.isPhong();
+        static bool blinnphong = m_disneySystem.isBlinnPhong();
        // ImGui::ShowDemoWindow();
         ImGui::Begin("Controls");
         ImGui::Checkbox("ibl", &ibl);
+        ImGui::Checkbox("albedo", &albedo);
+        ImGui::Checkbox("phong", &phong);
+        ImGui::Checkbox("Blinn-Phong", &blinnphong);
         /*ImGui::SliderFloat("Metalness", &vars.m_Metalness, 0.0f, 1.0f);*/
         /*ImGui::SliderFloat("Roughness", &vars.m_Roughness, 0.0f, 1.0f);*/
         /*ImGui::SliderFloat3("lightPosition", glm::value_ptr(vars.m_LightPosition), -50.0f, 50.0f);*/
@@ -838,6 +844,18 @@ namespace karhu
         if(ibl != m_disneySystem.isIbl())
         {
             m_disneySystem.setIblActive(ibl);
+        }
+        if(albedo != m_disneySystem.isAlbedo())
+        {
+            m_disneySystem.setAlbedoActive(albedo);
+        }
+        if(phong != m_disneySystem.isPhong())
+        {
+            m_disneySystem.setPhongActive(phong);
+        }
+        if(blinnphong != m_disneySystem.isBlinnPhong())
+        {
+            m_disneySystem.setBlinnPhongActive(blinnphong);
         }
 
         /*frameInfo.entities[1].setPosition(entPos);*/

@@ -12,4 +12,6 @@ C:/VulkanSDK/1.3.239.0/Bin/glslc.exe prefilteredCube.vert -o prefilteredcubevert
 C:/VulkanSDK/1.3.239.0/Bin/glslc.exe prefilteredCube.frag -o prefilteredcubefrag.spv
 C:/VulkanSDK/1.3.239.0/Bin/glslc.exe vertNoTex.vert -o NoTexvert.spv
 C:/VulkanSDK/1.3.239.0/Bin/glslc.exe fragNoTex.frag -o NoTexfrag.spv
+C:/VulkanSDK/1.3.239.0/Bin/glslc.exe NoTexUnreal.vert -o noTexUnrealvert.spv
+C:/VulkanSDK/1.3.239.0/Bin/glslc.exe NoTexUnreal.frag -o noTexUnrealfrag.spv
 pause

@@ -19,7 +19,11 @@ namespace karhu
         void operator=(const Descriptors&) = delete;
 
         VkDescriptorSetLayout createDescriptorSetLayout(std::vector< VkDescriptorSetLayoutBinding>& bindings);
-        void bind(std::vector<VkDescriptorSetLayoutBinding>& bindings, uint32_t binding, VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags flags);
+        void bind(std::vector<VkDescriptorSetLayoutBinding>& bindings,
+                uint32_t binding,
+                VkDescriptorType type,
+                uint32_t descriptorCount,
+                VkShaderStageFlags flags);
         VkDescriptorPool createDescriptorPool(uint32_t maxSets);
         void createDescriptorSets(std::vector<Entity>& entities, VkDescriptorSetLayout layout, VkDescriptorPool pool);
         void createDescriptorSets(VkDescriptorSetLayout layout, VkDescriptorPool pool);
