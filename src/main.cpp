@@ -1,6 +1,7 @@
-#include "kApplication.hpp"
+#include "Application.hpp"
 #include <iostream>
 #include <cstdlib>
+
 
 int main()
 {

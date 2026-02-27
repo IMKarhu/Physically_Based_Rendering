@@ -1,10 +1,13 @@
 #pragma once
 
+#include "Image.hpp"
+
 #include <vulkan/vulkan.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
+#include <vector>
 
 
 namespace karhu
@@ -15,6 +18,7 @@ namespace karhu
         glm::vec3 color;
         glm::vec3 normal;
         glm::vec2 texcoords;
+        glm::vec3 tangents;
 
         static VkVertexInputBindingDescription getBindingDescription()
         {
@@ -24,9 +28,9 @@ namespace karhu
             description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
             return description;
         }
-        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescription()
+        static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescription()
         {
-            std::array<VkVertexInputAttributeDescription, 4> attributeDescription{};
+            std::array<VkVertexInputAttributeDescription, 5> attributeDescription{};
             attributeDescription[0].binding = 0;
             attributeDescription[0].location = 0;
             attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -47,9 +51,57 @@ namespace karhu
             attributeDescription[3].format = VK_FORMAT_R32G32_SFLOAT;
             attributeDescription[3].offset = offsetof(Vertex, texcoords);
 
+            attributeDescription[4].binding = 0;
+            attributeDescription[4].location = 4;
+            attributeDescription[4].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescription[4].offset = offsetof(Vertex, tangents);
+
             return attributeDescription;
         }
     };
+
+    struct CubeVertex
+    {
+        glm::vec3 pos;
+
+        static VkVertexInputBindingDescription getBindingDescription()
+        {
+            VkVertexInputBindingDescription description{};
+            description.binding = 0;
+            description.stride = sizeof(Vertex);
+            description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            return description;
+        }
+        static VkVertexInputAttributeDescription getAttributeDescription()
+        {
+            VkVertexInputAttributeDescription attributeDescription{};
+            attributeDescription.binding = 0;
+            attributeDescription.location = 0;
+            attributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescription.offset = offsetof(Vertex, pos);
+
+            return attributeDescription;
+        }
+    };
+
+    const std::vector<Vertex> CUBEMAPVERTS = {
+            { { -1.0f, -1.0f, -1.0f } }, // Vertex 0
+            { { -1.0f, -1.0f,  1.0f } }, // Vertex 1
+            { { 1.0f, -1.0f,  1.0f } }, // Vertex 2
+            { { 1.0f, -1.0f, -1.0f } }, // Vertex 3
+            { { -1.0f, 1.0f, -1.0f } }, // Vertex 4
+            { { -1.0f,  1.0f, 1.0f } }, // Vertex 5
+            { { 1.0f,  1.0f,  1.0f } }, // Vertex 6
+            { { 1.0f,  1.0f, -1.0f } }  // Vertex 7
+        };
+    const std::vector<uint32_t> CUBEMAPINDICES = {
+             0, 1, 2, 2, 3, 0, // Bottom face
+             4, 5, 6, 6, 7, 4, // Top face
+             0, 1, 5, 5, 4, 0, // Front face
+             1, 2, 6, 6, 5, 1, // Right face
+             2, 3, 7, 7, 6, 2, // Back face
+             3, 0, 4, 4, 7, 3  // Left face
+        };
 
     struct UniformBufferObject
     {
@@ -74,5 +126,12 @@ namespace karhu
         alignas(16) glm::vec3 lightPosition;
         glm::vec4 lighColor;
         glm::vec4 albedoNormalMetalRoughness;
+    };
+
+    struct IblTextures {
+        Image m_brdfLut;
+        
+        Image m_irradianceCube;
+        Image m_prefilteredCube;
     };
 }

@@ -1,0 +1,93 @@
+#pragma once
+
+#include "Window.hpp"
+#include "Device.hpp"
+#include "CommandBuffer.hpp"
+#include "SwapChain.hpp"
+#include "pipelinesystems/DisneySystem.hpp"
+#include "pipelinesystems/UnrealSystem.hpp"
+#include "pipelinesystems/CubeMapSystem.hpp"
+#include "RenderPass.hpp"
+#include "Image.hpp"
+#include "Descriptors.hpp"
+#include "Entity.hpp"
+#include "Camera.hpp"
+#include "FrameBuffer.hpp"
+
+#include <memory>
+#include <unordered_map>
+
+namespace karhu
+{
+    class Application
+    {
+        public:
+            Application();
+            ~Application();
+
+            enum enityType
+            {
+                Disney,
+                Unreal,
+                Sphere,
+                SphereUE,
+                Cube
+            };
+
+            void run();
+            void update(std::vector<std::unique_ptr<Buffer>>& gBuffers, std::vector<std::unique_ptr<Buffer>>& skyBuffers, Entity& entity);
+            uint32_t begin(uint32_t currentFrameIndex);
+            void end(uint32_t currentFrameIndex, uint32_t imageIndex);
+        private:
+            void updateBuffers(std::vector<std::unique_ptr<Buffer>>& gBuffers,
+                    std::vector<std::unique_ptr<Buffer>>& skyBuffers,
+                    Camera& camera,
+                    bool flipY = false);
+            void createSyncObjects();
+            void cleanUpBeforeReCreate();
+            void reCreateSwapChain();
+            void createRenderPassForCubeMap();
+            void generatePropertiesForSphere();
+            void initializeImgui();
+            void renderGui(Frame& frameInfo);
+        private:
+            std::unique_ptr<Window> m_window = std::make_unique<Window>("Vulkan", 1080, 720);
+            Device m_device{ m_window->getInstance(), m_window->getSurface() };
+            CommandBuffer m_commandBuffer{ m_device };
+            SwapChain m_swapChain{ m_device, m_window };
+            DisneySystem m_disneySystem{ m_device };
+            UnrealSystem m_unrealSystem{ m_device };
+            CubeMapSystem m_cubeMapSystem{ m_device };
+            Descriptors m_builder{ m_device };
+            std::vector<RenderPass> m_renderPasses;
+            Image m_depthImage;
+
+            std::unordered_map<FramebufferType, std::vector<VkFramebuffer>> m_framebuffers;
+
+            std::unordered_map<enityType, std::vector<Entity>> m_entities;
+            IblTextures m_iblTextures;
+
+            /*synchronization*/
+            struct Semaphoras
+            {
+                std::vector<VkSemaphore> m_availableSemaphores;
+                std::vector<VkSemaphore> m_finishedSemaphores;
+            }m_semaphores;
+            std::vector<VkFence> m_inFlightFences;
+            uint32_t m_currentImage = 0;
+            uint32_t m_currentFrame = 0;
+            float m_deltaTime = 0.0f;
+
+            /*Camera descriptor.... global...*/
+            std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+            VkDescriptorSetLayout m_layout;
+            VkDescriptorPool m_pool;
+            VkDescriptorSet m_set;
+
+            VkDescriptorPool m_guiPool;
+
+            std::vector<Vertex> m_sphere;
+            std::vector<uint32_t> m_sphereIndices;
+            uint32_t indexCount;
+    };
+} // karhu namespace
